@@ -1,0 +1,7 @@
+packages:
+  - .
+
+# DSH Desktop supplies Cordis, Typert, React and client runtime peers. A second
+# local copy can create incompatible service and UI graphs.
+autoInstallPeers: false
+
