@@ -660,9 +660,9 @@ export function scanRequiredEnv(packageName, profileDir) {
     return [...found].sort();
 }
 /** Run `git <args>` in `cwd`, resolving on close (non-zero = reject). */
-export function runGit(cwd, args, timeoutMs = 3 * 60_000) {
+export function runGit(cwd, args, timeoutMs = 3 * 60_000, options = {}) {
     return new Promise((resolve) => {
-        const child = spawn('git', args, { cwd, windowsHide: true, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
+        const child = spawn('git', args, { cwd, shell: false, windowsHide: true, env: { ...process.env, ...(options.env ?? {}), GIT_TERMINAL_PROMPT: '0' } });
         let stdout = '';
         let stderr = '';
         const timer = setTimeout(() => { child.kill('SIGKILL'); }, timeoutMs);

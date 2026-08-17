@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-hub",
-  "version": "0.1.6-yourworkbench.1",
+  "version": "0.1.6-yourworkbench.2",
   "description": "YourWorkbench security-hardened distribution of the DSH Plugin Hub, based on upstream 0.1.6",
   "keywords": [
     "deepseek-harness",

@@ -76,9 +76,33 @@ Former live profile directory before the Junction switch:
 
 `C:\YourWorkbench\backups\plugin-hub-profile-live-before-link-2026-08-18`
 
-## Remaining separate finding
+## Publishing hardening
 
-The optional publishing module still contains a Windows `shell: true` command
-runner. It is not used by browsing or installing plugins and is scheduled for
-the next isolated hardening change. Do not use the Publish action until that
-change is complete.
+The security fork was advanced to `0.1.6-yourworkbench.2` after a separate
+review of the optional publishing module.
+
+The upstream implementation used `shell: true` for npm publishing, placed the
+npm token in a command-line argument, and embedded the GitHub token in the Git
+remote URL. The latter persisted the credential in the local plugin's
+`.git/config` despite a comment claiming the token was not logged.
+
+The hardened behavior is:
+
+- the npm shell runner, `.cmd` invocation and task-kill fallback are removed;
+- one-click npm publishing and the combined GitHub/npm action are disabled
+  until DSH exposes a dedicated credential-aware publishing capability;
+- GitHub remotes always use credential-free HTTPS URLs;
+- Git authentication is provided to the child process through ephemeral Git
+  environment configuration, not argv or `.git/config`;
+- the only remaining process spawn is fixed `git` with an argv array and
+  `shell: false`;
+- any security warning or critical finding blocks publication;
+- package names, token lengths, descriptions and GitHub topics are bounded and
+  validated;
+- publishing audit entries contain result messages, not credential values.
+
+Offline verification confirmed that the Git authentication header was visible
+inside the test child process and absent immediately afterward. The npm publish
+entry returned the disabled-policy result before any progress callback, network
+request or process launch. DSH Desktop and the Plugin Hub UI then loaded
+successfully with the hardened module.

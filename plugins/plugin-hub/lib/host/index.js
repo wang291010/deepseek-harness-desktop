@@ -1011,18 +1011,22 @@ let PluginStoreService = (() => {
             const name = String(raw?.packageName ?? '').trim();
             if (!name)
                 return { ok: false, message: '请选择要发布的插件', detail: null, repoUrl: null, npmUrl: null };
+            if (!validPackageName(name))
+                return { ok: false, message: '插件包名格式无效', detail: null, repoUrl: null, npmUrl: null };
             // Tokens are session-only: the UI passes them for this publish and they
             // are never persisted (security — a token must be re-entered every time).
             const githubToken = String(raw?.githubToken ?? '').trim();
             const npmToken = String(raw?.npmToken ?? '').trim();
+            if (githubToken.length > 500 || npmToken.length > 500)
+                return { ok: false, message: '发布令牌长度异常', detail: null, repoUrl: null, npmUrl: null };
             const request = {
                 packageName: name,
                 target: raw?.target === 'npm' || raw?.target === 'both' ? raw.target : 'github',
                 githubToken,
                 npmToken,
                 visibility: raw?.visibility === 'private' ? 'private' : 'public',
-                description: String(raw?.description ?? ''),
-                topics: Array.isArray(raw?.topics) ? raw.topics.map(String) : [],
+                description: String(raw?.description ?? '').slice(0, 20_000),
+                topics: Array.isArray(raw?.topics) ? raw.topics.map((topic) => String(topic).trim().toLowerCase()).filter((topic) => /^[a-z0-9][a-z0-9-]{0,49}$/.test(topic)).slice(0, 19) : [],
             };
             const key = name;
             this.publishProgressMap.set(key, { phase: '启动发布…', percent: 0, detail: '', updatedAt: Date.now() });

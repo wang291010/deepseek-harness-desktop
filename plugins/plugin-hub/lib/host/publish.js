@@ -11,7 +11,6 @@
  * Progress is reported through an onProgress callback; the host stores it in
  * a map and the UI polls publishProgress(packageName).
  */
-import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
@@ -19,49 +18,6 @@ import { runGit } from './installer.js';
 import { scanPlugin } from './security-scan.js';
 const API = 'https://api.github.com';
 const NPM_REGISTRY = 'https://registry.npmjs.org';
-/** Windows-safe escape for a single command-line argument (cmd.exe). */
-function escapeWinArg(arg) {
-    if (!/[\s"&|<>^]/.test(arg))
-        return arg;
-    return `"${arg.replace(/"/g, '\\"')}"`;
-}
-/** Run `npm <args>` in cwd (Windows .cmd shim needs shell + manual escaping). */
-function runNpm(cwd, args, timeoutMs = 5 * 60_000) {
-    return new Promise((resolve) => {
-        const isWin = process.platform === 'win32';
-        const cmd = isWin ? 'npm.cmd' : 'npm';
-        const child = isWin
-            ? spawn(`${cmd} ${args.map(escapeWinArg).join(' ')}`, { cwd, shell: true, windowsHide: true, env: { ...process.env, NO_COLOR: '1' } })
-            : spawn(cmd, args, { cwd, windowsHide: true, env: { ...process.env, NO_COLOR: '1' } });
-        let stdout = '';
-        let stderr = '';
-        let settled = false;
-        const settle = (r) => {
-            if (settled)
-                return;
-            settled = true;
-            resolve(r);
-        };
-        const timer = setTimeout(() => {
-            if (isWin && child.pid !== undefined) {
-                spawn('taskkill', ['/pid', String(child.pid), '/t', '/f'], { windowsHide: true, stdio: 'ignore' });
-            }
-            else {
-                child.kill('SIGKILL');
-            }
-        }, timeoutMs);
-        child.stdout?.on('data', (d) => { stdout += d.toString(); });
-        child.stderr?.on('data', (d) => { stderr += d.toString(); });
-        child.on('error', (err) => {
-            clearTimeout(timer);
-            settle({ ok: false, code: null, stdout, stderr: `${stderr}\n${err.message}` });
-        });
-        child.on('close', (code) => {
-            clearTimeout(timer);
-            settle({ ok: code === 0, code, stdout, stderr });
-        });
-    });
-}
 async function apiJson(url, init) {
     const res = await fetch(url, {
         ...init,
@@ -102,16 +58,17 @@ export async function publishPlugin(profile, req, onProgress) {
     const pkgName = String(pkg.name ?? name);
     const version = String(pkg.version ?? '0.0.0');
     const description = (req.description ?? '').trim() || String(pkg.description ?? '').trim() || pkgName;
+    if (req.target === 'npm' || req.target === 'both')
+        return fail('安全策略已暂时禁用一键 npm 发布', 'npm Token 不能安全地通过当前桌面子进程接口传递。请等待后续专用凭据能力，不要把 Token 放入命令行或项目 .npmrc。');
     // ---- security gate: critical findings reject the publish outright. ----
     onProgress('安全扫描中…', 3, null);
     const security = scanPlugin(dir, pkg);
-    if (security.level === 'malicious') {
-        const critical = security.findings.filter((f) => f.severity === 'critical');
-        const blocked = critical.map((f) => `🚫 [${f.rule}] ${f.target}: ${f.detail}`).join('\n');
+    if (security.findings.length > 0) {
+        const blocked = security.findings.map((f) => `🚫 [${f.severity}/${f.rule}] ${f.target}: ${f.detail}`).join('\n');
         return {
             ok: false,
-            message: `安全扫描未通过，已驳回发布（${critical.length} 项高风险发现）`,
-            detail: blocked || '未知高风险发现',
+            message: `安全扫描未完全通过，已驳回发布（${security.findings.length} 项需审查发现）`,
+            detail: blocked || '存在未分类的安全发现',
             repoUrl: null,
             npmUrl: null,
             security,
@@ -121,9 +78,6 @@ export async function publishPlugin(profile, req, onProgress) {
     const target = req.target === 'both' ? 'both' : req.target;
     if (target === 'github' || target === 'both') {
         results.github = await publishToGithub({ ...req, packageName: name }, { dir, pkgName, version, description }, onProgress);
-    }
-    if (target === 'npm' || target === 'both') {
-        results.npm = await publishToNpm(req, { dir, pkgName, version }, onProgress);
     }
     const parts = [results.github, results.npm].filter(Boolean);
     const ok = parts.every((r) => r.ok);
@@ -200,11 +154,19 @@ async function publishToGithub(req, m, onProgress) {
             return fail('创建仓库请求失败', e instanceof Error ? e.message : String(e));
         }
     }
-    // 4) git init/add/commit/push (token in URL, never in logs).
+    // 4) git init/add/commit/push. The remote URL never contains credentials.
+    // Authentication is injected into this child process only through Git's
+    // environment-backed temporary config and is absent from argv and .git/config.
     const repoUrl = `https://github.com/${login}/${repoName}`;
     onProgress('推送代码到 GitHub…', 55, 'git add / commit / push');
     try {
-        const gitUrl = `https://x-access-token:${token}@github.com/${login}/${repoName}.git`;
+        const gitUrl = `https://github.com/${login}/${repoName}.git`;
+        const basic = Buffer.from(`x-access-token:${token}`, 'utf8').toString('base64');
+        const gitAuth = {
+            GIT_CONFIG_COUNT: '1',
+            GIT_CONFIG_KEY_0: 'http.https://github.com/.extraheader',
+            GIT_CONFIG_VALUE_0: `AUTHORIZATION: basic ${basic}`,
+        };
         // Optional: generate a README.md from the description when the plugin has
         // none (long Markdown descriptions with images render on GitHub). An
         // existing README is never overwritten — the author's docs stay intact.
@@ -234,12 +196,12 @@ async function publishToGithub(req, m, onProgress) {
         // Push with retries: transient network resets (Recv failure / Connection
         // was reset) are common on CN networks — a retry usually succeeds. A large
         // postBuffer avoids mid-push failures on bigger repositories.
-        let push = await runGit(m.dir, ['-c', 'http.postBuffer=524288000', 'push', '-u', 'origin', 'main']);
+        let push = await runGit(m.dir, ['-c', 'http.postBuffer=524288000', 'push', '-u', 'origin', 'main'], 3 * 60_000, { env: gitAuth });
         for (let attempt = 1; !push.ok && attempt <= 3; attempt++) {
             if (!/403|denied|permission/i.test(push.stderr + push.stdout)) {
                 onProgress(`git push 网络波动，自动重试 ${attempt}/3…`, null, null);
                 await new Promise((r) => setTimeout(r, 2000 * attempt));
-                push = await runGit(m.dir, ['-c', 'http.postBuffer=524288000', 'push', '-u', 'origin', 'main']);
+                push = await runGit(m.dir, ['-c', 'http.postBuffer=524288000', 'push', '-u', 'origin', 'main'], 3 * 60_000, { env: gitAuth });
             }
             else
                 break;
@@ -283,50 +245,6 @@ async function publishToGithub(req, m, onProgress) {
     catch { /* release is best-effort */ }
     onProgress('发布完成', 100, repoUrl);
     return { ok: true, message: `GitHub 发布成功：${repoUrl}`, detail: `仓库 ${login}/${repoName}（${req.visibility}）· 标签 ${topics.join(', ')} · Release v${m.version}`, repoUrl, npmUrl: null };
-}
-async function publishToNpm(req, m, onProgress) {
-    const token = String(req.npmToken ?? '').trim();
-    if (!token)
-        return fail('缺少 npm Token：请在发布页输入你的 npm 访问令牌（Automation / Publish 类型）', null);
-    onProgress('验证 npm Token…', 10, null);
-    // 1) Validate token via whoami.
-    let user;
-    try {
-        const res = await fetch(`${NPM_REGISTRY}/-/whoami`, {
-            headers: { Authorization: `Bearer ${token}` },
-            signal: AbortSignal.timeout(20_000),
-        });
-        if (res.status !== 200) {
-            return fail(`npm Token 无效（HTTP ${res.status}）`, '请确认令牌类型为 Automation 或 Publish（legacy 类型已不被接受）');
-        }
-        const data = await res.json();
-        user = data.username ?? '';
-    }
-    catch (e) {
-        return fail('npm registry 连接失败', e instanceof Error ? e.message : String(e));
-    }
-    // 2) Package existence check (cannot publish over an existing version).
-    onProgress('检查包名是否已发布…', 30, null);
-    try {
-        const res = await fetch(`${NPM_REGISTRY}/${encodeURIComponent(m.pkgName).replace(/%2F/g, '/')}`, { signal: AbortSignal.timeout(15_000) });
-        if (res.status === 200) {
-            const data = await res.json();
-            const latest = data['dist-tags']?.latest ?? '?';
-            if (latest === m.version) {
-                return fail(`包 ${m.pkgName} 已发布 v${m.version}`, '如需更新，请先在插件的 package.json 中提升版本号后重新发布');
-            }
-        }
-    }
-    catch { /* registry check is best-effort */ }
-    // 3) npm publish with the token.
-    onProgress('npm publish 中…（上传包）', 60, m.pkgName);
-    const run = await runNpm(m.dir, ['publish', `--//registry.npmjs.org/:_authToken=${token}`]);
-    if (!run.ok) {
-        const err = run.stderr + run.stdout;
-        return fail('npm publish 失败', tail(err, 500));
-    }
-    onProgress('发布完成', 100, m.pkgName);
-    return { ok: true, message: `npm 发布成功：${m.pkgName}@${m.version}`, detail: `https://www.npmjs.com/package/${m.pkgName}`, repoUrl: null, npmUrl: `https://www.npmjs.com/package/${m.pkgName}` };
 }
 function fail(message, detail) {
     return { ok: false, message, detail, repoUrl: null, npmUrl: null };

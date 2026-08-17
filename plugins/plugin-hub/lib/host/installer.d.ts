@@ -80,7 +80,9 @@ export declare function installPlugin(profile: ProfileInfo, installSpec: string,
  * tokens). Informational hint surfaced in the install receipt. */
 export declare function scanRequiredEnv(packageName: string, profileDir: string): string[];
 /** Run `git <args>` in `cwd`, resolving on close (non-zero = reject). */
-export declare function runGit(cwd: string, args: string[], timeoutMs?: number): Promise<PnpmResult>;
+export declare function runGit(cwd: string, args: string[], timeoutMs?: number, options?: {
+    env?: Record<string, string>;
+}): Promise<PnpmResult>;
 /** Best-effort recursive remove (never throws). */
 export declare function rmrf(target: string): Promise<void>;
 /** Uninstall a plugin package from the profile (removes entry + bundles). */ export declare function uninstallPlugin(profile: ProfileInfo, packageName: string, entryId: string, actor: string): Promise<InstallReceipt>;
