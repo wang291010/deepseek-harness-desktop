@@ -24,12 +24,12 @@
  *       `command/run` args — the `todo/write` event is the authoritative
  *       domain event.
  *
- * preset/* is confined to ~/.dsh/.agent-presets/<id>/; fs/* accepts any
- * absolute path (the file view is a user-owned project browser).
+ * preset/* is confined to ~/.dsh/.agent-presets/<id>/. Filesystem and Git
+ * routes are confined to canonical paths owned by ctx.workspaceRegistry.
  */
 import { homedir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
-import { readdir, readFile, writeFile, stat, mkdir, rename } from 'node:fs/promises';
+import { isAbsolute, join, resolve, sep } from 'node:path';
+import { readdir, readFile, writeFile, stat, realpath, mkdir, rename } from 'node:fs/promises';
 import { appendFileSync } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
@@ -38,6 +38,7 @@ const name = 'dsh-workbench';
 const DSH_ROOT = join(homedir(), '.dsh');
 const PRESET_ROOT = join(DSH_ROOT, '.agent-presets');
 const MAX_READ_BYTES = 512 * 1024;
+const MAX_BODY_BYTES = 768 * 1024;
 const PRESET_FILES = new Set(['agent.cordis.yml', 'preset.yml']);
 const DIAG_LOG = join(DSH_ROOT, 'dsh-workbench-host.log');
 const TASK_STORE = join(DSH_ROOT, 'dsh-workbench-tasks.json');
@@ -58,6 +59,7 @@ let chatLlm = null;
 let chatCounter = 0;
 let orchestrationSubagents = null;
 let orchestrationAgents = null;
+let workspaceRegistry = null;
 const orchestrationControllers = new Map();
 let modelCatalogCache = { expiresAt: 0, items: [] };
 
@@ -102,9 +104,51 @@ function paramOf(req, key) {
 }
 
 function inside(root, target) {
-  const r = resolve(root);
-  const t = resolve(target);
+  const normalize = (value) => {
+    const normalized = resolve(value);
+    return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
+  };
+  const r = normalize(root);
+  const t = normalize(target);
   return t === r || t.startsWith(r + sep);
+}
+
+class WorkspacePathError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'WorkspacePathError';
+  }
+}
+
+/** Resolve before checking so symlinks and Windows junctions cannot escape. */
+async function authorizeWorkspacePath(input, expectedKind) {
+  const requested = String(input || '');
+  if (requested === '' || requested.includes('\0') || !isAbsolute(requested)) {
+    throw new WorkspacePathError('an absolute workspace path is required');
+  }
+  if (workspaceRegistry === null) throw new WorkspacePathError('workspace registry is unavailable');
+
+  let canonical;
+  try { canonical = await realpath(requested); } catch {
+    throw new WorkspacePathError('path does not exist or cannot be resolved');
+  }
+  const info = await stat(canonical);
+  if (expectedKind === 'file' && !info.isFile()) throw new WorkspacePathError('path is not a regular file');
+  if (expectedKind === 'directory' && !info.isDirectory()) throw new WorkspacePathError('path is not a directory');
+
+  const roots = workspaceRegistry.list().map((workspace) => workspace.path);
+  if (!roots.some((root) => inside(root, canonical))) {
+    throw new WorkspacePathError('path is outside registered workspaces');
+  }
+  return { canonical, info };
+}
+
+function pathFail(res, error) {
+  if (error instanceof WorkspacePathError) {
+    writeJson(res, 403, { error: 'workspace-path-forbidden', message: error.message });
+    return;
+  }
+  fail(res, error);
 }
 
 function runGit(dir, args) {
@@ -116,11 +160,20 @@ function runGit(dir, args) {
   });
 }
 
-function readBody(req) {
+function readBody(req, maxBytes = MAX_BODY_BYTES) {
   return new Promise((resolvePromise, rejectPromise) => {
     const chunks = [];
-    req.on('data', (c) => chunks.push(c));
-    req.on('end', () => resolvePromise(Buffer.concat(chunks).toString('utf8')));
+    let total = 0;
+    let tooLarge = false;
+    req.on('data', (c) => {
+      total += c.length;
+      if (total > maxBytes) { tooLarge = true; return; }
+      chunks.push(c);
+    });
+    req.on('end', () => {
+      if (tooLarge) { rejectPromise(new Error(`request body exceeds ${maxBytes} bytes`)); return; }
+      resolvePromise(Buffer.concat(chunks).toString('utf8'));
+    });
     req.on('error', rejectPromise);
   });
 }
@@ -1272,17 +1325,18 @@ function makeRoutes() {
         const dir = paramOf(req, 'path');
         if (!dir) return bad(res, 'path-required', 'path query param required');
         try {
-          const names = await readdir(dir, { withFileTypes: true });
+          const { canonical } = await authorizeWorkspacePath(dir, 'directory');
+          const names = await readdir(canonical, { withFileTypes: true });
           const entries = await Promise.all(names.map(async (d) => {
-            const full = join(dir, d.name);
+            const full = join(canonical, d.name);
             try {
               const s = await stat(full);
               return { name: d.name, isDir: d.isDirectory(), size: s.size, mtime: s.mtimeMs };
             } catch { return { name: d.name, isDir: d.isDirectory(), size: 0, mtime: 0 }; }
           }));
           entries.sort((a, b) => (a.isDir === b.isDir ? a.name.localeCompare(b.name) : a.isDir ? -1 : 1));
-          writeJson(res, 200, { path: dir, entries });
-        } catch (error) { fail(res, error); }
+          writeJson(res, 200, { path: canonical, entries });
+        } catch (error) { pathFail(res, error); }
       }
     },
     // ---- fs: read ----
@@ -1294,12 +1348,11 @@ function makeRoutes() {
         const target = paramOf(req, 'path');
         if (!target) return bad(res, 'path-required', 'path query param required');
         try {
-          const s = await stat(target);
-          if (!s.isFile()) return bad(res, 'not-a-file', 'path is not a file');
-          if (s.size > MAX_READ_BYTES) return bad(res, 'too-large', `file exceeds ${MAX_READ_BYTES} bytes`);
-          const content = await readFile(target, 'utf8');
-          writeJson(res, 200, { path: target, content });
-        } catch (error) { fail(res, error); }
+          const { canonical, info } = await authorizeWorkspacePath(target, 'file');
+          if (info.size > MAX_READ_BYTES) return bad(res, 'too-large', `file exceeds ${MAX_READ_BYTES} bytes`);
+          const content = await readFile(canonical, 'utf8');
+          writeJson(res, 200, { path: canonical, content });
+        } catch (error) { pathFail(res, error); }
       }
     },
     // ---- fs: write ----
@@ -1316,9 +1369,11 @@ function makeRoutes() {
         if (!target) return bad(res, 'path-required', 'path required');
         if (target.includes('\0')) return bad(res, 'bad-path', 'invalid path');
         try {
-          await writeFile(target, content, 'utf8');
+          const { canonical } = await authorizeWorkspacePath(target, 'file');
+          if (Buffer.byteLength(content, 'utf8') > MAX_READ_BYTES) return bad(res, 'too-large', `content exceeds ${MAX_READ_BYTES} bytes`);
+          await writeFile(canonical, content, 'utf8');
           writeJson(res, 200, { ok: true });
-        } catch (error) { fail(res, error); }
+        } catch (error) { pathFail(res, error); }
       }
     },
     // ---- preset: read ----
@@ -1370,9 +1425,11 @@ function makeRoutes() {
         const dir = paramOf(req, 'path');
         if (!dir) return bad(res, 'path-required', 'path query param required');
         try {
-          const text = await runGit(dir, ['log', '--graph', '--all', '--date=short', "--pretty=format:%h %ad %d %s", '-n', '80']);
-          writeJson(res, 200, { path: dir, text });
+          const { canonical } = await authorizeWorkspacePath(dir, 'directory');
+          const text = await runGit(canonical, ['log', '--graph', '--all', '--date=short', "--pretty=format:%h %ad %d %s", '-n', '80']);
+          writeJson(res, 200, { path: canonical, text });
         } catch (error) {
+          if (error instanceof WorkspacePathError) { pathFail(res, error); return; }
           writeJson(res, 200, { path: dir, text: '', error: String((error && error.message) || error) });
         }
       }
@@ -1430,11 +1487,11 @@ function apply(ctx) {
       diag('register failed: ' + String((error && error.stack) || error));
     }
   };
-  // `webServer` and `llm` are inject-only services on the cordis ctx; requesting
-  // them via inject guarantees availability and correct ownership.
-  ctx.inject(['webServer', 'llm'], (scoped) => {
-    diag('webServer + llm injected');
+  // Do not expose filesystem routes until the durable root authority exists.
+  ctx.inject(['webServer', 'llm', 'workspaceRegistry'], (scoped) => {
+    diag('webServer + llm + workspaceRegistry injected');
     chatLlm = scoped.llm;
+    workspaceRegistry = scoped.workspaceRegistry;
     register(scoped.webServer);
   });
   // Bind the official DSH subagent runtime separately so task routes remain
@@ -1467,6 +1524,7 @@ function apply(ctx) {
     orchestrationControllers.clear();
     orchestrationSubagents = null;
     orchestrationAgents = null;
+    workspaceRegistry = null;
     for (const dispose of disposers) dispose();
     for (const dispose of commandDisposers) dispose();
   });
