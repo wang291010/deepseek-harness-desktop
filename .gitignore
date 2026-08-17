@@ -1,0 +1,52 @@
+# Dependencies and package-manager state
+node_modules/
+.pnpm-store/
+
+# Local backups and temporary migration snapshots
+backups/
+*.bak
+*.backup
+*.tmp
+*.temp
+
+# Credentials and local environment configuration
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.pfx
+*.p12
+*credential*
+*secret*
+*token*
+
+# Runtime data that may contain private conversations or account information
+*.log
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+sessions/
+history/
+user-data/
+
+# Build and test output
+dist/
+build/
+coverage/
+.cache/
+.eslintcache
+
+# Editor and operating-system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Installed desktop binaries are not source code
+*.exe
+*.dll
+*.pak
+*.bin

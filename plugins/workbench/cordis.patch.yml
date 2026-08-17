@@ -1,0 +1,4 @@
+# dsh-workbench bundle patch: register the host plugin entry.
+- insert:
+    - id: dsh-workbench
+      name: dsh-workbench

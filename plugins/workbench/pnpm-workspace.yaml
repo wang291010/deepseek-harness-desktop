@@ -1,0 +1,6 @@
+packages:
+  - .
+
+# DeepSeek Harness provides the peer dependencies at runtime. Installing a
+# second copy inside this plugin can create incompatible Cordis/React graphs.
+autoInstallPeers: false
