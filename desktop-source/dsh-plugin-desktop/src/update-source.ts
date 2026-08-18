@@ -9,7 +9,7 @@
  */
 
 /** GitHub user or organization owning the release repository. */
-export const UPDATE_REPOSITORY_OWNER = 'your-github-username'
+export const UPDATE_REPOSITORY_OWNER = 'wang291010'
 
 /** GitHub repository publishing DSH Desktop releases. */
 export const UPDATE_REPOSITORY_NAME = 'deepseek-harness-desktop'

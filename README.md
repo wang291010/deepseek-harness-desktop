@@ -4,8 +4,9 @@ YourWorkbench is a local independent desktop distribution built on top of
 DeepSeek Harness and the community DSH Desktop shell.
 
 The immediate goal is to turn the current customized environment into a
-stable, recoverable, and security-reviewed personal client. This repository is
-local-only for now; initializing Git does not publish or upload the project.
+stable, recoverable, and security-reviewed personal client. The desktop
+product self-updates from this repository's GitHub Releases; source sharing
+and releases live on GitHub.
 
 ## Project layout
 
