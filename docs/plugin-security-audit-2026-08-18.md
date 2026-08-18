@@ -88,3 +88,5 @@ The previous ACL is stored in the ignored local backups directory for recovery.
 - Task Center and expert presets load.
 - Plugin Hub store loads.
 - Usage statistics settings and historical data load.
+- A cold-started desktop can still complete an authenticated DeepSeek model
+  request after the credential ACL is hardened.
