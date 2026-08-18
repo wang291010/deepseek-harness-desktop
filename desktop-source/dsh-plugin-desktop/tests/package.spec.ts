@@ -186,11 +186,21 @@ describe('published package surface', () => {
       perMachine: false,
       allowElevation: true,
       allowToChangeInstallationDirectory: true,
+      include: 'build/installer.nsh',
       createDesktopShortcut: true,
       createStartMenuShortcut: true,
       shortcutName: 'DeepSeek Harness Desktop',
       artifactName: 'DeepSeek-Harness-Desktop-${version}-${arch}-Setup.${ext}',
     })
+    const installerInclude = readFileSync(new URL('build/installer.nsh', packageRoot), 'utf8')
+    expect(installerInclude).toContain('!macro customInit')
+    expect(installerInclude).toContain('!macro customCheckAppRunning')
+    expect(installerInclude).toContain('!macro customRemoveFiles')
+    expect(installerInclude).toContain('!macro customUnInstall')
+    expect(installerInclude).toContain('taskkill /F /T /IM "DeepSeek Harness Desktop.exe"')
+    expect(installerInclude).toContain('RMDir /r "$INSTDIR"')
+    expect(installerInclude).toContain('robocopy')
+    expect(installerInclude).toContain('DeleteRegValue SHELL_CONTEXT "${UNINSTALL_REGISTRY_KEY}" UninstallString')
     expect(manifest.build?.linux?.icon).toBe('build/app-icon.png')
   })
 
