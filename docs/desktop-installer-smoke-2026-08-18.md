@@ -73,3 +73,18 @@ same pattern already used by `plugins/usage-monitor`. Rebuilt and re-verified:
 - The installer/exe file properties still show the package description
   inherited from `package.json` `description`; updated to the DeepSeek Harness
   Desktop wording. Cosmetic branding cleanup, no functional impact.
+
+## Addendum: 2.0.1 auto-update loop (2026-08-18)
+
+The v2.0.1 end-to-end update loop was verified after this smoke:
+
+- Release v2.0.1 was published to
+  `wang291010/deepseek-harness-desktop` with asset
+  `DeepSeek-Harness-Desktop-2.0.1-x64-Setup.exe`
+  (SHA-256 `E1B5A41B208EF44701C5D4CC5665139484EAB0F77A402740D8189606E1BB134B`).
+- The installed 2.0.0 app detected v2.0.1, downloaded, silently installed over
+  the old tree, and restarted itself; registry `DisplayVersion` = 2.0.1 and the
+  installed executable hash matches the 2.0.1 build.
+- The in-place upgrade quirk ("application cannot be closed") was not hit on
+  this path; the installer handled takeover of the running app. It remains a
+  release-gate item to re-verify with a clean no-process upgrade.
