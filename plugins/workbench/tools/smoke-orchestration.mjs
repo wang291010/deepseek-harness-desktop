@@ -98,9 +98,20 @@ try {
   const planned = await call('/api/dsh-workbench/tasks/mutate', 'POST', {
     action: 'orchestration_plan', scope: 'all', projectPath: 'D:\\demo', id
   });
-  assert.equal(planned.orchestrations[0].phase, 'planned');
-  assert.equal(planned.orchestrations[0].workers.length, 2);
-  assert.equal(planned.orchestrations[0].mainAgent.name, '交付负责人');
+  assert.equal(planned.orchestrations[0].phase, 'planning');
+  assert.ok(planned.orchestrations[0].planningNote, 'planningNote should be set while generating');
+  let plannedState = null;
+  for (let i = 0; i < 50; i += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    const snap = await call('/api/dsh-workbench/tasks/list', 'GET', undefined, '?scope=all&projectPath=D%3A%5Cdemo');
+    if (snap.orchestrations[0] && snap.orchestrations[0].phase === 'planned') {
+      plannedState = snap.orchestrations[0];
+      break;
+    }
+  }
+  assert(plannedState, 'orchestration plan should complete asynchronously');
+  assert.equal(plannedState.workers.length, 2);
+  assert.equal(plannedState.mainAgent.name, '交付负责人');
   const persisted = JSON.parse(await readFile(join(tempHome, '.dsh', 'dsh-workbench-tasks.json'), 'utf8'));
   assert.equal(persisted.version, 4);
   console.log('orchestration smoke test passed');

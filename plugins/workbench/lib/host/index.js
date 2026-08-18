@@ -421,6 +421,7 @@ function cleanOrchestration(raw) {
     maxParallel: Number.isSafeInteger(raw.maxParallel) ? Math.max(1, Math.min(4, raw.maxParallel)) : 3,
     attempt: Number.isSafeInteger(raw.attempt) && raw.attempt >= 0 ? raw.attempt : 0,
     feedback: cleanTaskText(raw.feedback, 6000),
+    planningNote: cleanTaskText(raw.planningNote, 200),
     finalReport: cleanTaskText(raw.finalReport, 30000),
     runtimeError: cleanTaskText(raw.runtimeError, 6000),
     acceptedNote: cleanTaskText(raw.acceptedNote, 6000),
@@ -682,6 +683,28 @@ async function mutateTasks(body) {
       createdAt: now,
       updatedAt: now
     }));
+  } else if (action === 'orchestration_set_planning') {
+    const index = store.orchestrations.findIndex((item) => item.id === body.id);
+    if (index < 0) throw new Error('orchestration not found');
+    const current = store.orchestrations[index];
+    store.orchestrations[index] = cleanOrchestration({
+      ...current,
+      phase: 'planning',
+      planningNote: cleanTaskText(body.planningNote, 200) || 'AI 正在生成方案…',
+      runtimeError: '',
+      updatedAt: now
+    });
+  } else if (action === 'orchestration_plan_failed') {
+    const index = store.orchestrations.findIndex((item) => item.id === body.id);
+    if (index < 0) throw new Error('orchestration not found');
+    const current = store.orchestrations[index];
+    store.orchestrations[index] = cleanOrchestration({
+      ...current,
+      phase: 'failed',
+      planningNote: '',
+      runtimeError: '方案生成失败：' + cleanTaskText(body.error, 6000),
+      updatedAt: now
+    });
   } else if (action === 'orchestration_set_plan') {
     const index = store.orchestrations.findIndex((item) => item.id === body.id);
     if (index < 0) throw new Error('orchestration not found');
@@ -692,6 +715,7 @@ async function mutateTasks(body) {
       ...current,
       title: plan.title || current.title,
       phase: 'planned',
+      planningNote: '',
       plan,
       mainAgent: { ...plan.mainAgent, status: 'planned', sessionId: '', output: '', error: '' },
       workers: plan.workers.map((worker) => ({ ...worker, status: 'planned', sessionId: '', output: '', error: '' })),
@@ -1308,10 +1332,35 @@ function makeRoutes() {
             const snapshot = await readTaskStore();
             const record = snapshot.orchestrations.find((item) => item.id === body.id);
             if (!record) throw new Error('orchestration not found');
+            if (record.phase === 'planning') throw new Error('方案正在生成中，请稍候');
             const feedback = cleanTaskText(body.feedback, 6000) || record.feedback;
-            const modelCatalog = await listOrchestrationModels();
-            const plan = await generateOrchestrationPlan(record, feedback, modelCatalog, cleanTaskText(body.modelPolicy, 40) || 'balanced');
-            body = { ...body, action: 'orchestration_set_plan', plan, feedback };
+            const modelPolicy = cleanTaskText(body.modelPolicy, 40) || 'balanced';
+            const planRequest = { ...body, feedback, modelPolicy };
+            await taskMutationQueue.then(() => mutateTasks({ ...planRequest, action: 'orchestration_set_planning', planningNote: feedback ? '正在按反馈重新编排…' : 'AI 正在生成第一份方案…' }));
+            void (async () => {
+              try {
+                const plan = await generateOrchestrationPlan(record, feedback, await listOrchestrationModels(), modelPolicy);
+                await taskMutationQueue.then(() => mutateTasks({ ...planRequest, action: 'orchestration_set_plan', plan }));
+              } catch (error) {
+                diag('orchestration plan failed: ' + String((error && error.stack) || error));
+                await taskMutationQueue.then(() => mutateTasks({ ...planRequest, action: 'orchestration_plan_failed', error: String((error && error.message) || error) })).catch(() => {});
+              }
+            })();
+            const planningStore = await readTaskStore();
+            const planningModels = await listOrchestrationModels();
+            writeJson(res, 200, {
+              ok: true,
+              revision: planningStore.revision,
+              projectPath,
+              scope,
+              tasks: tasksForScope(planningStore.tasks, projectPath, scope),
+              templates: planningStore.templates,
+              ideas: ideasForScope(planningStore.ideas, projectPath, scope),
+              orchestrations: orchestrationsForScope(planningStore.orchestrations, projectPath, scope),
+              orchestrationRuntime: orchestrationRuntimeInfo(),
+              modelCatalog: planningModels
+            });
+            return;
           }
           if (body.action === 'orchestration_set_agent_model' && (body.provider || body.model)) {
             const modelCatalog = await listOrchestrationModels();
