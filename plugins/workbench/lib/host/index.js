@@ -29,7 +29,7 @@
  */
 import { homedir } from 'node:os';
 import { isAbsolute, join, resolve, sep } from 'node:path';
-import { readdir, readFile, writeFile, stat, realpath, mkdir, rename } from 'node:fs/promises';
+import { readdir, readFile, writeFile, stat, lstat, realpath, mkdir, rename } from 'node:fs/promises';
 import { appendFileSync } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
@@ -39,6 +39,7 @@ const DSH_ROOT = join(homedir(), '.dsh');
 const PRESET_ROOT = join(DSH_ROOT, '.agent-presets');
 const MAX_READ_BYTES = 512 * 1024;
 const MAX_BODY_BYTES = 768 * 1024;
+const MAX_TASK_STORE_BYTES = 8 * 1024 * 1024;
 const PRESET_FILES = new Set(['agent.cordis.yml', 'preset.yml']);
 const DIAG_LOG = join(DSH_ROOT, 'dsh-workbench-host.log');
 const TASK_STORE = join(DSH_ROOT, 'dsh-workbench-tasks.json');
@@ -149,6 +150,30 @@ function pathFail(res, error) {
     return;
   }
   fail(res, error);
+}
+
+/** Resolve a preset target through its real parent so junctions cannot escape. */
+async function authorizePresetPath(id, file, allowMissingFile = false) {
+  await mkdir(PRESET_ROOT, { recursive: true });
+  const canonicalRoot = await realpath(PRESET_ROOT);
+  const canonicalPresetDir = await realpath(join(canonicalRoot, id));
+  if (!inside(canonicalRoot, canonicalPresetDir)) throw new WorkspacePathError('preset directory escapes preset root');
+  const dirInfo = await stat(canonicalPresetDir);
+  if (!dirInfo.isDirectory()) throw new WorkspacePathError('preset path is not a directory');
+
+  const target = join(canonicalPresetDir, file);
+  try {
+    const linkInfo = await lstat(target);
+    if (linkInfo.isSymbolicLink()) throw new WorkspacePathError('preset file cannot be a symbolic link');
+    const canonicalTarget = await realpath(target);
+    if (!inside(canonicalRoot, canonicalTarget)) throw new WorkspacePathError('preset file escapes preset root');
+    const info = await stat(canonicalTarget);
+    if (!info.isFile()) throw new WorkspacePathError('preset path is not a regular file');
+    return { canonical: canonicalTarget, info };
+  } catch (error) {
+    if (allowMissingFile && error && error.code === 'ENOENT') return { canonical: target, info: null };
+    throw error;
+  }
 }
 
 function runGit(dir, args) {
@@ -410,6 +435,9 @@ function cleanOrchestration(raw) {
 
 async function readTaskStore() {
   try {
+    const linkInfo = await lstat(TASK_STORE);
+    if (linkInfo.isSymbolicLink() || !linkInfo.isFile()) throw new Error('task store must be a regular non-symbolic file');
+    if (linkInfo.size > MAX_TASK_STORE_BYTES) throw new Error(`task store exceeds ${MAX_TASK_STORE_BYTES} bytes`);
     const parsed = JSON.parse(await readFile(TASK_STORE, 'utf8'));
     if (!parsed || ![1, 2, 3, 4].includes(parsed.version) || !Array.isArray(parsed.tasks)) throw new Error('unsupported task store format');
     return {
@@ -1389,7 +1417,9 @@ function makeRoutes() {
         const target = join(PRESET_ROOT, id, file);
         if (!inside(PRESET_ROOT, target)) return bad(res, 'bad-path', 'outside preset root');
         try {
-          const content = await readFile(target, 'utf8');
+          const { canonical, info } = await authorizePresetPath(id, file);
+          if (info.size > MAX_READ_BYTES) return bad(res, 'too-large', `file exceeds ${MAX_READ_BYTES} bytes`);
+          const content = await readFile(canonical, 'utf8');
           writeJson(res, 200, { id, file, content });
         } catch (error) { fail(res, error); }
       }
@@ -1410,8 +1440,10 @@ function makeRoutes() {
         if (!PRESET_FILES.has(file)) return bad(res, 'bad-file', 'invalid preset file');
         const target = join(PRESET_ROOT, id, file);
         if (!inside(PRESET_ROOT, target)) return bad(res, 'bad-path', 'outside preset root');
+        if (Buffer.byteLength(content, 'utf8') > MAX_READ_BYTES) return bad(res, 'too-large', `content exceeds ${MAX_READ_BYTES} bytes`);
         try {
-          await writeFile(target, content, 'utf8');
+          const { canonical } = await authorizePresetPath(id, file, true);
+          await writeFile(canonical, content, 'utf8');
           writeJson(res, 200, { ok: true });
         } catch (error) { fail(res, error); }
       }

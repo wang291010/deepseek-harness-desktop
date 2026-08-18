@@ -6,7 +6,7 @@ Verified on 2026-08-18 with DSH Desktop 2.0.0.
 
 - `@abcdefu_cja/dsh-usage-stats`: `0.1.0-yourworkbench.1`
 - `dsh-plugin-hub`: `0.1.6-yourworkbench.2`
-- `dsh-workbench`: `0.0.1`
+- `dsh-workbench`: `0.0.2-yourworkbench.1`
 
 ## Required installation mode
 

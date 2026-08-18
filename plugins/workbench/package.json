@@ -1,6 +1,6 @@
 {
   "name": "dsh-workbench",
-  "version": "0.0.1",
+  "version": "0.0.2-yourworkbench.1",
   "description": "Personal workbench for DeepSeek Harness: custom shell with six pages (Agent / Knowledge / Experts / Style / Monitor / Workflows). P0: loading-chain verification.",
   "license": "MIT",
   "type": "module",
