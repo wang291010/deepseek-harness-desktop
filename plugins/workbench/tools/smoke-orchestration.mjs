@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
@@ -35,8 +35,16 @@ const ctx = {
       });
     } else if (names.includes('subagents')) {
       callback({
-        subagents: { list: () => ['spawn', 'fork'] },
-        agents: { get: () => undefined, roots: () => [] }
+        subagents: {
+          list: () => ['spawn', 'fork'],
+          start: async (kind, options) => ({
+            id: 'run-' + options.label,
+            localAgent: { options: {} },
+            result: Promise.resolve({ output: [{ type: 'text', text: options.label + ' 完成：已提供证据。' }], stopReason: 'completed' }),
+            dispose: async () => {}
+          })
+        },
+        agents: { get: (id) => ({ id: id || 'session-1', session: { header: { cwd: 'D:\\demo' } } }), roots: () => [] }
       });
     } else if (names.includes('commands')) {
       callback({ commands: { register: () => [] }, sessionProjections: {} });
@@ -114,6 +122,40 @@ try {
   assert.equal(plannedState.mainAgent.name, '交付负责人');
   const persisted = JSON.parse(await readFile(join(tempHome, '.dsh', 'dsh-workbench-tasks.json'), 'utf8'));
   assert.equal(persisted.version, 4);
+
+  // Simulate an interrupted run: one worker completed, the rest interrupted by restart.
+  const storeFile = join(tempHome, '.dsh', 'dsh-workbench-tasks.json');
+  const interrupted = JSON.parse(await readFile(storeFile, 'utf8'));
+  const target = interrupted.orchestrations[0];
+  target.phase = 'failed';
+  target.runtimeError = '桌面端重启中断了本次执行；已完成步骤已保留，可以点击“继续执行”从未完成步骤接着跑。';
+  target.workers = target.workers.map((worker, index) => index === 0
+    ? { ...worker, status: 'completed', output: '第一步已完成', completedAt: new Date().toISOString() }
+    : { ...worker, status: 'failed', error: '桌面端重启中断了本次执行', completedAt: new Date().toISOString() });
+  target.mainAgent = { ...target.mainAgent, status: 'failed', error: '桌面端重启中断了本次执行', completedAt: new Date().toISOString() };
+  target.completedAt = new Date().toISOString();
+  await writeFile(storeFile, JSON.stringify(interrupted, null, 2) + '\n', 'utf8');
+
+  const resumed = await call('/api/dsh-workbench/tasks/mutate', 'POST', {
+    action: 'orchestration_resume', scope: 'all', projectPath: 'D:\\demo', id
+  });
+  assert.equal(resumed.orchestrations[0].phase, 'running');
+  assert.equal(resumed.orchestrations[0].attempt, 1);
+  assert.ok(resumed.orchestrations[0].workers.find((worker) => worker.status === 'completed'), 'completed worker should be kept on resume');
+  assert.equal(resumed.orchestrations[0].workers.filter((worker) => worker.status === 'planned').length, 1, 'interrupted worker should be reset to planned');
+
+  let resumedState = null;
+  for (let i = 0; i < 100; i += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    const snap = await call('/api/dsh-workbench/tasks/list', 'GET', undefined, '?scope=all&projectPath=D%3A%5Cdemo');
+    const rec = snap.orchestrations[0];
+    if (rec.phase === 'review' || rec.phase === 'failed') { resumedState = rec; break; }
+  }
+  assert(resumedState, 'resumed orchestration should reach a terminal state');
+  assert.equal(resumedState.phase, 'review');
+  assert.equal(resumedState.workers.filter((worker) => worker.status === 'completed').length, 2);
+  assert.equal(resumedState.workers[0].output, '第一步已完成');
+  assert.ok(resumedState.finalReport, 'main agent should produce a final report after resume');
   console.log('orchestration smoke test passed');
 } finally {
   await rm(tempHome, { recursive: true, force: true });

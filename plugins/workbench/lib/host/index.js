@@ -790,6 +790,27 @@ async function mutateTasks(body) {
       updatedAt: now
     });
     store.orchestrations[index] = cleanOrchestration({ ...next, runs: runsWithSnapshot(next, 'cancelled', now) });
+  } else if (action === 'orchestration_resume') {
+    const index = store.orchestrations.findIndex((item) => item.id === body.id);
+    if (index < 0) throw new Error('orchestration not found');
+    const current = store.orchestrations[index];
+    if (current.phase !== 'failed' && current.phase !== 'cancelled') throw new Error('只有异常中止或已终止的协作任务可以继续执行');
+    if (!current.plan || current.workers.length === 0) throw new Error('没有可继续执行的方案，请重新生成方案');
+    const resumedWorkers = current.workers.map((worker) => worker.status === 'completed' ? worker : {
+      ...worker, status: 'planned', sessionId: '', output: '', error: '', startedAt: '', completedAt: ''
+    });
+    store.orchestrations[index] = cleanOrchestration({
+      ...current,
+      phase: 'running',
+      attempt: current.attempt + 1,
+      mainAgent: { ...current.mainAgent, status: 'waiting', sessionId: '', output: '', error: '', startedAt: '', completedAt: '' },
+      workers: resumedWorkers,
+      finalReport: '',
+      runtimeError: '',
+      startedAt: now,
+      completedAt: '',
+      updatedAt: now
+    });
   } else if (action === 'orchestration_remove') {
     const before = store.orchestrations.length;
     store.orchestrations = store.orchestrations.filter((item) => item.id !== body.id);
@@ -1073,7 +1094,7 @@ async function runOrchestration(orchestrationId) {
       await queueOrchestrationPatch(orchestrationId, (item) => ({ ...item, sourceSessionId: String(parent.id), updatedAt: new Date().toISOString() }));
       orchestration = await orchestrationSnapshot(orchestrationId);
     }
-    const pending = new Set(orchestration.workers.map((worker) => worker.id));
+    const pending = new Set(orchestration.workers.filter((worker) => worker.status !== 'completed').map((worker) => worker.id));
     while (pending.size > 0) {
       if (controller.signal.aborted) throw new Error('用户终止执行');
       orchestration = await orchestrationSnapshot(orchestrationId);
@@ -1167,7 +1188,7 @@ function recoverInterruptedOrchestrations() {
         phase: 'failed',
         workers: item.workers.map((worker) => ['running', 'waiting', 'planned'].includes(worker.status) ? { ...worker, status: 'failed', error: '桌面端重启中断了本次执行', completedAt: now } : worker),
         mainAgent: item.mainAgent && ['running', 'waiting', 'planned'].includes(item.mainAgent.status) ? { ...item.mainAgent, status: 'failed', error: '桌面端重启中断了本次执行', completedAt: now } : item.mainAgent,
-        runtimeError: '桌面端重启中断了本次执行；记录和已完成结果仍保留，可以重新生成方案后再次执行。',
+        runtimeError: '桌面端重启中断了本次执行；已完成步骤已保留，可以点击“继续执行”从未完成步骤接着跑。',
         completedAt: now,
         updatedAt: now
       });
@@ -1366,6 +1387,9 @@ function makeRoutes() {
             const modelCatalog = await listOrchestrationModels();
             if (!modelCatalog.some((item) => item.provider === body.provider && item.id === body.model)) throw new Error('selected model is not available in the current DSH catalog');
           }
+          if (body.action === 'orchestration_resume' && (orchestrationSubagents === null || orchestrationAgents === null)) {
+            throw new Error('代理运行时不可用：请先确认桌面端已正常启动后再试');
+          }
           const operation = taskMutationQueue.then(() => mutateTasks(body));
           taskMutationQueue = operation.catch(() => {});
           const store = await operation;
@@ -1375,6 +1399,9 @@ function makeRoutes() {
           }
           if (body.action === 'orchestration_start') {
             void runOrchestration(body.id).catch((error) => diag('orchestration run failed: ' + String((error && error.stack) || error)));
+          }
+          if (body.action === 'orchestration_resume') {
+            void runOrchestration(body.id).catch((error) => diag('orchestration resume failed: ' + String((error && error.stack) || error)));
           }
           const modelCatalog = await listOrchestrationModels();
           writeJson(res, 200, {
