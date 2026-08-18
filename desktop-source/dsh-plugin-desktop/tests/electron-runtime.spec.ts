@@ -188,7 +188,7 @@ const spec: DesktopShellSpec = {
   minWidth: 900,
   minHeight: 640,
   url: 'http://127.0.0.1:43120/',
-  productName: 'DSH Desktop',
+  productName: 'DeepSeek Harness Desktop',
   windowTitle: 'DeepSeek Harness Desktop',
   iconPath: '/tmp/app-icon.png',
   trayIcons: {
@@ -389,7 +389,7 @@ describe('Electron compatibility runtime', () => {
 
     const labels = (electron.menuTemplates.at(-1) as Array<{ label?: string }>).map(item => item.label)
     expect(labels).toEqual([
-      'Open DSH Desktop', undefined,
+      'Open DeepSeek Harness Desktop', undefined,
       'Earlier Tool', 'Later Tool', undefined,
       'Check for Updates…', undefined,
       'Switch to Advanced Mode', undefined,
@@ -532,7 +532,7 @@ describe('Electron compatibility runtime', () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
     const response = Response.json({ version: '2.1.0' })
     electron.net.fetch.mockResolvedValueOnce(response)
-    updater.download.mockResolvedValueOnce('/tmp/DSH-Desktop-2.1.0-mac.dmg')
+    updater.download.mockResolvedValueOnce('/tmp/DeepSeek-Harness-Desktop-2.1.0-mac.dmg')
     const { ElectronDesktopRuntime } = await import('../src/electron-runtime.ts')
     const runtime = new ElectronDesktopRuntime(async () => {})
 
@@ -553,7 +553,7 @@ describe('Electron compatibility runtime', () => {
       latestVersion: '2.0.0',
     })
     expect(electron.dialog.showMessageBox).toHaveBeenLastCalledWith(expect.objectContaining({
-      title: 'DSH Desktop Is Up to Date',
+      title: 'DeepSeek Harness Desktop Is Up to Date',
       detail: 'Installed version: 2.0.0',
       buttons: ['OK'],
     }))
@@ -579,9 +579,9 @@ describe('Electron compatibility runtime', () => {
       request: expect.any(Function),
       signal: controller.signal,
     })
-    expect(electron.shell.openPath).toHaveBeenCalledWith('/tmp/DSH-Desktop-2.1.0-mac.dmg')
+    expect(electron.shell.openPath).toHaveBeenCalledWith('/tmp/DeepSeek-Harness-Desktop-2.1.0-mac.dmg')
     expect(electron.dialog.showMessageBox).toHaveBeenLastCalledWith(expect.objectContaining({
-      title: 'DSH Desktop Update Downloaded',
+      title: 'DeepSeek Harness Desktop Update Downloaded',
       buttons: ['OK'],
     }))
 
@@ -600,7 +600,7 @@ describe('Electron compatibility runtime', () => {
 
   it('starts the downloaded Windows installer before requesting orderly exit', async () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
-    updater.download.mockResolvedValueOnce('C:\\Updates\\DSH-Desktop-2.1.0-windows.exe')
+    updater.download.mockResolvedValueOnce('C:\\Updates\\DeepSeek-Harness-Desktop-2.1.0-windows.exe')
     const requestQuit = vi.fn()
     const { ElectronDesktopRuntime } = await import('../src/electron-runtime.ts')
     const runtime = new ElectronDesktopRuntime(async () => {})
@@ -609,7 +609,7 @@ describe('Electron compatibility runtime', () => {
     const pending = runtime.updates.downloadAndOpen('2.1.0', new AbortController().signal)
     await vi.waitFor(() => { expect(childProcess.spawn).toHaveBeenCalledOnce() })
     expect(childProcess.spawn).toHaveBeenCalledWith(
-      'C:\\Updates\\DSH-Desktop-2.1.0-windows.exe',
+      'C:\\Updates\\DeepSeek-Harness-Desktop-2.1.0-windows.exe',
       ['--updated', '--force-run'],
       {
         detached: true,
@@ -628,7 +628,7 @@ describe('Electron compatibility runtime', () => {
 
   it('does not exit when the downloaded Windows installer fails to spawn', async () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
-    updater.download.mockResolvedValueOnce('C:\\Updates\\DSH-Desktop-2.1.0-windows.exe')
+    updater.download.mockResolvedValueOnce('C:\\Updates\\DeepSeek-Harness-Desktop-2.1.0-windows.exe')
     const requestQuit = vi.fn()
     const { ElectronDesktopRuntime } = await import('../src/electron-runtime.ts')
     const runtime = new ElectronDesktopRuntime(async () => {})
@@ -645,7 +645,7 @@ describe('Electron compatibility runtime', () => {
 
   it('keeps a downloaded Windows installer idle when installation is deferred', async () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
-    updater.download.mockResolvedValueOnce('C:\\Updates\\DSH-Desktop-2.1.0-windows.exe')
+    updater.download.mockResolvedValueOnce('C:\\Updates\\DeepSeek-Harness-Desktop-2.1.0-windows.exe')
     electron.dialog.showMessageBox.mockResolvedValueOnce({ response: 1, checkboxChecked: false })
     const { ElectronDesktopRuntime } = await import('../src/electron-runtime.ts')
     const runtime = new ElectronDesktopRuntime(async () => {})
@@ -657,7 +657,7 @@ describe('Electron compatibility runtime', () => {
 
   it('rejects a macOS handoff when the operating system cannot open the DMG', async () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
-    updater.download.mockResolvedValueOnce('/tmp/DSH-Desktop-2.1.0-mac.dmg')
+    updater.download.mockResolvedValueOnce('/tmp/DeepSeek-Harness-Desktop-2.1.0-mac.dmg')
     electron.shell.openPath.mockResolvedValueOnce('Launch Services rejected the image')
     const { ElectronDesktopRuntime } = await import('../src/electron-runtime.ts')
     const runtime = new ElectronDesktopRuntime(async () => {})
@@ -669,7 +669,7 @@ describe('Electron compatibility runtime', () => {
 
   it('does not show macOS completion after the update generation is cancelled', async () => {
     vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
-    updater.download.mockResolvedValueOnce('/tmp/DSH-Desktop-2.1.0-mac.dmg')
+    updater.download.mockResolvedValueOnce('/tmp/DeepSeek-Harness-Desktop-2.1.0-mac.dmg')
     let finishOpen!: (result: string) => void
     electron.shell.openPath.mockImplementationOnce(async () => new Promise<string>(resolve => {
       finishOpen = resolve

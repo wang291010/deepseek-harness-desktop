@@ -133,9 +133,18 @@ describe('published package surface', () => {
   })
 
   it('fixes the installed application identity', () => {
+    const main = readFileSync(new URL('src/main.ts', packageRoot), 'utf8')
+
     expect(manifest.version).toBe(workspaceManifest.version)
-    expect(manifest.build?.productName).toBe('DSH Desktop')
-    expect(manifest.build?.appId).toBe('ai.deepseek.dsh.desktop')
+    expect(manifest.build?.productName).toBe('DeepSeek Harness Desktop')
+    expect(manifest.build?.appId).toBe('com.yourworkbench.deepseek-harness-desktop')
+    expect(main).toContain("const PRODUCT_NAME = 'DeepSeek Harness Desktop'")
+    expect(main).toContain("const WINDOWS_APP_ID = 'com.yourworkbench.deepseek-harness-desktop'")
+    expect(main).toContain('app.setName(PRODUCT_NAME)')
+    expect(main).toContain('app.setAppUserModelId(WINDOWS_APP_ID)')
+    expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).toMatch(
+      /id: desktop-updates[\s\S]*?name: dsh-plugin-desktop\/updates[\s\S]*?disabled: true/u,
+    )
     expect(manifest.build?.asarUnpack).toEqual([
       'package.json',
       'cordis.patch.yml',
@@ -173,8 +182,8 @@ describe('published package surface', () => {
       allowToChangeInstallationDirectory: true,
       createDesktopShortcut: true,
       createStartMenuShortcut: true,
-      shortcutName: 'DSH Desktop',
-      artifactName: 'DSH-Desktop-${version}-${arch}-Setup.${ext}',
+      shortcutName: 'DeepSeek Harness Desktop',
+      artifactName: 'DeepSeek-Harness-Desktop-${version}-${arch}-Setup.${ext}',
     })
     expect(manifest.build?.linux?.icon).toBe('build/app-icon.png')
   })

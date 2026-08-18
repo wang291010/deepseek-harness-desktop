@@ -224,8 +224,8 @@
     "vitest": "4.1.8"
   },
   "build": {
-    "appId": "ai.deepseek.dsh.desktop",
-    "productName": "DSH Desktop",
+    "appId": "com.yourworkbench.deepseek-harness-desktop",
+    "productName": "DeepSeek Harness Desktop",
     "asar": true,
     "asarUnpack": [
       "package.json",
@@ -278,8 +278,8 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "DSH Desktop",
-      "artifactName": "DSH-Desktop-${version}-${arch}-Setup.${ext}"
+      "shortcutName": "DeepSeek Harness Desktop",
+      "artifactName": "DeepSeek-Harness-Desktop-${version}-${arch}-Setup.${ext}"
     },
     "linux": {
       "target": [

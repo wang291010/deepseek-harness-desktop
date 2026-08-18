@@ -36,7 +36,8 @@ import {
 } from './shutdown.ts'
 
 const BIN_NAME = 'dsh-plugin-desktop'
-const PRODUCT_NAME = 'DSH Desktop'
+const PRODUCT_NAME = 'DeepSeek Harness Desktop'
+const WINDOWS_APP_ID = 'com.yourworkbench.deepseek-harness-desktop'
 
 /** Report profile recovery without changing startup or rollback outcomes. */
 function notifyProfileRecovery(runtime: ElectronDesktopRuntime, body: string): void {
@@ -98,7 +99,7 @@ async function start(): Promise<void> {
 
   app.on('second-instance', () => { runtime.show() })
   await app.whenReady()
-  if (process.platform === 'win32') app.setAppUserModelId('ai.deepseek.dsh.desktop')
+  if (process.platform === 'win32') app.setAppUserModelId(WINDOWS_APP_ID)
   if (app.isPackaged && process.cwd() === '/') process.chdir(app.getPath('home'))
 
   const failLoudProcess: FailLoudProcess = {

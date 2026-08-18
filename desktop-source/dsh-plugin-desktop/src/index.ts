@@ -140,7 +140,7 @@ export function apply(ctx: Context, config: Config): void {
     () => ctx.desktopRuntime.schedule({
       ...config,
       url: desktopRendererUrl(ctx.webServer.port, config.mode, ctx.desktopRuntime.platform),
-      productName: 'DSH Desktop',
+      productName: 'DeepSeek Harness Desktop',
       windowTitle: 'DeepSeek Harness Desktop',
       iconPath,
       trayIcons,
