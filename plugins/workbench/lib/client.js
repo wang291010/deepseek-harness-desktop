@@ -342,6 +342,7 @@ window.__ModuleLoader__.load({
       ".wb-sp-row:hover{background:var(--dsw-alias-interactive-bg-hover)}",
       ".wb-sp-row-active{background:var(--dsw-alias-interactive-bg-active,var(--dsw-alias-button-floating-fill))}",
       ".wb-sp-dot{flex:none;width:7px;height:7px;border-radius:50%}",
+      ".wb-sp-pin{flex:none;font-size:10px;color:#ff9f0a}",
       ".wb-st-idle{background:var(--dsw-alias-label-secondary)}",
       ".wb-st-run{background:#34c759}",
       ".wb-st-inter{background:#ff9f0a}",
@@ -776,6 +777,7 @@ window.__ModuleLoader__.load({
       const [menuId, setMenuId] = React.useState(null);
       const [renamingId, setRenamingId] = React.useState(null);
       const [renameText, setRenameText] = React.useState("");
+      const [pinned, setPinned] = React.useState(() => { try { const raw = JSON.parse(localStorage.getItem("wb.pinned") || "[]"); return Array.isArray(raw) ? raw : []; } catch (e) { return []; } });
 
       const wsItems = workspaces.items || [];
       const currentSession = sessions.current ? sessions.byId[sessions.current] : void 0;
@@ -789,9 +791,16 @@ window.__ModuleLoader__.load({
 
       const wsSessions = (sessions.ids || []).map((id) => sessions.byId[id]).filter((s) => {
         return s && !s.blank && activeWs !== null && normPath(s.cwd) === normPath(activeWs.path);
-      }).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+      }).sort((a, b) => {
+        const pa = pinned.includes(a.id) ? 0 : 1;
+        const pb = pinned.includes(b.id) ? 0 : 1;
+        if (pa !== pb) return pa - pb;
+        return (b.updatedAt || 0) - (a.updatedAt || 0);
+      });
 
       const selectWs = (id) => { try { setWsId(id); localStorage.setItem("wb.ws", id); } catch (e) { /* keep previous state */ } };
+      const persistPinned = (ids) => { try { localStorage.setItem("wb.pinned", JSON.stringify(ids)); } catch (e) {} };
+      const togglePin = (id) => { const next = pinned.includes(id) ? pinned.filter((x) => x !== id) : [...pinned, id]; setPinned(next); persistPinned(next); setMenuId(null); };
       const openSession = (id) => {
         try {
           const inst = wbSessionOf(id);
@@ -897,6 +906,7 @@ window.__ModuleLoader__.load({
               onClick: () => openSession(s.id),
               children: [
                 jsxRuntime.jsx("span", { className: "wb-sp-dot " + st.cls, title: st.label }),
+                pinned.includes(s.id) && jsxRuntime.jsx("span", { className: "wb-sp-pin", title: "已置顶", children: "★" }),
                 renaming
                   ? jsxRuntime.jsxs("span", { className: "wb-sp-renaming", onClick: (e) => e.stopPropagation(), children: [
                       jsxRuntime.jsx("input", { className: "wb-sp-input", autoFocus: true, value: renameText, onChange: (e) => setRenameText(e.target.value), onKeyDown: (e) => { if (e.key === "Enter") commitRename(s.id); if (e.key === "Escape") setRenamingId(null); } }),
@@ -913,6 +923,7 @@ window.__ModuleLoader__.load({
                 jsxRuntime.jsx("button", { type: "button", className: "wb-sp-menu", title: "更多", onClick: (e) => { e.stopPropagation(); setMenuId(menuId === s.id ? null : s.id); }, children: jsxRuntime.jsx(primitives.IconEllipsisOutline16, { size: 14 }) }),
                 menuId === s.id && jsxRuntime.jsxs("div", { className: "wb-sp-pop", onClick: (e) => e.stopPropagation(), children: [
                   jsxRuntime.jsx("button", { type: "button", className: "wb-sp-pop-item", onClick: () => startRename(s.id), children: "重命名" }),
+                  jsxRuntime.jsx("button", { type: "button", className: "wb-sp-pop-item", onClick: () => togglePin(s.id), children: pinned.includes(s.id) ? "取消置顶" : "置顶" }),
                   jsxRuntime.jsx("button", { type: "button", className: "wb-sp-pop-item", onClick: () => archiveSession(s.id), children: "归档" })
                 ] })
               ]
@@ -2290,11 +2301,15 @@ window.__ModuleLoader__.load({
       const sidebarW = panels.sidebar > 0 ? clampWidth(panels.sidebar, 264, 420) : 0;
       const detailsW = currentId === void 0 ? 0 : (panels.details === 0 ? 0 : clampWidth(panels.details, 300, 520));
       const d = viewport > 860 && detailsW > 0 ? detailsW : 0;
+      const sidebarBase = React.useRef(panels.sidebar || 280);
+      const detailsBase = React.useRef(panels.details || 360);
       return jsxRuntime.jsxs("div", { className: "wb-agent", children: [
         jsxRuntime.jsxs("div", { ref: frameRef, className: "wb-agent-frame", style: { gridTemplateColumns: sidebarW + "px minmax(0, 1fr) " + d + "px" }, children: [
           sidebarW > 0 && jsxRuntime.jsx("div", { className: "wb-sp-col", style: { gridColumn: 1 }, children: jsxRuntime.jsx(SessionPanel, { useSessions, useWorkspaces, onClose: onToggleSessions }) }),
+          sidebarW > 0 && jsxRuntime.jsx(DragHandle, { side: "sidebar", left: sidebarW, onStart: () => { sidebarBase.current = panels.sidebar; }, onDrag: (delta) => actions.setSidebar(sidebarBase.current + delta), onEnd: () => {} }),
           jsxRuntime.jsx(CenterColumn, { children: renderSlot("conversation", {}) }),
-          d > 0 && jsxRuntime.jsx("div", { className: "wb-tb-col", style: { gridColumn: 3 }, children: jsxRuntime.jsx(WbToolbar, { useSessions, onClose: () => actions.closeDetails() }) })
+          d > 0 && jsxRuntime.jsx("div", { className: "wb-tb-col", style: { gridColumn: 3 }, children: jsxRuntime.jsx(WbToolbar, { useSessions, onClose: () => actions.closeDetails() }) }),
+          d > 0 && jsxRuntime.jsx(DragHandle, { side: "details", left: viewport - d, onStart: () => { detailsBase.current = panels.details; }, onDrag: (delta) => actions.setDetails(detailsBase.current - delta), onEnd: () => {} })
         ] }),
         sidebarW === 0 && jsxRuntime.jsx("button", {
           type: "button",
