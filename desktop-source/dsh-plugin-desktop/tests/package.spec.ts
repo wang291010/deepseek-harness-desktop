@@ -18,6 +18,7 @@ const manifest = JSON.parse(readFileSync(new URL('package.json', packageRoot), '
   build?: {
     productName?: unknown
     appId?: unknown
+    electronDist?: unknown
     asarUnpack?: unknown
     afterPack?: unknown
     electronFuses?: unknown
@@ -139,6 +140,7 @@ describe('published package surface', () => {
     expect(manifest.version).toBe(workspaceManifest.version)
     expect(manifest.build?.productName).toBe('DeepSeek Harness Desktop')
     expect(manifest.build?.appId).toBe('com.yourworkbench.deepseek-harness-desktop')
+    expect(manifest.build?.electronDist).toBe('node_modules/electron/dist')
     expect(identity).toContain("PRODUCT_NAME = 'DeepSeek Harness Desktop'")
     expect(identity).toContain("WINDOWS_APP_ID = 'com.yourworkbench.deepseek-harness-desktop'")
     expect(main).toContain('app.setName(PRODUCT_NAME)')

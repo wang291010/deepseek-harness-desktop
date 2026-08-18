@@ -226,6 +226,7 @@
   "build": {
     "appId": "com.yourworkbench.deepseek-harness-desktop",
     "productName": "DeepSeek Harness Desktop",
+    "electronDist": "node_modules/electron/dist",
     "asar": true,
     "asarUnpack": [
       "package.json",
