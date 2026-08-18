@@ -6428,6 +6428,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cosmokit@npm:^1.8.1":
+  version: 1.8.1
+  resolution: "cosmokit@npm:1.8.1"
+  checksum: 10c0/56b0294572efc7793d5854b0022243fab9899d0ab6ce7da873839572b4dc8c6d3ba8d6ff5b61231dca2e9d821af73a2be5d502d9ea52af2671374711a93620aa
+  languageName: node
+  linkType: hard
+
 "cross-spawn@npm:^7.0.1, cross-spawn@npm:^7.0.5, cross-spawn@npm:^7.0.6":
   version: 7.0.6
   resolution: "cross-spawn@npm:7.0.6"
@@ -6746,11 +6753,13 @@ __metadata:
     node-addon-require-builtin: "npm:^0.1.4"
     pnpm: "npm:11.7.0"
     react: "npm:18.3.1"
+    schemastery: "npm:3.18.0"
     sharp: "npm:0.35.3"
     tsdown: "npm:0.22.2"
     typescript: "npm:6.0.3"
     vitest: "npm:4.1.8"
     yaml: "npm:^2.9.0"
+    zod: "npm:4.4.3"
   peerDependencies:
     electron: 43.4.0
   bin:
@@ -9831,6 +9840,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"schemastery@npm:3.18.0":
+  version: 3.18.0
+  resolution: "schemastery@npm:3.18.0"
+  dependencies:
+    "@standard-schema/spec": "npm:^1.1.0"
+    cosmokit: "npm:^1.8.1"
+  checksum: 10c0/2f18f79adbc478e8f90914c3dbb9cf74f6e17a593b32565cbdf6e13cf152bdf0d03fa9f42aed35d27430fec54b0c2bf53b71b8b505ccc80f121cb694095a9513
+  languageName: node
+  linkType: hard
+
 "semver-compare@npm:^1.0.0":
   version: 1.0.0
   resolution: "semver-compare@npm:1.0.0"
@@ -10973,7 +10992,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod@npm:^3.25 || ^4.0, zod@npm:^3.25.0 || ^4.0.0, zod@npm:^4.4.3":
+"zod@npm:4.4.3, zod@npm:^3.25 || ^4.0, zod@npm:^3.25.0 || ^4.0.0, zod@npm:^4.4.3":
   version: 4.4.3
   resolution: "zod@npm:4.4.3"
   checksum: 10c0/7ea31b558e88f9faf44f31dd185e2e1cbf51fed3081787fb96cc2534749b50c0acfc6da7f0922a7353ed092dd358c7d50c28ea96c94d04af64191bd33152eca3

@@ -23,6 +23,7 @@ const manifest = JSON.parse(readFileSync(new URL('package.json', packageRoot), '
     afterPack?: unknown
     electronFuses?: unknown
     files?: unknown
+    extraResources?: unknown
     mac?: { hardenedRuntime?: unknown; icon?: unknown; notarize?: unknown; target?: unknown }
     win?: { icon?: unknown; target?: unknown }
     nsis?: Record<string, unknown>
@@ -279,6 +280,29 @@ describe('published package surface', () => {
     expect(manifest.peerDependencies?.electron).toBe('43.4.0')
     expect(manifest.devDependencies?.electron).toBe('43.4.0')
     expect(manifest.dependencies?.pnpm).toBe('11.7.0')
+    expect(manifest.dependencies?.schemastery).toBe('3.18.0')
+    expect(manifest.dependencies?.yaml).toBe('^2.9.0')
+    expect(manifest.dependencies?.zod).toBe('4.4.3')
+  })
+
+  it('copies only the three distribution-owned plugin runtime surfaces', () => {
+    expect(manifest.build?.extraResources).toEqual([
+      {
+        from: '../../plugins/usage-monitor',
+        to: 'app.asar.unpacked/node_modules/@abcdefu_cja/dsh-usage-stats',
+        filter: ['package.json', 'cordis.patch.yml', 'lib/**', 'LICENSE', 'README.md'],
+      },
+      {
+        from: '../../plugins/plugin-hub',
+        to: 'app.asar.unpacked/node_modules/dsh-plugin-hub',
+        filter: ['package.json', 'cordis.patch.yml', 'lib/**', 'LICENSE', 'README.md'],
+      },
+      {
+        from: '../../plugins/workbench',
+        to: 'app.asar.unpacked/node_modules/dsh-workbench',
+        filter: ['package.json', 'cordis.patch.yml', 'lib/**', 'README.md'],
+      },
+    ])
   })
 
   it('resolves electron-builder through the pinned app-builder-lib keychain patch', () => {

@@ -154,6 +154,46 @@ function sameList(left: readonly string[], right: readonly string[]): boolean {
   return left.length === right.length && left.every((value, index) => value === right[index])
 }
 
+const PROFILE_DEPENDENCY_FIELDS = [
+  'dependencies',
+  'devDependencies',
+  'optionalDependencies',
+  'peerDependencies',
+] as const
+
+/**
+ * Remove development-time package references superseded by the packaged application.
+ * Bundle metadata and unrelated third-party dependencies remain user-owned.
+ */
+export function removeInstallationOwnedProfileDependencies(
+  profileDir: string,
+  packageNames: readonly string[],
+): boolean {
+  if (packageNames.length === 0) return false
+  const owned = new Set(packageNames)
+  const manifest = readProfileManifest(BIN_NAME, profileDir)
+  const next = { ...manifest } as ProfileManifest & Record<string, unknown>
+  let changed = false
+
+  for (const field of PROFILE_DEPENDENCY_FIELDS) {
+    const dependencies = (manifest as ProfileManifest & Record<string, unknown>)[field]
+    if (dependencies === undefined) continue
+    if (dependencies === null || typeof dependencies !== 'object' || Array.isArray(dependencies)) {
+      throw new Error(`${BIN_NAME}: ${field} must be a package-name map`)
+    }
+    const preserved = Object.fromEntries(
+      Object.entries(dependencies).filter(([packageName]) => !owned.has(packageName)),
+    )
+    if (Object.keys(preserved).length === Object.keys(dependencies).length) continue
+    changed = true
+    if (Object.keys(preserved).length === 0) delete next[field]
+    else next[field] = preserved
+  }
+
+  if (changed) writeProfileManifest(profileDir, next)
+  return changed
+}
+
 /**
  * Initialize or repair the persistent desktop profile.
  * @param home - Harness home containing the profiles directory.
@@ -218,6 +258,7 @@ function rowDisabledOnPlatform(row: EntryOptions, platform: NodeJS.Platform): bo
  * @param home - Harness home containing profiles and the machine-wide patch.
  * @param platform - native platform selecting launcher-owned safety overlays.
  * @param profileName - existing or lazily available Web profile to compose.
+ * @param installationOwnedPackages - packaged plugins that supersede profile dependencies.
  * @returns root config, profile metadata, and ordered patches.
  */
 export function prepareDesktopProfile(
@@ -225,10 +266,12 @@ export function prepareDesktopProfile(
   home: string = resolveDshHome(),
   platform: NodeJS.Platform = process.platform,
   profileName: string = DESKTOP_PROFILE_NAME,
+  installationOwnedPackages: readonly string[] = [],
 ): PreparedDesktopProfile {
   const profileDir = profileName === DESKTOP_PROFILE_NAME
     ? ensureDesktopProfile(home)
     : resolveProfileDir(profileName, home)
+  removeInstallationOwnedProfileDependencies(profileDir, installationOwnedPackages)
   healProfilesModuleFallback(INSTALL_ANCHOR, home)
   const profile = loadProfile(BIN_NAME, profileName, INSTALL_ANCHOR, home)
   const rootConfig = join(profileDir, DESKTOP_PROFILE_ROOT)

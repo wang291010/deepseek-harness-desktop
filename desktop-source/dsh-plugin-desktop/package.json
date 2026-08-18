@@ -206,7 +206,9 @@
     "node-addon-require-builtin": "^0.1.4",
     "pnpm": "11.7.0",
     "react": "18.3.1",
-    "yaml": "^2.9.0"
+    "schemastery": "3.18.0",
+    "yaml": "^2.9.0",
+    "zod": "4.4.3"
   },
   "peerDependencies": {
     "electron": "43.4.0"
@@ -251,6 +253,40 @@
       "cordis.patch.yml",
       "lib/**",
       "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../../plugins/usage-monitor",
+        "to": "app.asar.unpacked/node_modules/@abcdefu_cja/dsh-usage-stats",
+        "filter": [
+          "package.json",
+          "cordis.patch.yml",
+          "lib/**",
+          "LICENSE",
+          "README.md"
+        ]
+      },
+      {
+        "from": "../../plugins/plugin-hub",
+        "to": "app.asar.unpacked/node_modules/dsh-plugin-hub",
+        "filter": [
+          "package.json",
+          "cordis.patch.yml",
+          "lib/**",
+          "LICENSE",
+          "README.md"
+        ]
+      },
+      {
+        "from": "../../plugins/workbench",
+        "to": "app.asar.unpacked/node_modules/dsh-workbench",
+        "filter": [
+          "package.json",
+          "cordis.patch.yml",
+          "lib/**",
+          "README.md"
+        ]
+      }
     ],
     "mac": {
       "target": [

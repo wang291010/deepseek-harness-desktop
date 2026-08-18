@@ -68,6 +68,21 @@ export const REQUIRED_UNPACKED_RUNTIME_ENTRIES = [
   'node_modules/@deepseek-ai/dsh-app-boot/lib/index.js',
   'node_modules/@deepseek-ai/dsh-web-frontend/dist/index.html',
   'node_modules/pnpm/bin/pnpm.mjs',
+  'node_modules/@abcdefu_cja/dsh-usage-stats/package.json',
+  'node_modules/@abcdefu_cja/dsh-usage-stats/cordis.patch.yml',
+  'node_modules/@abcdefu_cja/dsh-usage-stats/lib/index.js',
+  'node_modules/@abcdefu_cja/dsh-usage-stats/lib/client.js',
+  'node_modules/dsh-plugin-hub/package.json',
+  'node_modules/dsh-plugin-hub/cordis.patch.yml',
+  'node_modules/dsh-plugin-hub/lib/host/index.js',
+  'node_modules/dsh-plugin-hub/lib/client.js',
+  'node_modules/dsh-workbench/package.json',
+  'node_modules/dsh-workbench/cordis.patch.yml',
+  'node_modules/dsh-workbench/lib/host/index.js',
+  'node_modules/dsh-workbench/lib/client.js',
+  'node_modules/schemastery/package.json',
+  'node_modules/yaml/package.json',
+  'node_modules/zod/package.json',
 ] as const
 
 /** Prebuilt Node-API modules required when the Windows package skips native source rebuilds. */
@@ -93,6 +108,15 @@ export const REQUIRED_UNPACKED_PACKAGE_SPECIFIERS = [
   'dsh-plugin-desktop/package.json',
   '@deepseek-ai/dsh-base/package.json',
   '@deepseek-ai/dsh-web-app/package.json',
+  '@abcdefu_cja/dsh-usage-stats',
+  '@abcdefu_cja/dsh-usage-stats/client',
+  'dsh-plugin-hub',
+  'dsh-plugin-hub/client',
+  'dsh-workbench',
+  'dsh-workbench/client',
+  'schemastery/package.json',
+  'yaml/package.json',
+  'zod/package.json',
 ] as const
 
 /** Injectable archive listing seam used by focused tests. */

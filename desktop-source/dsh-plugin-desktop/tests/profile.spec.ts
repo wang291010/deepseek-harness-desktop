@@ -11,6 +11,7 @@ import {
   ensureDesktopProfile,
   prepareDesktopProfile,
   readDesktopShellMode,
+  removeInstallationOwnedProfileDependencies,
 } from '../src/profile.ts'
 
 const homes: string[] = []
@@ -74,6 +75,50 @@ describe('desktop profile composition', () => {
     const manifest = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>
     writeFileSync(path, JSON.stringify({ ...manifest, dsh: { profile: { bundles: 'not-an-array' } } }) + '\n')
     expect(() => ensureDesktopProfile(home)).toThrow('dsh.profile.bundles must be an array')
+  })
+
+  it('removes packaged plugin dependencies without changing bundles or unrelated packages', () => {
+    const home = temporaryHome()
+    const dir = ensureDesktopProfile(home)
+    const path = join(dir, 'package.json')
+    const manifest = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>
+    const bundles = [
+      '@deepseek-ai/dsh-base',
+      '@deepseek-ai/dsh-web-app',
+      '@abcdefu_cja/dsh-usage-stats',
+      'dsh-plugin-hub',
+      'dsh-workbench',
+      'third-party-plugin',
+    ]
+    writeFileSync(path, JSON.stringify({
+      ...manifest,
+      dependencies: {
+        '@abcdefu_cja/dsh-usage-stats': 'file:C:/YourWorkbench/plugins/usage-monitor',
+        'dsh-plugin-hub': 'file:C:/YourWorkbench/plugins/plugin-hub',
+        'dsh-workbench': 'link:C:/YourWorkbench/plugins/workbench',
+        'third-party-plugin': '^1.2.3',
+      },
+      optionalDependencies: {
+        'dsh-workbench': 'link:C:/stale/workbench',
+        optional: '^2.0.0',
+      },
+      dsh: { profile: { bundles } },
+    }, undefined, 2) + '\n')
+
+    expect(removeInstallationOwnedProfileDependencies(dir, [
+      '@abcdefu_cja/dsh-usage-stats',
+      'dsh-plugin-hub',
+      'dsh-workbench',
+    ])).toBe(true)
+
+    const cleaned = JSON.parse(readFileSync(path, 'utf8')) as {
+      dependencies: Record<string, string>
+      optionalDependencies: Record<string, string>
+      dsh: { profile: { bundles: string[] } }
+    }
+    expect(cleaned.dependencies).toEqual({ 'third-party-plugin': '^1.2.3' })
+    expect(cleaned.optionalDependencies).toEqual({ optional: '^2.0.0' })
+    expect(cleaned.dsh.profile.bundles).toEqual(bundles)
   })
 
   it('assembles the Host shell without replacing the upstream client shell', () => {

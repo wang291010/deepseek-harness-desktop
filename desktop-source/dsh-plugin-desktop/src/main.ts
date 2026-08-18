@@ -17,6 +17,7 @@ import {
   PRODUCT_NAME,
   WINDOWS_APP_ID,
 } from './desktop-identity.ts'
+import { bundledPluginPackagesForRuntime } from './bundled-plugins.ts'
 import { installDesktopPnpmRuntime } from './desktop-runtime-environment.ts'
 import { ElectronDesktopRuntime } from './electron-runtime.ts'
 import { installProfilePackageResolver } from './module-resolution.ts'
@@ -139,11 +140,13 @@ async function start(): Promise<void> {
     profileStatePath = selectionStatePath
     profileStartup = beginDesktopProfileStartup(selectionStatePath, homeDir)
     const activeProfileName = profileStartup.profileName
+    const installationOwnedPackages = bundledPluginPackagesForRuntime(app.isPackaged)
     const prepared = prepareDesktopProfile(
       process.env.DSH_TELEMETRY_DISABLED,
       homeDir,
       process.platform,
       activeProfileName,
+      installationOwnedPackages,
     )
     const desktopPnpmBootstrap: DesktopPnpmBootstrap = {
       activeProfileName,
@@ -157,7 +160,10 @@ async function start(): Promise<void> {
       clearEnvironmentPath: pnpmRuntime.clearEnvironmentPath,
       dshBootstrapPath: fileURLToPath(new URL('./desktop-cli.js', import.meta.url)),
     }
-    const releasePackageResolver = installProfilePackageResolver(prepared.bareModuleBaseUrl)
+    const releasePackageResolver = installProfilePackageResolver(
+      prepared.bareModuleBaseUrl,
+      installationOwnedPackages,
+    )
     const ctx = await boot(
       BIN_NAME,
       prepared.rootConfig,
