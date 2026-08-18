@@ -140,7 +140,7 @@ window.__ModuleLoader__.load({
     }
 
     // ---- services stashed by apply() for components ----
-    var WB_SVC = { sessions: null, workspaces: null, api: null, remote: null };
+    var WB_SVC = { sessions: null, workspaces: null, api: null, remote: null, theme: null };
 
     // =====================================================================
     // Forked from @deepseek-ai/dsh-client-ui-layout (MIT)
@@ -673,6 +673,22 @@ window.__ModuleLoader__.load({
       ".wb-exp-msg-copy{position:absolute;top:-8px;right:6px;opacity:0;transition:opacity .15s;font-size:10px;padding:2px 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);cursor:pointer;font-family:inherit}",
       ".wb-exp-chat-input{flex:none;display:flex;gap:8px;align-items:flex-end}",
       ".wb-exp-chat-input textarea{flex:1;min-width:0;height:60px;resize:vertical;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:8px;font:12px/1.5 inherit;box-sizing:border-box;font-family:inherit}",
+      // ---- style page (P2) ----
+      ".wb-root{position:relative;isolation:isolate;font-size:calc(14px * var(--wb-font-scale,1))}.wb-root:before,.wb-root:after{content:'';position:absolute;inset:0;z-index:-2;pointer-events:none}.wb-root:before{background-image:var(--wb-wallpaper,none);background-size:cover;background-position:center}.wb-root:after{z-index:-1;background:rgba(0,0,0,var(--wb-wallpaper-darken,0))}",
+      "body.wb-has-wallpaper .wb-nav,body.wb-has-wallpaper .wb-page,body.wb-has-wallpaper .pI_x6G_frame,body.wb-has-wallpaper .pI_x6G_sidebarCol{background:color-mix(in srgb,var(--dsw-alias-bg-base) var(--wb-surface-opacity,92%),transparent);backdrop-filter:blur(var(--wb-backdrop-blur,12px))}",
+      ".wb-page-card,.wb-exp-card,.wb-exp-modal-box,.wb-task-center-shell,.wb-tb-panel{border-radius:var(--wb-radius,8px)}",
+      "body[data-wb-density=compact] .wb-nav-btn{height:32px}body[data-wb-density=compact] .wb-page-inner{padding-top:28px;padding-bottom:28px}body[data-wb-density=relaxed] .wb-nav-btn{height:42px}body[data-wb-density=relaxed] .wb-page-inner{padding-top:48px;padding-bottom:48px}",
+      ".wb-style-page .wb-page-inner{max-width:1120px;padding-bottom:56px}.wb-style-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:20px}.wb-style-status{height:28px;display:flex;align-items:center;color:var(--dsw-alias-label-tertiary);font-size:11px;white-space:nowrap}",
+      ".wb-style-tabs{display:flex;gap:3px;border-bottom:1px solid var(--dsw-alias-border-l1);margin-bottom:24px}.wb-style-tab{height:38px;padding:0 14px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--dsw-alias-label-secondary);font:12px inherit;cursor:pointer}.wb-style-tab-active{border-bottom-color:var(--dsw-alias-accent-fill);color:var(--dsw-alias-label-primary);font-weight:600}",
+      ".wb-style-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:32px;align-items:start}.wb-style-controls{min-width:0}.wb-style-section{padding:0 0 22px;margin-bottom:22px;border-bottom:1px solid var(--dsw-alias-border-l1)}.wb-style-section:last-child{border-bottom:0}.wb-style-section-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}.wb-style-section h2{margin:0;color:var(--dsw-alias-label-primary);font-size:14px;font-weight:600}.wb-style-value{color:var(--dsw-alias-label-tertiary);font-size:11px}",
+      ".wb-style-segmented{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;padding:3px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--wb-radius,8px);background:var(--dsw-alias-bg-layer-2)}.wb-style-segmented button{height:34px;border:0;border-radius:max(2px,calc(var(--wb-radius,8px) - 3px));background:transparent;color:var(--dsw-alias-label-secondary);font:12px inherit;cursor:pointer}.wb-style-segmented button[aria-pressed=true]{background:var(--dsw-alias-button-floating-fill);color:var(--dsw-alias-label-primary);box-shadow:var(--dsw-shadow-lv1)}",
+      ".wb-style-swatches{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.wb-style-swatch{width:30px;height:30px;border-radius:50%;border:2px solid transparent;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);cursor:pointer}.wb-style-swatch[aria-pressed=true]{border-color:var(--dsw-alias-label-primary);box-shadow:inset 0 0 0 3px var(--dsw-alias-bg-base)}.wb-style-color{width:34px;height:30px;padding:0;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:transparent;cursor:pointer}",
+      ".wb-style-range{display:grid;grid-template-columns:150px minmax(120px,1fr) 54px;gap:12px;align-items:center;margin:11px 0}.wb-style-range label{font-size:12px;color:var(--dsw-alias-label-secondary)}.wb-style-range input{width:100%;accent-color:var(--dsw-alias-accent-fill)}.wb-style-range output{text-align:right;font-size:11px;color:var(--dsw-alias-label-tertiary)}",
+      ".wb-style-wallpaper{display:flex;align-items:center;gap:10px}.wb-style-wallpaper-thumb{width:84px;aspect-ratio:16/10;border-radius:6px;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2);object-fit:cover}.wb-style-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.wb-style-button{height:32px;padding:0 11px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);font:11px inherit;cursor:pointer}.wb-style-button-primary{border-color:transparent;background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-inverted)}.wb-style-button-danger{color:#e5484d}.wb-style-button:disabled{opacity:.45;cursor:default}",
+      ".wb-style-preview{position:sticky;top:24px;min-height:360px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--wb-radius,8px);overflow:hidden;background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) var(--wb-surface-opacity,92%),transparent);box-shadow:var(--dsw-shadow-lv1)}.wb-style-preview-image{height:104px;background-image:var(--wb-wallpaper,none);background-size:cover;background-position:center;background-color:var(--dsw-alias-bg-base);position:relative}.wb-style-preview-image:after{content:'';position:absolute;inset:0;background:rgba(0,0,0,var(--wb-wallpaper-darken,0))}.wb-style-preview-body{padding:16px;display:flex;flex-direction:column;gap:12px}.wb-style-preview-title{font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)}.wb-style-preview-msg{max-width:88%;padding:9px 11px;border-radius:var(--wb-radius,8px);font-size:calc(11px * var(--wb-font-scale,1));line-height:1.55}.wb-style-preview-user{align-self:flex-end;background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-inverted)}.wb-style-preview-ai{align-self:flex-start;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary)}",
+      ".wb-style-conversation{display:grid;gap:8px}.wb-style-choice{display:grid;grid-template-columns:18px 110px 1fr;gap:10px;align-items:center;min-height:44px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--wb-radius,8px);background:transparent;color:var(--dsw-alias-label-secondary);font:12px inherit;text-align:left;cursor:pointer}.wb-style-choice[aria-pressed=true]{border-color:var(--dsw-alias-accent-fill);background:color-mix(in srgb,var(--dsw-alias-accent-fill) 8%,transparent);color:var(--dsw-alias-label-primary)}.wb-style-choice strong{font-size:12px}.wb-style-choice span:last-child{font-size:11px;color:var(--dsw-alias-label-tertiary)}.wb-style-custom{width:100%;min-height:120px;box-sizing:border-box;margin-top:12px;padding:10px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--wb-radius,8px);resize:vertical;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:12px/1.6 inherit}",
+      ".wb-style-preset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}.wb-style-preset{min-height:112px;padding:14px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--wb-radius,8px);background:var(--dsw-alias-bg-layer-2);display:flex;flex-direction:column;gap:10px}.wb-style-preset-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.wb-style-preset-name{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary)}.wb-style-preset-meta{font-size:10px;color:var(--dsw-alias-label-tertiary)}.wb-style-save-row{display:flex;gap:8px;margin-bottom:18px}.wb-style-save-row input{flex:1;min-width:0;height:34px;padding:0 10px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:12px inherit}",
+      "@media(max-width:860px){.wb-style-layout{grid-template-columns:1fr}.wb-style-preview{position:static;min-height:300px}.wb-style-range{grid-template-columns:120px minmax(90px,1fr) 48px}}@media(max-width:560px){.wb-style-page .wb-page-inner{padding:24px 16px}.wb-style-head{display:block}.wb-style-status{margin-top:6px}.wb-style-tabs{overflow-x:auto}.wb-style-range{grid-template-columns:1fr 48px}.wb-style-range label{grid-column:1/-1}.wb-style-choice{grid-template-columns:18px 1fr}.wb-style-choice span:last-child{grid-column:2}.wb-style-preset-grid{grid-template-columns:1fr}}",
     ].join("\n");
 
     var WB_CSS_TAG = "dsh-workbench/workbench.css";
@@ -700,6 +716,21 @@ window.__ModuleLoader__.load({
       monitor: { title: "监控", desc: "账户总览、用量统计、会话洞察、实时面板与页面内告警（P4）。" },
       workflows: { title: "工作流", desc: "把重复性多步骤任务固化成模板：日报汇总、会议纪要、调研写作流水线……一键运行 + 定时调度（P5）。" }
     };
+
+    var WB_STYLE_DEFAULTS = {
+      theme: "system", accent: "#ff9f0a", wallpaper: "", surfaceOpacity: 0.92,
+      darken: 0.2, blur: 12, fontScale: 1, radius: 8, density: "comfortable",
+      conversationStyle: "default", customConversationStyle: ""
+    };
+    var WB_STYLE_SWATCHES = ["#3478f6", "#00a67e", "#30b650", "#ff9f0a", "#e5484d", "#d946ef"];
+    var WB_STYLE_BUILTINS = [
+      { id: "focus", name: "专注", settings: { ...WB_STYLE_DEFAULTS, theme: "light", accent: "#3478f6", surfaceOpacity: 1, blur: 0, radius: 6, density: "compact", conversationStyle: "concise" } },
+      { id: "studio", name: "工作室", settings: { ...WB_STYLE_DEFAULTS, theme: "system", accent: "#00a67e", surfaceOpacity: 0.9, blur: 14, radius: 8, density: "comfortable", conversationStyle: "default" } },
+      { id: "deep-night", name: "深夜", settings: { ...WB_STYLE_DEFAULTS, theme: "dark", accent: "#ff9f0a", surfaceOpacity: 0.82, darken: 0.36, blur: 18, radius: 10, density: "relaxed", conversationStyle: "detailed" } }
+    ];
+    var wbStyleOverrideDispose = null;
+    var wbAppliedAccent = "";
+    var wbStyleLoadPromise = null;
 
     function normPath(p) {
       return typeof p === "string" ? p.replace(/[\\/]+$/, "").toLowerCase() : "";
@@ -1127,6 +1158,108 @@ window.__ModuleLoader__.load({
         if (controller && controller.signal.aborted) throw new Error("请求超时或连接中断（" + timeout + "ms）：" + String((e && e.message) || e));
         throw e;
       }).finally(() => { if (timer) clearTimeout(timer); });
+    }
+
+    function wbStyleNumber(value, fallback, min, max) {
+      const number = Number(value);
+      return Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : fallback;
+    }
+    function wbNormalizeStyleSettings(value) {
+      const input = value && typeof value === "object" ? value : {};
+      const nativeTheme = WB_SVC.theme && WB_SVC.theme.getTheme ? WB_SVC.theme.getTheme().preference : "system";
+      return {
+        theme: ["light", "dark", "system"].includes(input.theme) ? input.theme : nativeTheme,
+        accent: /^#[0-9a-f]{6}$/i.test(String(input.accent || "")) ? String(input.accent).toLowerCase() : WB_STYLE_DEFAULTS.accent,
+        wallpaper: /^data:image\/(?:png|jpeg|webp);base64,/i.test(String(input.wallpaper || "")) ? String(input.wallpaper) : "",
+        surfaceOpacity: wbStyleNumber(input.surfaceOpacity, WB_STYLE_DEFAULTS.surfaceOpacity, 0.55, 1),
+        darken: wbStyleNumber(input.darken, WB_STYLE_DEFAULTS.darken, 0, 0.7),
+        blur: wbStyleNumber(input.blur, WB_STYLE_DEFAULTS.blur, 0, 24),
+        fontScale: wbStyleNumber(input.fontScale, WB_STYLE_DEFAULTS.fontScale, 0.85, 1.2),
+        radius: wbStyleNumber(input.radius, WB_STYLE_DEFAULTS.radius, 0, 14),
+        density: ["compact", "comfortable", "relaxed"].includes(input.density) ? input.density : WB_STYLE_DEFAULTS.density,
+        conversationStyle: ["default", "concise", "detailed", "socratic", "custom"].includes(input.conversationStyle) ? input.conversationStyle : WB_STYLE_DEFAULTS.conversationStyle,
+        customConversationStyle: String(input.customConversationStyle || "").slice(0, 1200)
+      };
+    }
+    function wbApplyStyleSettings(value, applyTheme) {
+      const settings = wbNormalizeStyleSettings(value);
+      const body = document.body;
+      body.style.setProperty("--wb-wallpaper", settings.wallpaper ? "url(" + JSON.stringify(settings.wallpaper) + ")" : "none");
+      body.style.setProperty("--wb-surface-opacity", Math.round(settings.surfaceOpacity * 100) + "%");
+      body.style.setProperty("--wb-wallpaper-darken", String(settings.darken));
+      body.style.setProperty("--wb-backdrop-blur", settings.blur + "px");
+      body.style.setProperty("--wb-font-scale", String(settings.fontScale));
+      body.style.setProperty("--wb-radius", settings.radius + "px");
+      body.dataset.wbDensity = settings.density;
+      body.classList.toggle("wb-has-wallpaper", Boolean(settings.wallpaper));
+      if (WB_SVC.theme) {
+        if (applyTheme && WB_SVC.theme.getTheme().preference !== settings.theme) WB_SVC.theme.setTheme(settings.theme);
+        if (settings.accent !== wbAppliedAccent) {
+          const modes = { light: settings.accent, dark: settings.accent };
+          const previous = wbStyleOverrideDispose;
+          wbStyleOverrideDispose = WB_SVC.theme.overrideTokens("dsh-workbench-style", {
+            "--dsw-alias-brand-primary": modes,
+            "--dsw-alias-accent-fill": modes,
+            "--dsw-alias-button-primary-fill": modes
+          });
+          wbAppliedAccent = settings.accent;
+          if (previous) previous();
+        }
+      }
+      return settings;
+    }
+    function wbLoadStyleDocument(force) {
+      if (!force && wbStyleLoadPromise) return wbStyleLoadPromise;
+      wbStyleLoadPromise = wbFetchJson("/api/dsh-workbench/style/read", null, 30000).then(({ data }) => {
+        const currentTheme = WB_SVC.theme ? WB_SVC.theme.getTheme().preference : "system";
+        const doc = {
+          version: 1,
+          revision: Number(data && data.revision) || 0,
+          settings: wbNormalizeStyleSettings({ ...(data && data.settings || {}), theme: currentTheme }),
+          presets: Array.isArray(data && data.presets) ? data.presets : []
+        };
+        wbApplyStyleSettings(doc.settings, false);
+        return doc;
+      }).catch((error) => {
+        wbStyleLoadPromise = null;
+        throw error;
+      });
+      return wbStyleLoadPromise;
+    }
+    function wbWriteStyleDocument(doc) {
+      return wbFetchJson("/api/dsh-workbench/style/write", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(doc)
+      }, 60000).then(({ data }) => data);
+    }
+    function wbWallpaperFromFile(file) {
+      return new Promise((resolvePromise, rejectPromise) => {
+        if (!file || !String(file.type || "").startsWith("image/")) { rejectPromise(new Error("请选择 PNG、JPEG 或 WebP 图片")); return; }
+        if (file.size > 12 * 1024 * 1024) { rejectPromise(new Error("原图不能超过 12MB")); return; }
+        const objectUrl = URL.createObjectURL(file);
+        const image = new Image();
+        image.onload = () => {
+          try {
+            let width = image.naturalWidth || image.width;
+            let height = image.naturalHeight || image.height;
+            const scale = Math.min(1, 1920 / width, 1200 / height);
+            width = Math.max(1, Math.round(width * scale));
+            height = Math.max(1, Math.round(height * scale));
+            const canvas = document.createElement("canvas");
+            canvas.width = width; canvas.height = height;
+            canvas.getContext("2d").drawImage(image, 0, 0, width, height);
+            let quality = 0.84;
+            let data = canvas.toDataURL("image/webp", quality);
+            while (data.length > 610000 && quality > 0.42) { quality -= 0.08; data = canvas.toDataURL("image/webp", quality); }
+            URL.revokeObjectURL(objectUrl);
+            if (data.length > 620000) rejectPromise(new Error("图片压缩后仍过大，请选择尺寸更小的图片"));
+            else resolvePromise(data);
+          } catch (error) { URL.revokeObjectURL(objectUrl); rejectPromise(error); }
+        };
+        image.onerror = () => { URL.revokeObjectURL(objectUrl); rejectPromise(new Error("图片无法读取")); };
+        image.src = objectUrl;
+      });
     }
     function WbErrNote({ message }) {
       const text = String(message == null ? "" : message);
@@ -2429,6 +2562,194 @@ window.__ModuleLoader__.load({
       ] });
     }
 
+    function StyleRange({ label, value, min, max, step, format, onChange }) {
+      return jsxRuntime.jsxs("div", { className: "wb-style-range", children: [
+        jsxRuntime.jsx("label", { children: label }),
+        jsxRuntime.jsx("input", { type: "range", min, max, step, value, onChange: (event) => onChange(Number(event.target.value)) }),
+        jsxRuntime.jsx("output", { children: format(value) })
+      ] });
+    }
+
+    function StylePreview({ settings }) {
+      const styleLabel = { default: "默认表达", concise: "简洁直接", detailed: "充分展开", socratic: "引导思考", custom: "自定义" }[settings.conversationStyle];
+      return jsxRuntime.jsxs("aside", { className: "wb-style-preview", children: [
+        jsxRuntime.jsx("div", { className: "wb-style-preview-image" }),
+        jsxRuntime.jsxs("div", { className: "wb-style-preview-body", children: [
+          jsxRuntime.jsx("div", { className: "wb-style-preview-title", children: "实时预览" }),
+          jsxRuntime.jsx("div", { className: "wb-style-preview-msg wb-style-preview-user", children: "把今天的重点整理一下。" }),
+          jsxRuntime.jsx("div", { className: "wb-style-preview-msg wb-style-preview-ai", children: settings.conversationStyle === "concise" ? "今天有 3 项重点：回归、实现、验证。" : settings.conversationStyle === "detailed" ? "今天的工作分为三个阶段：先完成回归核验，再实现当前功能，最后执行自动化与桌面验证。" : "今天先完成回归核验，然后实现当前功能并验证。" }),
+          jsxRuntime.jsx("span", { className: "wb-style-value", children: styleLabel })
+        ] })
+      ] });
+    }
+
+    function StylePage() {
+      const [doc, setDoc] = React.useState(null);
+      const [tab, setTab] = React.useState("visual");
+      const [saveState, setSaveState] = React.useState("loading");
+      const [pageError, setPageError] = React.useState("");
+      const [presetName, setPresetName] = React.useState("");
+      const [imageBusy, setImageBusy] = React.useState(false);
+      const dirtyRef = React.useRef(false);
+      const fileRef = React.useRef(null);
+
+      React.useEffect(() => {
+        let alive = true;
+        wbLoadStyleDocument().then((value) => {
+          if (!alive) return;
+          dirtyRef.current = false;
+          setDoc(value);
+          setSaveState("saved");
+        }).catch((error) => { if (alive) { setPageError(String((error && error.message) || error)); setSaveState("error"); } });
+        return () => { alive = false; };
+      }, []);
+
+      React.useEffect(() => {
+        if (!doc || !dirtyRef.current) return undefined;
+        setSaveState("saving");
+        const timer = setTimeout(() => {
+          const snapshot = doc;
+          wbWriteStyleDocument(snapshot).then((saved) => {
+            dirtyRef.current = false;
+            setSaveState("saved");
+            setPageError("");
+            setDoc((current) => current === snapshot ? { ...current, revision: Number(saved && saved.revision) || current.revision } : current);
+          }).catch((error) => { setSaveState("error"); setPageError("保存失败：" + String((error && error.message) || error)); });
+        }, 450);
+        return () => clearTimeout(timer);
+      }, [doc]);
+
+      const replaceSettings = (nextValue) => {
+        if (!doc) return;
+        const settings = wbNormalizeStyleSettings(nextValue);
+        dirtyRef.current = true;
+        setDoc({ ...doc, settings });
+        wbApplyStyleSettings(settings, true);
+      };
+      const changeSettings = (patchValue) => replaceSettings({ ...doc.settings, ...patchValue });
+      const replacePresets = (presets) => {
+        dirtyRef.current = true;
+        setDoc({ ...doc, presets });
+      };
+      const applyPreset = (preset) => replaceSettings({ ...preset.settings, wallpaper: doc.settings.wallpaper });
+      const savePreset = () => {
+        const name = presetName.trim();
+        if (!name) return;
+        const preset = { id: "style-" + Date.now().toString(36), name: name.slice(0, 40), settings: { ...doc.settings, wallpaper: "" }, createdAt: new Date().toISOString() };
+        replacePresets([...(doc.presets || []).slice(-19), preset]);
+        setPresetName("");
+      };
+      const reset = () => replaceSettings({ ...WB_STYLE_DEFAULTS, wallpaper: "" });
+      const chooseWallpaper = (event) => {
+        const file = event.target.files && event.target.files[0];
+        event.target.value = "";
+        if (!file) return;
+        setImageBusy(true); setPageError("");
+        wbWallpaperFromFile(file).then((wallpaper) => changeSettings({ wallpaper }))
+          .catch((error) => setPageError(String((error && error.message) || error)))
+          .finally(() => setImageBusy(false));
+      };
+
+      if (!doc) return jsxRuntime.jsxs("div", { className: "wb-page wb-style-page", children: [
+        jsxRuntime.jsx("div", { className: "wb-page-inner", children: saveState === "error" ? jsxRuntime.jsx(WbErrNote, { message: pageError }) : "正在加载风格设置…" })
+      ] });
+
+      const settings = doc.settings;
+      const statusText = saveState === "saving" ? "保存中…" : saveState === "error" ? "保存失败" : "已保存";
+      const themes = [{ id: "light", label: "浅色" }, { id: "dark", label: "深色" }, { id: "system", label: "跟随系统" }];
+      const densities = [{ id: "compact", label: "紧凑" }, { id: "comfortable", label: "标准" }, { id: "relaxed", label: "宽松" }];
+      const conversationChoices = [
+        { id: "default", label: "默认", sample: "沿用专家与任务自身的表达方式" },
+        { id: "concise", label: "简洁", sample: "先给结论，减少重复与铺垫" },
+        { id: "detailed", label: "详尽", sample: "补充假设、证据、权衡和验证" },
+        { id: "socratic", label: "引导", sample: "适合反思时用聚焦问题推进思考" },
+        { id: "custom", label: "自定义", sample: "使用你的全局表达要求" }
+      ];
+
+      const visual = jsxRuntime.jsxs("div", { className: "wb-style-layout", children: [
+        jsxRuntime.jsxs("div", { className: "wb-style-controls", children: [
+          jsxRuntime.jsxs("section", { className: "wb-style-section", children: [
+            jsxRuntime.jsx("div", { className: "wb-style-section-head", children: jsxRuntime.jsx("h2", { children: "主题" }) }),
+            jsxRuntime.jsx("div", { className: "wb-style-segmented", children: themes.map((item) => jsxRuntime.jsx("button", { type: "button", "aria-pressed": settings.theme === item.id, onClick: () => changeSettings({ theme: item.id }), children: item.label }, item.id)) })
+          ] }),
+          jsxRuntime.jsxs("section", { className: "wb-style-section", children: [
+            jsxRuntime.jsx("div", { className: "wb-style-section-head", children: jsxRuntime.jsx("h2", { children: "强调色" }) }),
+            jsxRuntime.jsxs("div", { className: "wb-style-swatches", children: [
+              ...WB_STYLE_SWATCHES.map((color) => jsxRuntime.jsx("button", { type: "button", className: "wb-style-swatch", style: { background: color }, title: color, "aria-label": "强调色 " + color, "aria-pressed": settings.accent === color, onClick: () => changeSettings({ accent: color }) }, color)),
+              jsxRuntime.jsx("input", { type: "color", className: "wb-style-color", title: "自定义强调色", value: settings.accent, onChange: (event) => changeSettings({ accent: event.target.value }) })
+            ] })
+          ] }),
+          jsxRuntime.jsxs("section", { className: "wb-style-section", children: [
+            jsxRuntime.jsx("div", { className: "wb-style-section-head", children: jsxRuntime.jsx("h2", { children: "壁纸" }) }),
+            jsxRuntime.jsxs("div", { className: "wb-style-wallpaper", children: [
+              settings.wallpaper ? jsxRuntime.jsx("img", { className: "wb-style-wallpaper-thumb", src: settings.wallpaper, alt: "当前壁纸" }) : jsxRuntime.jsx("div", { className: "wb-style-wallpaper-thumb" }),
+              jsxRuntime.jsxs("div", { className: "wb-style-actions", children: [
+                jsxRuntime.jsx("input", { ref: fileRef, type: "file", accept: "image/png,image/jpeg,image/webp", hidden: true, onChange: chooseWallpaper }),
+                jsxRuntime.jsx("button", { type: "button", className: "wb-style-button", disabled: imageBusy, onClick: () => fileRef.current && fileRef.current.click(), children: imageBusy ? "处理中…" : "选择图片" }),
+                settings.wallpaper && jsxRuntime.jsx("button", { type: "button", className: "wb-style-button wb-style-button-danger", onClick: () => changeSettings({ wallpaper: "" }), children: "移除" })
+              ] })
+            ] }),
+            jsxRuntime.jsx(StyleRange, { label: "界面不透明度", value: settings.surfaceOpacity, min: 0.55, max: 1, step: 0.01, format: (value) => Math.round(value * 100) + "%", onChange: (value) => changeSettings({ surfaceOpacity: value }) }),
+            jsxRuntime.jsx(StyleRange, { label: "暗色遮罩", value: settings.darken, min: 0, max: 0.7, step: 0.01, format: (value) => Math.round(value * 100) + "%", onChange: (value) => changeSettings({ darken: value }) }),
+            jsxRuntime.jsx(StyleRange, { label: "毛玻璃", value: settings.blur, min: 0, max: 24, step: 1, format: (value) => value + "px", onChange: (value) => changeSettings({ blur: value }) })
+          ] }),
+          jsxRuntime.jsxs("section", { className: "wb-style-section", children: [
+            jsxRuntime.jsx("div", { className: "wb-style-section-head", children: jsxRuntime.jsx("h2", { children: "排版" }) }),
+            jsxRuntime.jsx(StyleRange, { label: "字体大小", value: settings.fontScale, min: 0.85, max: 1.2, step: 0.01, format: (value) => Math.round(value * 100) + "%", onChange: (value) => changeSettings({ fontScale: value }) }),
+            jsxRuntime.jsx(StyleRange, { label: "圆角", value: settings.radius, min: 0, max: 14, step: 1, format: (value) => value + "px", onChange: (value) => changeSettings({ radius: value }) }),
+            jsxRuntime.jsx("div", { className: "wb-style-segmented", children: densities.map((item) => jsxRuntime.jsx("button", { type: "button", "aria-pressed": settings.density === item.id, onClick: () => changeSettings({ density: item.id }), children: item.label }, item.id)) })
+          ] })
+        ] }),
+        jsxRuntime.jsx(StylePreview, { settings })
+      ] });
+
+      const conversation = jsxRuntime.jsxs("div", { className: "wb-style-layout", children: [
+        jsxRuntime.jsxs("div", { className: "wb-style-controls", children: [
+          jsxRuntime.jsx("div", { className: "wb-style-conversation", children: conversationChoices.map((item) => jsxRuntime.jsxs("button", { type: "button", className: "wb-style-choice", "aria-pressed": settings.conversationStyle === item.id, onClick: () => changeSettings({ conversationStyle: item.id }), children: [
+            jsxRuntime.jsx("span", { children: settings.conversationStyle === item.id ? "●" : "○" }),
+            jsxRuntime.jsx("strong", { children: item.label }),
+            jsxRuntime.jsx("span", { children: item.sample })
+          ] }, item.id)) }),
+          settings.conversationStyle === "custom" && jsxRuntime.jsx("textarea", { className: "wb-style-custom", maxLength: 1200, value: settings.customConversationStyle, placeholder: "例如：使用平实中文；先给可执行结论，再说明关键依据。", onChange: (event) => changeSettings({ customConversationStyle: event.target.value }) })
+        ] }),
+        jsxRuntime.jsx(StylePreview, { settings })
+      ] });
+
+      const presets = jsxRuntime.jsxs("div", { children: [
+        jsxRuntime.jsxs("div", { className: "wb-style-save-row", children: [
+          jsxRuntime.jsx("input", { value: presetName, maxLength: 40, placeholder: "预设名称", onChange: (event) => setPresetName(event.target.value), onKeyDown: (event) => { if (event.key === "Enter") savePreset(); } }),
+          jsxRuntime.jsx("button", { type: "button", className: "wb-style-button wb-style-button-primary", disabled: !presetName.trim(), onClick: savePreset, children: "保存当前风格" })
+        ] }),
+        jsxRuntime.jsx("div", { className: "wb-style-preset-grid", children: [...WB_STYLE_BUILTINS, ...(doc.presets || [])].map((preset) => {
+          const custom = !WB_STYLE_BUILTINS.some((item) => item.id === preset.id);
+          return jsxRuntime.jsxs("div", { className: "wb-style-preset", children: [
+            jsxRuntime.jsxs("div", { className: "wb-style-preset-head", children: [
+              jsxRuntime.jsx("span", { className: "wb-style-preset-name", children: preset.name }),
+              jsxRuntime.jsx("span", { className: "wb-style-swatch", style: { background: preset.settings.accent, width: 20, height: 20 } })
+            ] }),
+            jsxRuntime.jsx("span", { className: "wb-style-preset-meta", children: ({ light: "浅色", dark: "深色", system: "跟随系统" }[preset.settings.theme] || "跟随系统") + " · " + ({ compact: "紧凑", comfortable: "标准", relaxed: "宽松" }[preset.settings.density] || "标准") }),
+            jsxRuntime.jsxs("div", { className: "wb-style-actions", children: [
+              jsxRuntime.jsx("button", { type: "button", className: "wb-style-button wb-style-button-primary", onClick: () => applyPreset(preset), children: "应用" }),
+              custom && jsxRuntime.jsx("button", { type: "button", className: "wb-style-button wb-style-button-danger", onClick: () => replacePresets(doc.presets.filter((item) => item.id !== preset.id)), children: "删除" })
+            ] })
+          ] }, preset.id);
+        }) })
+      ] });
+
+      return jsxRuntime.jsx("div", { className: "wb-page wb-style-page", children: jsxRuntime.jsxs("div", { className: "wb-page-inner", children: [
+        jsxRuntime.jsxs("div", { className: "wb-style-head", children: [
+          jsxRuntime.jsx("h1", { className: "wb-page-title", children: "风格" }),
+          jsxRuntime.jsxs("div", { className: "wb-style-actions", children: [
+            jsxRuntime.jsx("span", { className: "wb-style-status", children: statusText }),
+            jsxRuntime.jsx("button", { type: "button", className: "wb-style-button", onClick: reset, children: "恢复默认" })
+          ] })
+        ] }),
+        pageError && jsxRuntime.jsx(WbErrNote, { message: pageError }),
+        jsxRuntime.jsx("div", { className: "wb-style-tabs", role: "tablist", children: [{ id: "visual", label: "外观" }, { id: "conversation", label: "对话风格" }, { id: "presets", label: "预设" }].map((item) => jsxRuntime.jsx("button", { type: "button", role: "tab", className: "wb-style-tab" + (tab === item.id ? " wb-style-tab-active" : ""), "aria-selected": tab === item.id, onClick: () => setTab(item.id), children: item.label }, item.id)) }),
+        tab === "visual" ? visual : tab === "conversation" ? conversation : presets
+      ] }) });
+    }
+
     function WorkbenchPage({ id }) {
       const meta = PAGE_META[id] || { title: id, desc: "" };
       return jsxRuntime.jsx("div", { className: "wb-page", children: jsxRuntime.jsxs("div", { className: "wb-page-inner", children: [
@@ -2647,6 +2968,7 @@ window.__ModuleLoader__.load({
 
     function WorkbenchRoot(props) {
       const { useStore, useSessions, useWorkspaces, actions, renderSlot } = props;
+      React.useEffect(() => { wbLoadStyleDocument().catch(() => {}); }, []);
       const [page, setPage] = React.useState(() => {
         try { return localStorage.getItem("wb.page") || "agent"; } catch (e) { return "agent"; }
       });
@@ -2664,8 +2986,10 @@ window.__ModuleLoader__.load({
         jsxRuntime.jsx(WbDiag, { useStore, useSessions }),
         jsxRuntime.jsx("div", { className: "wb-content", children: page === "agent"
           ? jsxRuntime.jsx(AgentWorkspace, { useStore, useSessions, useWorkspaces, actions, renderSlot, onToggleSessions })
-          : page === "experts"
+            : page === "experts"
             ? jsxRuntime.jsx(ExpertsPage, { useWorkspaces, useSessions, onSelect })
+            : page === "style"
+              ? jsxRuntime.jsx(StylePage, {})
             : jsxRuntime.jsx(WorkbenchPage, { id: page })
         })
       ] }) });
@@ -2687,6 +3011,7 @@ window.__ModuleLoader__.load({
       WB_SVC.sessions = ctx.sessions;
       WB_SVC.workspaces = ctx.workspaces;
       WB_SVC.remote = ctx.remote || null;
+      WB_SVC.theme = ctx.theme || null;
       try { WB_SVC.api = ctx.get("connection").api; } catch (e) { WB_SVC.api = null; }
       const layout = new LayoutController();
       ctx.effect(() => {
@@ -2718,6 +3043,7 @@ window.__ModuleLoader__.load({
         const off = ctx.on("theme/change", (snapshot) => { presenter.apply(snapshot); });
         return () => { off(); presenter.dispose(); };
       }, "dsh-workbench: theme presenter");
+      wbLoadStyleDocument().catch((error) => console.warn("[dsh-workbench] style settings unavailable", error));
     }
 
     var index_exports = {};

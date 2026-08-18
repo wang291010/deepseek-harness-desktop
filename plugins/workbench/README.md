@@ -11,7 +11,7 @@
 | P1 | 外壳接管（root + 6 页导航 + Agent 纯工作区 + 会话面板 + 右侧工具栏 + 商店/设置搬入导航栏 + 错误边界） | 🔄 进行中（功能基本可用，待收尾） |
 | P2 | 专家页（调用/编辑/复制/删除）+ host 文件 IO + 首批专家（健身专家、AI 产品架构师） | 🔄 进行中（已实现，待回归） |
 | P2+ | Workbench Flow 任务中心（想法库 + 长期任务 + Agent 当前计划 + 多代理协作）+ 文件视图修复 | ✅ 数据/API/界面已升级，待桌面端最终走查 |
-| P3 | 风格页（主题/强调色/壁纸/字体 + 预设 + 对话风格层） | 待定 |
+| P3 | 风格页（主题/强调色/壁纸/字体 + 预设 + 对话风格层） | 🔄 已实现，待桌面端回归 |
 | P4 | 监控页（账户/用量/会话/实时 + 页面内告警） | 待定 |
 | P5 | 工作流页（模板库 + 定时调度） | 待定 |
 | P6 | 知识库 + 蒸馏按钮（等用户视频想法） | 待定 |
@@ -25,7 +25,7 @@ dsh-workbench/
 ├── cordis.patch.yml    # 注册 host 插件条目
 └── lib/
     ├── host/index.js   # host 插件（fs/preset/git 路由 + /todo 命令 + DSH 原生多代理编排）
-    └── client.js       # client bundle（外壳、6 页、Agent 工具栏、任务看板、文件视图、专家页）
+    └── client.js       # client bundle（外壳、6 页、Agent 工具栏、任务看板、文件视图、专家页、风格页）
 ```
 
 ## 安装（已装）
@@ -87,6 +87,17 @@ powershell -ExecutionPolicy Bypass -File .\tools\enable-workbench.ps1    # 恢�
 ## 详细方案
 
 见 `..\工作台方案清单.md`（工作区根目录）。
+
+## 风格页
+
+- 原生主题偏好：浅色、深色、跟随系统，继续通过 DSH `ThemeRuntime` 持久化。
+- 工作台视觉层：强调色、壁纸、界面不透明度、暗色遮罩、毛玻璃、字体大小、圆角和密度均实时预览。
+- 壁纸在客户端缩放并转为 WebP，Host 只接受受限大小的 PNG/JPEG/WebP data URL；不会加载远程图片。
+- 内置风格可直接应用，自定义风格预设最多保存 20 个。预设不复制壁纸数据，应用预设时保留当前壁纸。
+- 对话风格与专家人格分离；默认、简洁、详尽、引导、自定义五种模式通过独立 `systemPrompt` 段全局生效。
+- 风格设置保存在 `DSH_HOME/dsh-workbench-style.json`，采用串行队列和同目录原子替换。
+- Host 路由：`GET /api/dsh-workbench/style/read`、`POST /api/dsh-workbench/style/write`。
+- 风格 Host 冒烟测试：`node tools/smoke-style.mjs`，使用独立临时用户目录，不触碰真实数据。
 
 ## 双层任务系统
 

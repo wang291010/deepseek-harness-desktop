@@ -13,6 +13,8 @@
  *   GET  /api/dsh-workbench/git/graph?path=<abs>          → git log --graph text
  *   GET  /api/dsh-workbench/tasks/list?projectPath=<path> → persistent workbench tasks
  *   POST /api/dsh-workbench/tasks/mutate                  → atomic add/update/remove/import
+ *   GET  /api/dsh-workbench/style/read                    → durable visual/conversation style
+ *   POST /api/dsh-workbench/style/write {settings,presets} → validate and atomically persist style
  *
  * Command:
  *   /todo [add <content>|done <content>|start <content>|pending <content>|
@@ -44,6 +46,8 @@ const MAX_TASK_STORE_BYTES = 8 * 1024 * 1024;
 const PRESET_FILES = new Set(['agent.cordis.yml', 'preset.yml']);
 const DIAG_LOG = join(DSH_ROOT, 'dsh-workbench-host.log');
 const TASK_STORE = join(DSH_ROOT, 'dsh-workbench-tasks.json');
+const STYLE_STORE = join(DSH_ROOT, 'dsh-workbench-style.json');
+const MAX_STYLE_STORE_BYTES = 700 * 1024;
 const TODO_STATUSES = ['pending', 'in_progress', 'completed'];
 const TASK_STATUSES = ['inbox', 'pending', 'in_progress', 'blocked', 'completed'];
 const TASK_PRIORITIES = ['low', 'medium', 'high'];
@@ -53,6 +57,30 @@ const IDEA_RECOMMENDATIONS = ['task', 'orchestration', 'later', 'archive'];
 const ORCHESTRATION_PHASES = ['idea', 'planning', 'planned', 'running', 'refining', 'review', 'changes_requested', 'accepted', 'failed', 'cancelled'];
 const ORCHESTRATION_AGENT_STATUSES = ['planned', 'waiting', 'running', 'completed', 'failed', 'cancelled'];
 let taskMutationQueue = Promise.resolve();
+let styleMutationQueue = Promise.resolve();
+
+const STYLE_DEFAULTS = Object.freeze({
+  theme: 'system',
+  accent: '#ff9f0a',
+  wallpaper: '',
+  surfaceOpacity: 0.92,
+  darken: 0.2,
+  blur: 12,
+  fontScale: 1,
+  radius: 8,
+  density: 'comfortable',
+  conversationStyle: 'default',
+  customConversationStyle: ''
+});
+const STYLE_THEMES = new Set(['light', 'dark', 'system']);
+const STYLE_DENSITIES = new Set(['compact', 'comfortable', 'relaxed']);
+const CONVERSATION_STYLES = new Set(['default', 'concise', 'detailed', 'socratic', 'custom']);
+const CONVERSATION_PROMPTS = Object.freeze({
+  concise: 'Conversation style: be concise and direct. Lead with the answer, keep explanations compact, and avoid repeating the user request.',
+  detailed: 'Conversation style: provide structured, thorough explanations with the assumptions, evidence, tradeoffs, and verification steps needed to act confidently.',
+  socratic: 'Conversation style: when the request benefits from reflection, guide the user with focused questions and explicit reasoning. Still answer direct factual or execution requests without unnecessary questioning.'
+});
+let styleState = { version: 1, revision: 0, settings: { ...STYLE_DEFAULTS }, presets: [] };
 
 // Edit-dialog chat: current default route; refine later via settings.
 const CHAT_PROVIDER = 'deepseek-official';
@@ -68,6 +96,101 @@ let modelCatalogCache = { expiresAt: 0, items: [] };
 /** Diagnostic trail for host loading issues (also tells us module load failed when absent). */
 function diag(msg) {
   try { appendFileSync(DIAG_LOG, new Date().toISOString() + ' ' + msg + '\n'); } catch (e) { /* never throw */ }
+}
+
+function clampNumber(value, fallback, min, max) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(max, Math.max(min, number));
+}
+
+function cleanStyleSettings(value) {
+  const input = value && typeof value === 'object' ? value : {};
+  const theme = STYLE_THEMES.has(input.theme) ? input.theme : STYLE_DEFAULTS.theme;
+  const accent = /^#[0-9a-f]{6}$/i.test(String(input.accent || '')) ? String(input.accent).toLowerCase() : STYLE_DEFAULTS.accent;
+  const rawWallpaper = String(input.wallpaper || '');
+  const wallpaper = /^data:image\/(?:png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(rawWallpaper) && rawWallpaper.length <= 620000
+    ? rawWallpaper
+    : '';
+  const density = STYLE_DENSITIES.has(input.density) ? input.density : STYLE_DEFAULTS.density;
+  const conversationStyle = CONVERSATION_STYLES.has(input.conversationStyle) ? input.conversationStyle : STYLE_DEFAULTS.conversationStyle;
+  return {
+    theme,
+    accent,
+    wallpaper,
+    surfaceOpacity: clampNumber(input.surfaceOpacity, STYLE_DEFAULTS.surfaceOpacity, 0.55, 1),
+    darken: clampNumber(input.darken, STYLE_DEFAULTS.darken, 0, 0.7),
+    blur: clampNumber(input.blur, STYLE_DEFAULTS.blur, 0, 24),
+    fontScale: clampNumber(input.fontScale, STYLE_DEFAULTS.fontScale, 0.85, 1.2),
+    radius: clampNumber(input.radius, STYLE_DEFAULTS.radius, 0, 14),
+    density,
+    conversationStyle,
+    customConversationStyle: String(input.customConversationStyle || '').trim().slice(0, 1200)
+  };
+}
+
+function cleanStylePreset(value) {
+  const input = value && typeof value === 'object' ? value : {};
+  const id = String(input.id || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80) || randomUUID();
+  const nameValue = String(input.name || '').trim().slice(0, 40);
+  const settings = cleanStyleSettings(input.settings);
+  settings.wallpaper = '';
+  return {
+    id,
+    name: nameValue || '未命名预设',
+    settings,
+    createdAt: String(input.createdAt || new Date().toISOString()).slice(0, 40)
+  };
+}
+
+function cleanStyleStore(value) {
+  const input = value && typeof value === 'object' ? value : {};
+  return {
+    version: 1,
+    revision: Number.isSafeInteger(input.revision) && input.revision >= 0 ? input.revision : 0,
+    settings: cleanStyleSettings(input.settings),
+    presets: Array.isArray(input.presets) ? input.presets.slice(0, 20).map(cleanStylePreset) : []
+  };
+}
+
+async function readStyleStore() {
+  try {
+    const info = await lstat(STYLE_STORE);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('style store must be a regular non-symbolic file');
+    if (info.size > MAX_STYLE_STORE_BYTES) throw new Error(`style store exceeds ${MAX_STYLE_STORE_BYTES} bytes`);
+    styleState = cleanStyleStore(JSON.parse(await readFile(STYLE_STORE, 'utf8')));
+    return styleState;
+  } catch (error) {
+    if (error && error.code === 'ENOENT') return styleState;
+    throw error;
+  }
+}
+
+async function writeStyleStore(store) {
+  await mkdir(DSH_ROOT, { recursive: true });
+  const temp = STYLE_STORE + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, JSON.stringify(store, null, 2) + '\n', 'utf8');
+  let lastError = null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      await rename(temp, STYLE_STORE);
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 4) await new Promise((resolvePromise) => setTimeout(resolvePromise, 25 * (attempt + 1)));
+    }
+  }
+  try { await rm(temp, { force: true }); } catch (e) { /* keep the temp for inspection */ }
+  throw lastError;
+}
+
+function conversationStylePrompt() {
+  const settings = styleState.settings;
+  if (settings.conversationStyle === 'custom') {
+    const custom = settings.customConversationStyle.trim();
+    return custom === '' ? '' : 'Conversation style selected by the user:\n' + custom;
+  }
+  return CONVERSATION_PROMPTS[settings.conversationStyle] || '';
 }
 
 /** Loopback fence: same-origin local requests only (mirrors usage-stats). */
@@ -1422,6 +1545,36 @@ function executeTodoCommand(invocation, sessionProjections) {
 
 function makeRoutes() {
   return [
+    // ---- durable workbench appearance + conversation-style preferences ----
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/style/read',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'GET') return bad(res, 'method', 'GET required');
+        try { writeJson(res, 200, await readStyleStore()); } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/style/write',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        const operation = styleMutationQueue.then(async () => {
+          const current = await readStyleStore();
+          const next = cleanStyleStore(body);
+          next.revision = current.revision + 1;
+          await writeStyleStore(next);
+          styleState = next;
+          return next;
+        });
+        styleMutationQueue = operation.catch(() => {});
+        try { writeJson(res, 200, await operation); } catch (error) { fail(res, error); }
+      }
+    },
     // ---- persistent workbench tasks (separate from per-turn agent todos) ----
     {
       kind: 'exact',
@@ -1705,6 +1858,7 @@ function makeRoutes() {
 
 function apply(ctx) {
   diag('apply called');
+  void readStyleStore().catch((error) => diag('style store load failed: ' + String((error && error.stack) || error)));
   let disposers = [];
   let commandDisposers = [];
   const register = (webServer) => {
@@ -1730,6 +1884,13 @@ function apply(ctx) {
     orchestrationAgents = scoped.agents;
     diag('subagents + agents injected: ' + scoped.subagents.list().join(','));
     void recoverInterruptedOrchestrations().catch((error) => diag('orchestration recovery failed: ' + String((error && error.stack) || error)));
+  });
+  ctx.inject(['systemPrompt'], (scoped) => {
+    scoped.effect(() => scoped.systemPrompt.section({
+      name: 'dsh-workbench:conversation-style',
+      order: 50,
+      text: () => conversationStylePrompt()
+    }), 'dsh-workbench: conversation style');
   });
   // `/todo` command: needs the command registry + the session-projection seam
   // to read the current list. Wrapped defensively: a registration failure must
