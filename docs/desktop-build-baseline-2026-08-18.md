@@ -42,3 +42,20 @@ debt and must be resolved before claiming macOS or Linux support.
 The imported source is buildable and passes its upstream Windows release gate.
 Branding and distribution changes should preserve this gate as the minimum
 regression check.
+
+## Unpacked packaging follow-up
+
+The first `package:dir` attempt exposed a configuration difference: unlike the
+formal Windows release script, the unpacked packaging script allowed Electron
+Builder to rebuild `node-pty` and therefore required an unavailable Visual
+Studio C++ toolchain. The unpacked script now passes
+`--config.npmRebuild=false`, matching the tested Windows release strategy, and
+its package configuration test passes.
+
+After that correction, Electron Builder downloaded Electron and entered the
+Windows x64 packaging stage but produced no further output or final `dist`
+directory during the bounded observation window. The packaging session was
+interrupted cleanly; no partial artifact is considered valid. Source build,
+typecheck, and the Windows release gate remain passing. Before another full
+packaging attempt, the private data root should be verified through development
+launch and the Electron Builder assembly stall should be diagnosed separately.

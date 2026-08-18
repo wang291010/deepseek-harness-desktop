@@ -8,7 +8,11 @@ import { fileURLToPath } from 'node:url'
 const require = createRequire(import.meta.url)
 const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)))
 const builderCli = require.resolve('electron-builder/cli.js')
-const result = spawnSync(process.execPath, [builderCli, '--dir'], {
+const result = spawnSync(process.execPath, [
+  builderCli,
+  '--dir',
+  '--config.npmRebuild=false',
+], {
   cwd: packageRoot,
   env: {
     ...process.env,
