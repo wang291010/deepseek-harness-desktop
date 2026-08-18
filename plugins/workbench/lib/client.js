@@ -856,6 +856,7 @@ window.__ModuleLoader__.load({
         if (!value) return;
         ideaStore.mutate("idea_create", { title: value.split(/\r?\n/)[0].slice(0, 120), body: value, projectPath: ideaProjectPath }).then(() => {
           setIdeaDraft(""); setIdeaNotice("已存入想法库"); window.setTimeout(() => setIdeaNotice(""), 2200);
+          try { window.dispatchEvent(new CustomEvent("wb:tasks-changed")); } catch (e) { /* noop */ }
         }).catch(() => {});
       };
 
@@ -1173,10 +1174,12 @@ window.__ModuleLoader__.load({
           .catch((e) => { setErr(String((e && e.message) || e)); throw e; })
           .finally(() => setBusy(false));
       };
+      const reload = React.useCallback(() => loadTasks(false), [loadTasks]);
+      const refresh = React.useCallback(() => loadTasks(true), [loadTasks]);
       return {
         tasks, templates, ideas, orchestrations, orchestrationRuntime, modelCatalog, loading, busy, err, setErr, projectPath, sessionId,
-        reload: () => loadTasks(false),
-        refresh: () => loadTasks(true),
+        reload,
+        refresh,
         mutate,
         add: (title, extra) => mutate("add", { title, ...(extra || {}) }),
         update: (id, patch) => mutate("update", { id, patch }),
@@ -1450,7 +1453,10 @@ window.__ModuleLoader__.load({
       const create = () => {
         const value = capture.trim();
         if (!value) return;
-        store.mutate("idea_create", { title: value.split(/\r?\n/)[0].slice(0, 120), body: value, projectPath: scope === "global" ? "" : projectPath }).then(() => setCapture("")).catch(() => {});
+        store.mutate("idea_create", { title: value.split(/\r?\n/)[0].slice(0, 120), body: value, projectPath: scope === "global" ? "" : projectPath }).then(() => {
+          setCapture("");
+          try { window.dispatchEvent(new CustomEvent("wb:tasks-changed")); } catch (e) { /* noop */ }
+        }).catch(() => {});
       };
       const save = () => {
         if (!draft || !String(draft.title || "").trim()) return;
@@ -1631,6 +1637,7 @@ window.__ModuleLoader__.load({
       const [collaborationInitialId, setCollaborationInitialId] = React.useState(null);
       const searchRef = React.useRef(null);
       const createRef = React.useRef(null);
+      React.useEffect(() => { store.refresh(); }, [store.refresh]);
       const chooseView = (id) => {
         let next = id;
         if (id === "tasks") { try { next = localStorage.getItem("wb.taskDisplay") || "board"; } catch (e) { next = "board"; } }
@@ -2337,6 +2344,11 @@ window.__ModuleLoader__.load({
         window.addEventListener("wb:open-task-center", handleOpenTaskCenter);
         return () => window.removeEventListener("wb:open-task-center", handleOpenTaskCenter);
       }, []);
+      React.useEffect(() => {
+        const handleTasksChanged = () => store.refresh();
+        window.addEventListener("wb:tasks-changed", handleTasksChanged);
+        return () => window.removeEventListener("wb:tasks-changed", handleTasksChanged);
+      }, [store.refresh]);
       const renderPageButton = (p, main) => jsxRuntime.jsxs("button", {
         type: "button",
         className: "wb-nav-btn" + (main ? " wb-nav-btn-main" : "") + (page === p.id && !taskCenterOpen ? " wb-nav-btn-active" : ""),
