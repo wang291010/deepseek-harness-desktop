@@ -134,14 +134,17 @@ describe('published package surface', () => {
 
   it('fixes the installed application identity', () => {
     const main = readFileSync(new URL('src/main.ts', packageRoot), 'utf8')
+    const identity = readFileSync(new URL('src/desktop-identity.ts', packageRoot), 'utf8')
 
     expect(manifest.version).toBe(workspaceManifest.version)
     expect(manifest.build?.productName).toBe('DeepSeek Harness Desktop')
     expect(manifest.build?.appId).toBe('com.yourworkbench.deepseek-harness-desktop')
-    expect(main).toContain("const PRODUCT_NAME = 'DeepSeek Harness Desktop'")
-    expect(main).toContain("const WINDOWS_APP_ID = 'com.yourworkbench.deepseek-harness-desktop'")
+    expect(identity).toContain("PRODUCT_NAME = 'DeepSeek Harness Desktop'")
+    expect(identity).toContain("WINDOWS_APP_ID = 'com.yourworkbench.deepseek-harness-desktop'")
     expect(main).toContain('app.setName(PRODUCT_NAME)')
     expect(main).toContain('app.setAppUserModelId(WINDOWS_APP_ID)')
+    expect(main.indexOf('const homeDir = installDesktopDshHome'))
+      .toBeLessThan(main.indexOf('const environment = loadLayeredEnv'))
     expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).toMatch(
       /id: desktop-updates[\s\S]*?name: dsh-plugin-desktop\/updates[\s\S]*?disabled: true/u,
     )

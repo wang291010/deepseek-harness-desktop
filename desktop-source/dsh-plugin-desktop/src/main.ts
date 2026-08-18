@@ -11,8 +11,12 @@ import {
   type FailLoudProcess,
 } from '@deepseek-ai/dsh-app-boot'
 import { provideCmdline } from '@deepseek-ai/dsh-cmdline'
-import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { DSH_LAUNCH_ENVIRONMENT_KEY } from '@deepseek-ai/dsh-launch-environment'
+import {
+  installDesktopDshHome,
+  PRODUCT_NAME,
+  WINDOWS_APP_ID,
+} from './desktop-identity.ts'
 import { installDesktopPnpmRuntime } from './desktop-runtime-environment.ts'
 import { ElectronDesktopRuntime } from './electron-runtime.ts'
 import { installProfilePackageResolver } from './module-resolution.ts'
@@ -36,9 +40,6 @@ import {
 } from './shutdown.ts'
 
 const BIN_NAME = 'dsh-plugin-desktop'
-const PRODUCT_NAME = 'DeepSeek Harness Desktop'
-const WINDOWS_APP_ID = 'com.yourworkbench.deepseek-harness-desktop'
-
 /** Report profile recovery without changing startup or rollback outcomes. */
 function notifyProfileRecovery(runtime: ElectronDesktopRuntime, body: string): void {
   try {
@@ -101,6 +102,7 @@ async function start(): Promise<void> {
   await app.whenReady()
   if (process.platform === 'win32') app.setAppUserModelId(WINDOWS_APP_ID)
   if (app.isPackaged && process.cwd() === '/') process.chdir(app.getPath('home'))
+  const homeDir = installDesktopDshHome(app.getPath('userData'), process.env)
 
   const failLoudProcess: FailLoudProcess = {
     on: (event, handler) => process.on(event, handler),
@@ -133,7 +135,6 @@ async function start(): Promise<void> {
     })
     const releasePnpmRuntime = (): void => { pnpmRuntime.dispose() }
     disposePnpmRuntime = releasePnpmRuntime
-    const homeDir = resolveDshHome()
     const selectionStatePath = join(app.getPath('userData'), 'profile-selection', 'state.json')
     profileStatePath = selectionStatePath
     profileStartup = beginDesktopProfileStartup(selectionStatePath, homeDir)

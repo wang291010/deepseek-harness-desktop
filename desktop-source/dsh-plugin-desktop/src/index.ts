@@ -10,6 +10,7 @@ import {
   type ThemeSettings,
 } from '@deepseek-ai/dsh-client-ui-theme'
 import { settingsNamespace } from '@deepseek-ai/dsh-settings'
+import { PRODUCT_NAME } from './desktop-identity.ts'
 import type { DesktopShellMode } from './runtime.ts'
 import type {} from './runtime.ts'
 
@@ -140,8 +141,8 @@ export function apply(ctx: Context, config: Config): void {
     () => ctx.desktopRuntime.schedule({
       ...config,
       url: desktopRendererUrl(ctx.webServer.port, config.mode, ctx.desktopRuntime.platform),
-      productName: 'DeepSeek Harness Desktop',
-      windowTitle: 'DeepSeek Harness Desktop',
+      productName: PRODUCT_NAME,
+      windowTitle: PRODUCT_NAME,
       iconPath,
       trayIcons,
       readThemeSource: () => {

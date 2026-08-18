@@ -28,8 +28,13 @@ gives this application its own Electron user-data directory instead of the
 upstream `DSH Desktop` directory. Profile-selection state, runtime shims, and
 download state therefore have a separate desktop location.
 
-The DeepSeek Harness home directory is a different layer. It still resolves
-through the upstream `DSH_HOME` rules and may currently point to the same `.dsh`
-directory used by the existing client. Full account, conversation, profile, and
-plugin-data isolation is a later migration step and is not claimed by this
-identity change.
+The DeepSeek Harness home directory is a different layer. The desktop launcher
+now forces `DSH_HOME` to the `harness-home` directory below this application's
+Electron user-data directory before loading any project or user environment.
+Inherited `DSH_HOME` aliases are replaced, so the existing `~/.dsh` directory is
+not used by default.
+
+This establishes account, conversation, profile, and plugin-data isolation, but
+it does not migrate any existing data. The private directory starts as a clean
+environment. Migration from the old client must copy only reviewed data into the
+private directory after a backup and must never move or delete the source data.
