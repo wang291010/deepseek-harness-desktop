@@ -30,7 +30,7 @@
  */
 import { homedir } from 'node:os';
 import { isAbsolute, join, resolve, sep } from 'node:path';
-import { readdir, readFile, writeFile, stat, lstat, realpath, mkdir, rename } from 'node:fs/promises';
+import { readdir, readFile, writeFile, stat, lstat, realpath, mkdir, rename, rm } from 'node:fs/promises';
 import { appendFileSync } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
@@ -461,7 +461,18 @@ async function writeTaskStore(store) {
   await mkdir(DSH_ROOT, { recursive: true });
   const temp = TASK_STORE + '.tmp-' + process.pid + '-' + randomUUID();
   await writeFile(temp, JSON.stringify(store, null, 2) + '\n', 'utf8');
-  await rename(temp, TASK_STORE);
+  let lastError = null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      await rename(temp, TASK_STORE);
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 4) await new Promise((resolve) => setTimeout(resolve, 25 * (attempt + 1)));
+    }
+  }
+  try { await rm(temp, { force: true }); } catch (e) { /* keep the temp for inspection */ }
+  throw lastError;
 }
 
 function tasksForProject(tasks, projectPath) {
@@ -721,7 +732,7 @@ async function mutateTasks(body) {
       workers: plan.workers.map((worker) => ({ ...worker, status: 'planned', sessionId: '', output: '', error: '' })),
       maxParallel: plan.maxParallel,
       planVersions: [...current.planVersions, { version: nextVersion, plan, feedback: cleanTaskText(body.feedback, 6000), createdAt: now }],
-      feedback: cleanTaskText(body.feedback, 6000) || current.feedback,
+      feedback: cleanTaskText(body.feedback, 6000),
       finalReport: '',
       runtimeError: '',
       completedAt: '',
@@ -975,7 +986,6 @@ function workerPrompt(orchestration, worker) {
     '总目标：\n' + orchestration.idea,
     '你的任务：\n' + worker.mission,
     worker.acceptance ? '你的验收标准：\n' + worker.acceptance : '',
-    orchestration.feedback ? '用户最新反馈：\n' + orchestration.feedback : '',
     dependencyContext ? '依赖任务的结果：\n' + dependencyContext : '',
     '完成后给出结构清晰的交接报告：完成内容、证据/产物、验证结果、风险和建议。'
   ].filter(Boolean).join('\n\n');
@@ -1044,7 +1054,6 @@ function coordinatorPrompt(orchestration) {
     '项目路径：' + (orchestration.projectPath || '全局任务'),
     '原始想法：\n' + orchestration.idea,
     orchestration.plan && orchestration.plan.strategy ? '执行策略：\n' + orchestration.plan.strategy : '',
-    orchestration.feedback ? '用户最新反馈：\n' + orchestration.feedback : '',
     '子代理交接：\n' + results,
     orchestration.plan && orchestration.plan.acceptanceCriteria.length ? '最终验收标准：\n- ' + orchestration.plan.acceptanceCriteria.join('\n- ') : '',
     '输出一份给用户验收的最终报告：结论、各子任务完成情况、产物/证据、验证结果、未完成项与风险、建议验收步骤。'
@@ -1354,7 +1363,7 @@ function makeRoutes() {
             const record = snapshot.orchestrations.find((item) => item.id === body.id);
             if (!record) throw new Error('orchestration not found');
             if (record.phase === 'planning') throw new Error('方案正在生成中，请稍候');
-            const feedback = cleanTaskText(body.feedback, 6000) || record.feedback;
+            const feedback = cleanTaskText(body.feedback, 6000);
             const modelPolicy = cleanTaskText(body.modelPolicy, 40) || 'balanced';
             const planRequest = { ...body, feedback, modelPolicy };
             await taskMutationQueue.then(() => mutateTasks({ ...planRequest, action: 'orchestration_set_planning', planningNote: feedback ? '正在按反馈重新编排…' : 'AI 正在生成第一份方案…' }));

@@ -9,6 +9,7 @@ process.env.USERPROFILE = tempHome;
 process.env.HOME = tempHome;
 
 const routes = new Map();
+const agentPrompts = [];
 const plan = {
   title: '检查登录体验',
   summary: '由体验与安全两个子代理分别检查，主代理汇总。',
@@ -37,12 +38,16 @@ const ctx = {
       callback({
         subagents: {
           list: () => ['spawn', 'fork'],
-          start: async (kind, options) => ({
-            id: 'run-' + options.label,
-            localAgent: { options: {} },
-            result: Promise.resolve({ output: [{ type: 'text', text: options.label + ' 完成：已提供证据。' }], stopReason: 'completed' }),
-            dispose: async () => {}
-          })
+          start: async (kind, options) => {
+            const text = Array.isArray(options.prompt) ? options.prompt.map((entry) => entry.text || '').join('\n') : String(options.prompt || '');
+            agentPrompts.push(text);
+            return {
+              id: 'run-' + options.label,
+              localAgent: { options: {} },
+              result: Promise.resolve({ output: [{ type: 'text', text: options.label + ' 完成：已提供证据。' }], stopReason: 'completed' }),
+              dispose: async () => {}
+            };
+          }
         },
         agents: { get: (id) => ({ id: id || 'session-1', session: { header: { cwd: 'D:\\demo' } } }), roots: () => [] }
       });
@@ -104,10 +109,11 @@ try {
   assert.equal(created.modelCatalog[0].id, 'test-model');
   const id = created.orchestrations[0].id;
   const planned = await call('/api/dsh-workbench/tasks/mutate', 'POST', {
-    action: 'orchestration_plan', scope: 'all', projectPath: 'D:\\demo', id
+    action: 'orchestration_plan', scope: 'all', projectPath: 'D:\\demo', id, feedback: '把方案精简为两个子代理，体验与安全并行'
   });
   assert.equal(planned.orchestrations[0].phase, 'planning');
   assert.ok(planned.orchestrations[0].planningNote, 'planningNote should be set while generating');
+  assert.ok(String(planned.orchestrations[0].planningNote).includes('重新编排'), 'planning note should reflect feedback');
   let plannedState = null;
   for (let i = 0; i < 50; i += 1) {
     await new Promise((resolve) => setTimeout(resolve, 10));
@@ -120,6 +126,8 @@ try {
   assert(plannedState, 'orchestration plan should complete asynchronously');
   assert.equal(plannedState.workers.length, 2);
   assert.equal(plannedState.mainAgent.name, '交付负责人');
+  assert.equal(plannedState.feedback, '把方案精简为两个子代理，体验与安全并行');
+  assert.equal(plannedState.planVersions[0].feedback, '把方案精简为两个子代理，体验与安全并行');
   const persisted = JSON.parse(await readFile(join(tempHome, '.dsh', 'dsh-workbench-tasks.json'), 'utf8'));
   assert.equal(persisted.version, 4);
 
@@ -133,6 +141,7 @@ try {
     ? { ...worker, status: 'completed', output: '第一步已完成', completedAt: new Date().toISOString() }
     : { ...worker, status: 'failed', error: '桌面端重启中断了本次执行', completedAt: new Date().toISOString() });
   target.mainAgent = { ...target.mainAgent, status: 'failed', error: '桌面端重启中断了本次执行', completedAt: new Date().toISOString() };
+  target.feedback = '把方案精简为两个子代理，体验与安全并行';
   target.completedAt = new Date().toISOString();
   await writeFile(storeFile, JSON.stringify(interrupted, null, 2) + '\n', 'utf8');
 
@@ -156,6 +165,9 @@ try {
   assert.equal(resumedState.workers.filter((worker) => worker.status === 'completed').length, 2);
   assert.equal(resumedState.workers[0].output, '第一步已完成');
   assert.ok(resumedState.finalReport, 'main agent should produce a final report after resume');
+  assert.ok(agentPrompts.length >= 2, 'workers and main agent should have been prompted');
+  assert.ok(agentPrompts.every((text) => !text.includes('用户最新反馈')), 'feedback must not be injected into agent prompts');
+  assert.ok(agentPrompts.every((text) => !text.includes('把方案精简为两个子代理')), 'feedback text must not be injected into agent prompts');
   console.log('orchestration smoke test passed');
 } finally {
   await rm(tempHome, { recursive: true, force: true });
