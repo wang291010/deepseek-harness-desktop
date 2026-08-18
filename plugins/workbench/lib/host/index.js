@@ -50,7 +50,7 @@ const TASK_PRIORITIES = ['low', 'medium', 'high'];
 const TASK_OWNERS = ['human', 'agent', 'hybrid'];
 const IDEA_STATUSES = ['inbox', 'considering', 'promoted', 'snoozed', 'archived'];
 const IDEA_RECOMMENDATIONS = ['task', 'orchestration', 'later', 'archive'];
-const ORCHESTRATION_PHASES = ['idea', 'planning', 'planned', 'running', 'review', 'changes_requested', 'accepted', 'failed', 'cancelled'];
+const ORCHESTRATION_PHASES = ['idea', 'planning', 'planned', 'running', 'refining', 'review', 'changes_requested', 'accepted', 'failed', 'cancelled'];
 const ORCHESTRATION_AGENT_STATUSES = ['planned', 'waiting', 'running', 'completed', 'failed', 'cancelled'];
 let taskMutationQueue = Promise.resolve();
 
@@ -422,6 +422,8 @@ function cleanOrchestration(raw) {
     attempt: Number.isSafeInteger(raw.attempt) && raw.attempt >= 0 ? raw.attempt : 0,
     feedback: cleanTaskText(raw.feedback, 6000),
     planningNote: cleanTaskText(raw.planningNote, 200),
+    thread: Array.isArray(raw.thread) ? raw.thread.map((entry) => ({ role: entry && entry.role === 'user' ? 'user' : 'main', text: cleanTaskText(entry && entry.text, 20000), at: typeof (entry && entry.at) === 'string' ? entry.at : '' })).filter((entry) => entry.text).slice(-60) : [],
+    refineCount: Number.isSafeInteger(raw.refineCount) && raw.refineCount >= 0 ? raw.refineCount : 0,
     finalReport: cleanTaskText(raw.finalReport, 30000),
     runtimeError: cleanTaskText(raw.runtimeError, 6000),
     acceptedNote: cleanTaskText(raw.acceptedNote, 6000),
@@ -822,6 +824,22 @@ async function mutateTasks(body) {
       completedAt: '',
       updatedAt: now
     });
+  } else if (action === 'orchestration_continue') {
+    const index = store.orchestrations.findIndex((item) => item.id === body.id);
+    if (index < 0) throw new Error('orchestration not found');
+    const current = store.orchestrations[index];
+    if (current.phase !== 'review' && current.phase !== 'accepted') throw new Error('只有等待验收或已验收的协作任务可以继续优化');
+    const message = cleanTaskText(body.message, 12000);
+    if (message === '') throw new Error('请写下要继续优化的内容');
+    store.orchestrations[index] = cleanOrchestration({
+      ...current,
+      phase: 'refining',
+      refineCount: current.refineCount + 1,
+      thread: [...(current.thread || []), { role: 'user', text: message, at: now }],
+      mainAgent: current.mainAgent ? { ...current.mainAgent, status: 'running', startedAt: now, error: '' } : current.mainAgent,
+      runtimeError: '',
+      updatedAt: now
+    });
   } else if (action === 'orchestration_remove') {
     const before = store.orchestrations.length;
     store.orchestrations = store.orchestrations.filter((item) => item.id !== body.id);
@@ -1177,6 +1195,96 @@ async function runOrchestration(orchestrationId) {
   }
 }
 
+function continuationPrompt(orchestration, userMessage) {
+  const results = (orchestration.workers || []).map((worker) => [
+    '## ' + worker.name + '（' + worker.role + '）',
+    '状态：' + worker.status,
+    '结果：\n' + (worker.output || worker.error || '无结果')
+  ].join('\n')).join('\n\n').slice(0, 50000);
+  const history = (orchestration.thread || []).slice(-30).map((entry) => (entry.role === 'user' ? '用户：' : '主代理：') + entry.text).join('\n\n').slice(0, 30000);
+  return [{
+    type: 'text',
+    text: [
+      '你正在继续优化一项已经交付的任务。请基于已有成果继续工作，不要从头重做；可以按需调用子代理去修改、验证对应的部分，最后把更新后的完整结果交回。',
+      '项目路径：' + (orchestration.projectPath || '全局任务'),
+      '原始想法：\n' + orchestration.idea,
+      orchestration.plan && orchestration.plan.strategy ? '执行策略：\n' + orchestration.plan.strategy : '',
+      orchestration.plan && orchestration.plan.acceptanceCriteria.length ? '最终验收标准：\n- ' + orchestration.plan.acceptanceCriteria.join('\n- ') : '',
+      '子代理交接（最近结果）：\n' + results,
+      '上次最终报告：\n' + (orchestration.finalReport || '（无）'),
+      history ? '之前的优化对话记录：\n' + history : '',
+      '用户本次优化要求：\n' + (userMessage || '请整体再检查一遍并改进')
+    ].filter(Boolean).join('\n\n')
+  }];
+}
+
+async function continueOrchestration(orchestrationId) {
+  if (orchestrationControllers.has(orchestrationId)) return;
+  const controller = new AbortController();
+  orchestrationControllers.set(orchestrationId, controller);
+  try {
+    let orchestration = await orchestrationSnapshot(orchestrationId);
+    if (!orchestration || orchestration.phase !== 'refining') return;
+    if (orchestrationSubagents === null || orchestrationAgents === null) throw new Error('DSH subagent runtime unavailable; restart the desktop host and try again');
+    let parent = orchestrationAgents.get(orchestration.sourceSessionId);
+    const requestedProject = taskProjectKey(orchestration.projectPath);
+    const parentProject = parent && parent.session && parent.session.header ? taskProjectKey(parent.session.header.cwd || '') : '';
+    if (requestedProject && parentProject !== requestedProject) {
+      parent = orchestrationAgents.roots().find((agent) => agent.session && agent.session.header && taskProjectKey(agent.session.header.cwd || '') === requestedProject);
+    }
+    if (!parent) throw new Error('所选项目当前没有在线主会话；请先打开该项目中的任一会话，再重试继续优化');
+    const lastUser = [...(orchestration.thread || [])].reverse().find((entry) => entry.role === 'user');
+    const startedAt = new Date().toISOString();
+    await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
+      ...item,
+      mainAgent: { ...item.mainAgent, status: 'running', startedAt, error: '' },
+      updatedAt: startedAt
+    }));
+    const run = await orchestrationSubagents.start('spawn', {
+      label: (orchestration.mainAgent && orchestration.mainAgent.name) + ' · 优化',
+      prompt: continuationPrompt(orchestration, lastUser && lastUser.text),
+      parent,
+      signal: controller.signal,
+      persona: '你是' + (orchestration.mainAgent && orchestration.mainAgent.role || '主协调代理') + '。继续负责本次任务的优化与质量把关，可以调用子代理修改对应部分，最后交回更新后的完整结果。',
+      ...(orchestration.mainAgent && orchestration.mainAgent.provider && orchestration.mainAgent.model ? { agentOptions: { provider: orchestration.mainAgent.provider, model: orchestration.mainAgent.model } } : {}),
+      maxDepth: 3
+    });
+    const result = await run.result;
+    const completedAt = new Date().toISOString();
+    const output = contentBlocksText(result.output);
+    const successful = result.stopReason === 'completed';
+    await queueOrchestrationPatch(orchestrationId, (item) => {
+      if (item.phase === 'cancelled') return item;
+      return cleanOrchestration({
+        ...item,
+        phase: successful ? 'review' : 'failed',
+        mainAgent: { ...item.mainAgent, status: successful ? 'completed' : 'failed', output, error: successful ? '' : ('主代理优化结束原因：' + result.stopReason), completedAt },
+        thread: [...(item.thread || []), { role: 'main', text: output, at: completedAt }],
+        finalReport: output,
+        runtimeError: successful ? '' : ('主代理优化结束原因：' + result.stopReason),
+        completedAt,
+        updatedAt: completedAt
+      });
+    });
+  } catch (error) {
+    const completedAt = new Date().toISOString();
+    await queueOrchestrationPatch(orchestrationId, (item) => {
+      if (item.phase === 'cancelled') return item;
+      const status = controller.signal.aborted ? 'cancelled' : 'failed';
+      return cleanOrchestration({
+        ...item,
+        phase: status,
+        mainAgent: item.mainAgent && (item.mainAgent.status === 'running') ? { ...item.mainAgent, status: controller.signal.aborted ? 'cancelled' : 'failed', error: String((error && error.message) || error), completedAt } : item.mainAgent,
+        runtimeError: String((error && error.message) || error),
+        completedAt,
+        updatedAt: completedAt
+      });
+    }).catch(() => {});
+  } finally {
+    orchestrationControllers.delete(orchestrationId);
+  }
+}
+
 function orchestrationRuntimeInfo() {
   return {
     available: orchestrationSubagents !== null && orchestrationAgents !== null,
@@ -1190,14 +1298,14 @@ function recoverInterruptedOrchestrations() {
     const now = new Date().toISOString();
     let changed = false;
     store.orchestrations = store.orchestrations.map((item) => {
-      if (item.phase !== 'running' && item.phase !== 'planning') return item;
+      if (item.phase !== 'running' && item.phase !== 'planning' && item.phase !== 'refining') return item;
       changed = true;
       const next = cleanOrchestration({
         ...item,
         phase: 'failed',
         workers: item.workers.map((worker) => ['running', 'waiting', 'planned'].includes(worker.status) ? { ...worker, status: 'failed', error: '桌面端重启中断了本次执行', completedAt: now } : worker),
         mainAgent: item.mainAgent && ['running', 'waiting', 'planned'].includes(item.mainAgent.status) ? { ...item.mainAgent, status: 'failed', error: '桌面端重启中断了本次执行', completedAt: now } : item.mainAgent,
-        runtimeError: '桌面端重启中断了本次执行；已完成步骤已保留，可以点击“继续执行”从未完成步骤接着跑。',
+        runtimeError: item.phase === 'refining' ? '桌面端重启中断了本次优化；可以在交付页重新发送优化要求。' : '桌面端重启中断了本次执行；已完成步骤已保留，可以点击“继续执行”从未完成步骤接着跑。',
         completedAt: now,
         updatedAt: now
       });
@@ -1411,6 +1519,9 @@ function makeRoutes() {
           }
           if (body.action === 'orchestration_resume') {
             void runOrchestration(body.id).catch((error) => diag('orchestration resume failed: ' + String((error && error.stack) || error)));
+          }
+          if (body.action === 'orchestration_continue') {
+            void continueOrchestration(body.id).catch((error) => diag('orchestration continue failed: ' + String((error && error.stack) || error)));
           }
           const modelCatalog = await listOrchestrationModels();
           writeJson(res, 200, {

@@ -168,6 +168,31 @@ try {
   assert.ok(agentPrompts.length >= 2, 'workers and main agent should have been prompted');
   assert.ok(agentPrompts.every((text) => !text.includes('用户最新反馈')), 'feedback must not be injected into agent prompts');
   assert.ok(agentPrompts.every((text) => !text.includes('把方案精简为两个子代理')), 'feedback text must not be injected into agent prompts');
+
+  // Continue optimizing: after review, the user sends a new instruction to the main agent.
+  const continuing = await call('/api/dsh-workbench/tasks/mutate', 'POST', {
+    action: 'orchestration_continue', scope: 'all', projectPath: 'D:\\demo', id,
+    message: '把报告第 2 部分的方案再优化一下'
+  });
+  assert.equal(continuing.orchestrations[0].phase, 'refining');
+  assert.equal(continuing.orchestrations[0].refineCount, 1);
+  assert.equal(continuing.orchestrations[0].thread.length, 1);
+  assert.equal(continuing.orchestrations[0].thread[0].role, 'user');
+
+  let refinedState = null;
+  for (let i = 0; i < 100; i += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    const snap = await call('/api/dsh-workbench/tasks/list', 'GET', undefined, '?scope=all&projectPath=D%3A%5Cdemo');
+    const rec = snap.orchestrations[0];
+    if (rec.phase === 'review' || rec.phase === 'failed') { refinedState = rec; break; }
+  }
+  assert(refinedState, 'refined orchestration should reach a terminal state');
+  assert.equal(refinedState.phase, 'review');
+  assert.equal(refinedState.thread.length, 2, 'thread should contain user instruction and main agent reply');
+  assert.equal(refinedState.thread[1].role, 'main');
+  assert.ok(refinedState.thread[1].text.length > 0);
+  assert.ok(agentPrompts.some((text) => text.includes('用户本次优化要求')), 'continuation prompt should include the new instruction');
+  assert.ok(agentPrompts.some((text) => text.includes('把报告第 2 部分的方案再优化一下')), 'continuation prompt should carry the user message');
   console.log('orchestration smoke test passed');
 } finally {
   await rm(tempHome, { recursive: true, force: true });
