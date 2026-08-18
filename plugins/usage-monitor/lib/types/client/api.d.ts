@@ -99,4 +99,3 @@ export type BalanceMap = Record<string, BalanceResponse>;
 export declare function fetchBalance(signal?: AbortSignal): Promise<BalanceMap>;
 /** 手动触发一次全量余额/配额刷新并返回新快照表。 */
 export declare function refreshBalance(): Promise<BalanceMap>;
-//# sourceMappingURL=api.d.ts.map

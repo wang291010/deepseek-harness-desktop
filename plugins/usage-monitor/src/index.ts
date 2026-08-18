@@ -1,6 +1,4 @@
-import { homedir } from 'node:os'
 import { existsSync, readFileSync } from 'node:fs'
-import { join, resolve, sep } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
 import { installSettingsSection, settingsNamespace } from '@deepseek-ai/dsh-settings'
@@ -14,13 +12,14 @@ import { makeRoutes } from './routes.ts'
 import { BalanceClient } from './balance.ts'
 import type { BalanceSettings } from './provider-detect.ts'
 import { detectBalanceEndpoints } from './provider-detect.ts'
+import { resolveCredentialsFile, resolveUsageFile } from './dsh-home.ts'
 
 /**
- * 读取 DSH 凭据文件（~/.dsh/.credentials.yaml，形如 "KEY: value" 行）。
+ * 读取当前 DSH_HOME 下的凭据文件（未设置时回退 ~/.dsh/.credentials.yaml）。
  * 失败/缺失返回空对象；结果缓存（凭据变更需重启）。
  */
 function readCredentialsFile(): Record<string, string> {
-  const file = join(homedir(), '.dsh', '.credentials.yaml')
+  const file = resolveCredentialsFile()
   if (!existsSync(file)) return {}
   try {
     const entries: Record<string, string> = {}
@@ -48,22 +47,13 @@ export const USAGE_STATS_METER_KEY = Symbol('usage-stats.meter')
 export const USAGE_STATS_SETTINGS_NAMESPACE: SettingsNamespace = settingsNamespace('usage-stats')
 
 function safeUsageFilePath(value: string | undefined): string {
-  const dshRoot = resolve(homedir(), '.dsh')
-  const legacy = resolve(dshRoot, 'dsh-usage-stats.json')
-  const managed = resolve(dshRoot, 'usage-stats')
-  if (value === undefined || value.trim() === '') return legacy
-  const requested = resolve(value)
-  const normalize = (path: string): string => process.platform === 'win32' ? path.toLowerCase() : path
-  const target = normalize(requested)
-  const allowedRoot = normalize(managed)
-  if (target === normalize(legacy) || target === allowedRoot || target.startsWith(allowedRoot + sep)) return requested
-  return legacy
+  return resolveUsageFile(value)
 }
 
 export interface Config {
   /** 总开关；false 时停止订阅、写盘与 meter 挂载。 */
   enabled?: boolean
-  /** 持久化文件路径；缺省 ~/.dsh/dsh-usage-stats.json（测试注入用）。 */
+  /** 持久化文件路径；缺省 $DSH_HOME/dsh-usage-stats.json（未设置时回退 ~/.dsh）。 */
   filePath?: string
   /** 用户按模型覆盖的单价（每百万 token）。 */
   prices?: Record<string, ModelPrice>
@@ -97,7 +87,8 @@ export const Config: z<Config> = z.object({
   prices: z.dict(priceSchema),
   defaultPrice: priceSchema,
   currency: z.string().default('CNY'),
-  peakHours: z.array(z.tuple([z.number(), z.number()])).default([[9, 10], [14, 15]]),
+  peakHours: (z.array(z.tuple([z.number(), z.number()])) as z<Array<[number, number]>>)
+    .default([[9, 10], [14, 15]]),
   balance: z.object({
     mode: z.union([z.const('auto'), z.const('manual'), z.const('off')]).default('auto'),
     baseUrl: z.string(),
@@ -148,7 +139,7 @@ export function apply(ctx: Context, config: Config = {}): void {
   })
   const balance = new BalanceClient({
     fetchFn: fetch,
-    // key 优先进程环境变量，其次 DSH 凭据文件（~/.dsh/.credentials.yaml，
+    // key 优先进程环境变量，其次当前 DSH_HOME 下的凭据文件，
     // 形如 "KEY: value" 行）——DSH 的 key 通常存在凭据文件而非环境变量。
     getEnv: (name) => process.env[name] ?? readCredentialsFile()[name],
     // 费用计价货币跟随插件设置 currency（费用行 ¥/$ 符号）。

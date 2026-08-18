@@ -125,4 +125,3 @@ export type SettingsCardKey = keyof typeof zh;
 export declare const zh: UsageStatsCopy;
 /** 英文字典（与 zh 键集完全一致）。 */
 export declare const en: UsageStatsCopy;
-//# sourceMappingURL=locales.d.ts.map

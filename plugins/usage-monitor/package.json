@@ -1,7 +1,7 @@
 {
   "name": "@abcdefu_cja/dsh-usage-stats",
   "description": "DSH API 用量统计：token、请求、轮次、缓存命中、费用估算与多提供商余额/配额。",
-  "version": "0.1.0-yourworkbench.1",
+  "version": "0.1.0-yourworkbench.2",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
@@ -19,9 +19,9 @@
     }
   },
   "scripts": {
-    "build": "tsc -b && tsdown",
-    "prepare": "tsc -b && tsdown",
-    "typecheck": "tsc -b --pretty false",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.client.json && tsdown",
+    "prepare": "tsc -p tsconfig.json && tsc -p tsconfig.client.json && tsdown",
+    "typecheck": "tsc -p tsconfig.json --pretty false && tsc -p tsconfig.client.json --pretty false",
     "test": "vitest run --passWithNoTests",
     "watch": "tsdown --watch"
   },
@@ -61,6 +61,7 @@
     "@deepseek-ai/dsh-settings": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-timeout": "^0.1.0-rc.6",
     "@testing-library/react": "^16.1.0",
+    "@tsdown/css": "0.22.14",
     "@types/node": "^22.20.0",
     "@types/react": "~18.3.1",
     "jsdom": "^26.0.0",

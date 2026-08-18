@@ -11,7 +11,7 @@ export declare const USAGE_STATS_SETTINGS_NAMESPACE: SettingsNamespace;
 export interface Config {
     /** 总开关；false 时停止订阅、写盘与 meter 挂载。 */
     enabled?: boolean;
-    /** 持久化文件路径；缺省 ~/.dsh/dsh-usage-stats.json（测试注入用）。 */
+    /** 持久化文件路径；缺省 $DSH_HOME/dsh-usage-stats.json（未设置时回退 ~/.dsh）。 */
     filePath?: string;
     /** 用户按模型覆盖的单价（每百万 token）。 */
     prices?: Record<string, ModelPrice>;
@@ -27,4 +27,3 @@ export interface Config {
 /** 运行时 schema（schemastery）。 */
 export declare const Config: z<Config>;
 export declare function apply(ctx: Context, config?: Config): void;
-//# sourceMappingURL=index.d.ts.map

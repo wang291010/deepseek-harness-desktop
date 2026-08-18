@@ -1,3 +1,4 @@
+(()=>{const id="@abcdefu_cja/dsh-usage-stats/card.module.css";if(typeof document!=="undefined"&&!document.querySelector("style[data-plugin-css="+JSON.stringify(id)+"]")){const tag=document.createElement("style");tag.dataset.plugin="@abcdefu_cja/dsh-usage-stats";tag.dataset.pluginCss=id;tag.textContent="._9xG1AW_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);border-radius:6px;min-width:0;list-style:none;transition:border-color .16s,background .16s;overflow:hidden}._9xG1AW_content{flex-direction:column;gap:14px;min-width:0;display:flex}._9xG1AW_cardOpen{background:var(--dsw-alias-bg-layer-2);border-color:var(--dsw-alias-label-dimmed)}._9xG1AW_header{width:100%;min-height:70.5px;color:inherit;cursor:pointer;text-align:left;font:inherit;background:0 0;border:0;justify-content:space-between;align-items:center;gap:8px;padding:12px 14px;display:flex}._9xG1AW_header:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}._9xG1AW_header:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}._9xG1AW_header:focus-visible{box-shadow:inset 0 0 0 2px var(--dsw-alias-button-info-fill);outline:none}._9xG1AW_headText{flex-direction:column;flex:1;gap:3px;min-width:0;display:flex;overflow:hidden}._9xG1AW_nameRow{align-items:center;gap:8px;min-width:0;display:flex}._9xG1AW_name{color:var(--dsw-alias-label-primary);white-space:nowrap;text-overflow:ellipsis;font-weight:600;overflow:hidden}._9xG1AW_iconBadge{background:var(--dsw-alias-button-info-fill);width:32px;height:32px;color:var(--dsw-alias-label-primary-foreground);border-radius:8px;flex:none;justify-content:center;align-items:center;display:inline-flex;box-shadow:0 1px 2px #0000001f}._9xG1AW_activeBadge{background:color-mix(in srgb, var(--dsw-alias-state-success-primary) 14%, transparent);color:var(--dsw-alias-state-success-primary);border:1px solid color-mix(in srgb, var(--dsw-alias-state-success-primary) 30%, transparent);border-radius:999px;flex:none;padding:1px 8px;font-size:10px;font-weight:600;line-height:1.5}._9xG1AW_description{color:var(--dsw-alias-label-tertiary);white-space:nowrap;text-overflow:ellipsis;font-size:13px;line-height:1.35;overflow:hidden}._9xG1AW_pending{color:var(--dsw-alias-state-warn-primary);white-space:nowrap;flex:none;font-size:12px}._9xG1AW_chevron{color:var(--dsw-alias-label-tertiary);flex:none;margin-left:10px;font-size:13px;transition:transform .12s}._9xG1AW_body{border-top:1px solid var(--dsw-alias-border-l2);flex-direction:column;gap:14px;padding:2px 12px 12px;display:flex}._9xG1AW_readOnly{color:var(--dsw-alias-label-tertiary);margin:0;font-size:12px}._9xG1AW_footer{justify-content:flex-end;align-items:center;gap:8px;display:flex}._9xG1AW_failed{color:var(--dsw-alias-state-error-primary);margin:0 auto 0 0;font-size:12px}._9xG1AW_discard,._9xG1AW_save{font:inherit;cursor:pointer;border-radius:6px;padding:5px 12px;font-size:13px;transition:background-color .13s,border-color .13s,color .13s}._9xG1AW_discard{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);background:0 0}._9xG1AW_discard:hover:not(:disabled){color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed);background:var(--dsw-alias-interactive-bg-hover)}._9xG1AW_discard:active:not(:disabled){color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed);background:var(--dsw-alias-interactive-bg-active)}._9xG1AW_discard:focus-visible,._9xG1AW_save:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}._9xG1AW_save{border:1px solid var(--dsw-alias-button-info-fill);background:var(--dsw-alias-button-info-fill);color:var(--dsw-alias-label-primary-foreground)}._9xG1AW_save:hover:not(:disabled),._9xG1AW_save:active:not(:disabled){border-color:var(--dsw-alias-button-info-hover);background:var(--dsw-alias-button-info-hover)}._9xG1AW_discard:disabled,._9xG1AW_save:disabled{opacity:.5;cursor:default}._9xG1AW_field{flex-direction:column;gap:4px;min-width:0;display:flex}._9xG1AW_head{align-items:center;gap:8px;display:flex}._9xG1AW_label{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:500}._9xG1AW_badges{flex:none;align-items:center;gap:6px;min-width:0;margin-left:auto;display:flex}._9xG1AW_badge{background:var(--dsw-alias-interactive-bg-hover-accent);color:var(--dsw-alias-state-business-primary);white-space:nowrap;border-radius:999px;flex:none;padding:1px 6px;font-size:11px}._9xG1AW_reset{color:var(--dsw-alias-state-business-primary);cursor:pointer;white-space:nowrap;background:0 0;border:0;flex:none;padding:0;font-size:11px}._9xG1AW_reset:hover:not(:disabled){color:var(--dsw-alias-label-primary);text-decoration:underline}._9xG1AW_reset:active:not(:disabled){color:var(--dsw-alias-state-business-primary)}._9xG1AW_reset:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px;border-radius:2px}._9xG1AW_reset:disabled{opacity:.5;cursor:default}._9xG1AW_input,._9xG1AW_select{border:1px solid var(--dsw-alias-border-l2);font:inherit;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border-radius:6px;padding:6px 8px;font-size:13px;transition:border-color .13s,box-shadow .13s}._9xG1AW_input:hover:not(:disabled),._9xG1AW_select:hover:not(:disabled){border-color:var(--dsw-alias-label-dimmed)}._9xG1AW_input:focus-visible,._9xG1AW_select:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:1px}._9xG1AW_inputInvalid{border:1px solid var(--dsw-alias-state-error-primary);font:inherit;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary);border-radius:6px;padding:6px 8px;font-size:13px;transition:border-color .13s,box-shadow .13s}._9xG1AW_inputInvalid:hover:not(:disabled){border-color:var(--dsw-alias-state-error-primary)}._9xG1AW_inputInvalid:focus-visible{outline:2px solid var(--dsw-alias-state-error-primary);outline-offset:1px}._9xG1AW_input:disabled,._9xG1AW_select:disabled{opacity:.6;cursor:default}._9xG1AW_hint{color:var(--dsw-alias-label-secondary);margin:0;font-size:12px}._9xG1AW_invalid{color:var(--dsw-alias-state-error-primary);margin:0;font-size:12px}@media (prefers-reduced-motion:reduce){._9xG1AW_card,._9xG1AW_chevron,._9xG1AW_discard,._9xG1AW_save,._9xG1AW_input,._9xG1AW_select,._9xG1AW_inputInvalid{transition:none}}._9xG1AW_controlBar{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:8px;display:flex}._9xG1AW_timeSegment{background:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;align-items:center;gap:2px;padding:3px;display:flex}._9xG1AW_timeBtn,._9xG1AW_timeBtnActive{font:inherit;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;border-radius:6px;padding:4px 10px;font-size:12px;transition:background-color .13s,color .13s}._9xG1AW_timeBtn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}._9xG1AW_timeBtnActive{background:var(--dsw-alias-button-info-fill);color:var(--dsw-alias-label-primary-foreground);font-weight:600}._9xG1AW_providerRow{flex-wrap:wrap;align-items:center;gap:6px;min-width:0;display:flex}._9xG1AW_providerLabel{color:var(--dsw-alias-label-tertiary);white-space:nowrap;font-size:11px}._9xG1AW_providerPill,._9xG1AW_providerPillActive{font:inherit;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:999px;padding:4px 10px;font-size:12px;transition:background-color .13s,border-color .13s,color .13s}._9xG1AW_providerPill:hover{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed);background:var(--dsw-alias-interactive-bg-hover)}._9xG1AW_providerPillActive{border-color:var(--dsw-alias-button-info-fill);background:var(--dsw-alias-button-info-fill);color:var(--dsw-alias-label-primary-foreground)}._9xG1AW_tabNav{border-bottom:1px solid var(--dsw-alias-border-l2);gap:2px;margin:0;padding:0;display:flex}._9xG1AW_tabBtn,._9xG1AW_tabBtnActive{font:inherit;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;border-bottom:2px solid #0000;margin-bottom:-1px;padding:7px 14px;font-size:12px;font-weight:500;transition:color .13s,border-color .13s}._9xG1AW_tabBtn:hover{color:var(--dsw-alias-label-primary)}._9xG1AW_tabBtnActive{color:var(--dsw-alias-label-primary);border-bottom-color:var(--dsw-alias-button-info-fill);font-weight:600}._9xG1AW_customRow{color:var(--dsw-alias-label-secondary);flex-wrap:wrap;align-items:center;gap:10px;font-size:12px;display:flex}._9xG1AW_customRow label{align-items:center;gap:6px;min-width:0;display:flex}._9xG1AW_customRow input{font:inherit;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border-radius:6px;padding:4px 6px;font-size:12px}._9xG1AW_status{color:var(--dsw-alias-label-secondary);margin:0;font-size:12px}._9xG1AW_metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 16px;min-width:0;margin:0;display:grid}._9xG1AW_metrics>div{min-width:0}._9xG1AW_metrics dt{color:var(--dsw-alias-label-tertiary);white-space:nowrap;text-overflow:ellipsis;font-size:11px;display:block;overflow:hidden}._9xG1AW_metrics dd{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary);white-space:nowrap;text-overflow:ellipsis;margin:0;font-size:13px;font-weight:600;display:block;overflow:hidden}._9xG1AW_tokenSplit{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-secondary);flex-direction:column;gap:8px;min-width:0;font-size:12px;display:flex}._9xG1AW_tokenStacked{background:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l2);border-radius:4px;width:100%;height:10px;display:flex;overflow:hidden}._9xG1AW_tokenStackedSeg{min-width:0;height:100%;transition:width .3s}._9xG1AW_tokenLegend{flex-wrap:wrap;gap:6px 14px;display:flex}._9xG1AW_tokenShare{color:var(--dsw-alias-label-tertiary);font-size:10px}._9xG1AW_heading{color:var(--dsw-alias-label-primary);margin:0;font-size:12px;font-weight:600}._9xG1AW_trendChart{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);border-radius:8px;flex-direction:column;gap:6px;min-width:0;padding:10px 12px 8px;display:flex}._9xG1AW_trendBody{align-items:stretch;gap:8px;min-width:0;display:flex}._9xG1AW_trendYAxis{flex:none;width:52px;height:140px;position:relative}._9xG1AW_trendYTick{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-tertiary);white-space:nowrap;font-size:10px;line-height:1;position:absolute;right:6px}._9xG1AW_trendPlot{flex:1;min-width:0;position:relative}._9xG1AW_trendSvg{width:100%;height:140px;display:block}._9xG1AW_trendHit{cursor:pointer}._9xG1AW_trendTooltip{z-index:5;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);pointer-events:none;border-radius:8px;min-width:200px;max-width:260px;padding:8px 10px;font-size:11px;position:absolute;top:4px;box-shadow:0 4px 16px #0000002e}._9xG1AW_tooltipDate{color:var(--dsw-alias-label-primary);margin-bottom:4px;font-size:12px;font-weight:700}._9xG1AW_tooltipRow{color:var(--dsw-alias-label-secondary);justify-content:space-between;align-items:center;gap:8px;line-height:1.5;display:flex}._9xG1AW_tooltipRow strong{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;font-weight:600}._9xG1AW_tooltipModels{border-top:1px dashed var(--dsw-alias-border-l2);border-bottom:1px dashed var(--dsw-alias-border-l2);flex-direction:column;gap:2px;margin:4px 0;padding:4px 0;display:flex}._9xG1AW_tooltipModel{align-items:center;gap:6px;line-height:1.6;display:flex}._9xG1AW_tooltipModelName{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-secondary);flex:1;overflow:hidden}._9xG1AW_tooltipModel strong{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary);font-weight:600}._9xG1AW_trendAxis{border-top:1px solid var(--dsw-alias-border-l2);justify-content:space-between;gap:2px;margin-left:60px;padding-top:6px;display:flex}._9xG1AW_trendTick{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-tertiary);white-space:nowrap;font-size:10px}._9xG1AW_tableCard{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);border-radius:8px;min-width:0;overflow:hidden}._9xG1AW_table{border-collapse:collapse;font-variant-numeric:tabular-nums;width:100%;min-width:0;font-size:12px}._9xG1AW_table th,._9xG1AW_table td{border-bottom:1px solid var(--dsw-alias-border-l2);text-align:left;white-space:nowrap;text-overflow:ellipsis;padding:6px 10px;overflow:hidden}._9xG1AW_table thead th{background:color-mix(in srgb, var(--dsw-alias-bg-layer-3) 60%, transparent)}._9xG1AW_table th{color:var(--dsw-alias-label-tertiary);font-size:11px;font-weight:500}._9xG1AW_table td{color:var(--dsw-alias-label-primary)}._9xG1AW_table tbody tr:last-child td{border-bottom:0}._9xG1AW_thRight{text-align:right}._9xG1AW_tdRight{text-align:right;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}._9xG1AW_tdStrong{font-weight:600}._9xG1AW_trHover:hover td{background:color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 6%, transparent)}._9xG1AW_modelDot{vertical-align:middle;border-radius:50%;width:8px;height:8px;margin-right:6px;display:inline-block}._9xG1AW_balance{flex-direction:column;gap:4px;display:flex}._9xG1AW_refresh{font:inherit;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:6px;align-self:flex-start;padding:3px 10px;font-size:12px;transition:background-color .13s,border-color .13s,color .13s}._9xG1AW_refresh:hover:not(:disabled){color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed);background:var(--dsw-alias-interactive-bg-hover)}._9xG1AW_refresh:disabled{opacity:.5;cursor:default}._9xG1AW_kpiGrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;min-width:0;display:grid}._9xG1AW_kpiCard{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);border-radius:10px;flex-direction:column;gap:3px;min-width:0;padding:12px 14px 10px;transition:border-color .16s,background .16s;display:flex;position:relative;overflow:hidden}._9xG1AW_kpiCard:hover{border-color:var(--dsw-alias-label-dimmed);background:var(--dsw-alias-interactive-bg-hover)}._9xG1AW_kpiTop{min-width:0;color:var(--dsw-alias-label-secondary);white-space:nowrap;justify-content:space-between;align-items:center;gap:6px;font-size:11px;font-weight:500;display:flex}._9xG1AW_kpiTop svg{color:var(--dsw-alias-label-tertiary);flex:none}._9xG1AW_kpiValue{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary);letter-spacing:-.02em;white-space:nowrap;text-overflow:ellipsis;margin:0;font-size:20px;font-weight:700;overflow:hidden}._9xG1AW_kpiSub{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-tertiary);white-space:nowrap;text-overflow:ellipsis;min-height:13px;margin:2px 0 0;font-size:10px;overflow:hidden}._9xG1AW_kpiCostVal{color:var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary));font-variant-numeric:tabular-nums;font-weight:600}._9xG1AW_kpiValueEmerald{font-variant-numeric:tabular-nums;color:var(--dsw-alias-state-success-primary);letter-spacing:-.02em;white-space:nowrap;text-overflow:ellipsis;margin:0;font-size:20px;font-weight:700;overflow:hidden}._9xG1AW_kpiCardDynamic{border:1px solid color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 40%, var(--dsw-alias-border-l2));background:color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 8%, var(--dsw-alias-bg-layer-2));border-radius:10px;flex-direction:column;gap:3px;min-width:0;padding:12px 14px 10px;display:flex;position:relative;overflow:hidden}._9xG1AW_kpiTopRow{justify-content:space-between;align-items:center;gap:6px;min-width:0;display:flex}._9xG1AW_kpiDynamicLabel{color:var(--dsw-alias-label-primary);white-space:nowrap;text-overflow:ellipsis;font-size:11px;font-weight:600;overflow:hidden}._9xG1AW_kpiValueAccent{font-variant-numeric:tabular-nums;color:var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary));letter-spacing:-.02em;white-space:nowrap;text-overflow:ellipsis;margin:0;font-size:20px;font-weight:700;overflow:hidden}._9xG1AW_chip{white-space:nowrap;border-radius:999px;flex:none;padding:1px 7px;font-size:10px;font-weight:700}._9xG1AW_chipBlue{background:color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 14%, transparent);color:var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary));border:1px solid color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 30%, transparent)}._9xG1AW_chipEmerald{background:color-mix(in srgb, var(--dsw-alias-state-success-primary) 14%, transparent);color:var(--dsw-alias-state-success-primary);border:1px solid color-mix(in srgb, var(--dsw-alias-state-success-primary) 30%, transparent)}._9xG1AW_chipAmber{background:color-mix(in srgb, var(--dsw-alias-state-warn-primary) 14%, transparent);color:var(--dsw-alias-state-warn-primary);border:1px solid color-mix(in srgb, var(--dsw-alias-state-warn-primary) 30%, transparent)}._9xG1AW_chipError{background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 14%, transparent);color:var(--dsw-alias-state-error-primary);border:1px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 30%, transparent)}._9xG1AW_tokenItem{align-items:center;gap:6px;display:inline-flex}._9xG1AW_dot{border-radius:9999px;flex:none;width:8px;height:8px}._9xG1AW_cacheDiag{background:color-mix(in srgb, var(--dsw-alias-state-success-primary) 10%, transparent);border:1px solid color-mix(in srgb, var(--dsw-alias-state-success-primary) 30%, transparent);color:var(--dsw-alias-state-success-primary);border-radius:8px;flex-direction:column;gap:4px;padding:10px 12px;font-size:12px;display:flex}._9xG1AW_cacheDiag strong{font-weight:700}._9xG1AW_cacheDiag span{color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums;font-size:11px}._9xG1AW_cacheDiagRows{border-top:1px solid color-mix(in srgb, var(--dsw-alias-state-success-primary) 20%, transparent);flex-direction:column;gap:4px;margin-top:2px;padding-top:6px;display:flex}._9xG1AW_cacheDiagRow{color:var(--dsw-alias-label-secondary);justify-content:space-between;align-items:center;gap:8px;font-size:11px;display:flex}._9xG1AW_cacheDiagRow strong{color:var(--dsw-alias-state-success-primary);font-variant-numeric:tabular-nums;font-weight:600}._9xG1AW_chartRow{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;min-width:0;display:grid}._9xG1AW_chartCell{flex-direction:column;gap:8px;min-width:0;display:flex}._9xG1AW_donutWrap{align-items:center;gap:12px;min-width:0;display:flex}._9xG1AW_donutSvgWrap{flex:none;width:92px;height:92px;position:relative}._9xG1AW_donutSvg{width:100%;height:100%;display:block;transform:rotate(-90deg)}._9xG1AW_donutHole{pointer-events:none;background:0 0;border-radius:50%;flex-direction:column;justify-content:center;align-items:center;gap:0;display:flex;position:absolute;inset:22%}._9xG1AW_donutTotal{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary);font-size:15px;font-weight:700;line-height:1.1}._9xG1AW_donutTotalLabel{color:var(--dsw-alias-label-tertiary);font-size:9px}._9xG1AW_legend{flex-direction:column;flex:1;gap:3px;min-width:0;margin:0;padding:0;list-style:none;display:flex}._9xG1AW_legend li{min-width:0;color:var(--dsw-alias-label-secondary);align-items:center;gap:6px;font-size:11px;display:flex}._9xG1AW_legendDot{border-radius:2px;flex:none;width:8px;height:8px}._9xG1AW_legendModel{white-space:nowrap;text-overflow:ellipsis;flex:1;min-width:0;overflow:hidden}._9xG1AW_legendShare{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary);flex:none}._9xG1AW_sessionUsageRoot{text-align:left;display:inline-block;position:relative}._9xG1AW_sessionUsage,._9xG1AW_sessionUsageActive{white-space:nowrap;background-color:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);font:inherit;cursor:pointer;border-radius:.5rem;flex-wrap:nowrap;flex:none;align-items:center;gap:.5rem;padding:.375rem .75rem;font-size:.75rem;font-weight:500;transition:background-color .2s cubic-bezier(.16,1,.3,1),border-color .2s cubic-bezier(.16,1,.3,1),color .2s cubic-bezier(.16,1,.3,1);display:inline-flex;box-shadow:0 1px 2px #00000014}._9xG1AW_sessionUsage>span,._9xG1AW_sessionUsageActive>span{white-space:nowrap;flex:none}._9xG1AW_sessionUsage:hover{background-color:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-label-dimmed)}._9xG1AW_sessionUsage:focus-visible,._9xG1AW_sessionUsageActive:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}._9xG1AW_sessionUsageActive{border-color:var(--dsw-alias-state-business-primary)}._9xG1AW_pulseDotContainer{width:.5rem;height:.5rem;display:flex;position:relative}._9xG1AW_pulseDotPing{background-color:var(--dsw-alias-state-success-primary);opacity:.75;border-radius:9999px;width:100%;height:100%;animation:1.5s cubic-bezier(0,0,.2,1) infinite _9xG1AW_usagePing;display:inline-flex;position:absolute}._9xG1AW_pulseDot{background-color:var(--dsw-alias-state-success-primary);border-radius:9999px;width:.5rem;height:.5rem;display:inline-flex;position:relative}@keyframes _9xG1AW_usagePing{75%,to{opacity:0;transform:scale(2)}}._9xG1AW_labelMuted{color:var(--dsw-alias-label-tertiary)}._9xG1AW_valHighlightTokens{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;font-weight:700}._9xG1AW_valHighlightCost{color:var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary));font-variant-numeric:tabular-nums;font-weight:500}._9xG1AW_valSeparator{color:var(--dsw-alias-label-dimmed)}._9xG1AW_chevronIcon{width:.875rem;height:.875rem;color:var(--dsw-alias-label-tertiary);transition:transform .2s}._9xG1AW_chevronOpen{transform:rotate(180deg)}._9xG1AW_sessionUsagePanel{background-color:var(--dsw-alias-bg-layer-3);width:330px;max-width:calc(100vw - 32px);color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);z-index:100;transform-origin:100% 0;border-radius:1rem;margin-top:.5rem;animation:.2s cubic-bezier(.34,1.56,.64,1) forwards _9xG1AW_usagePanelEnter;position:absolute;right:0;overflow:hidden;box-shadow:0 20px 25px -5px #02061780,0 8px 10px -6px #0206174d}@keyframes _9xG1AW_usagePanelEnter{0%{opacity:0;transform:translateY(-6px)scale(.9)}to{opacity:1;transform:translateY(0)scale(1)}}._9xG1AW_panelHeader{background-color:var(--dsw-alias-bg-layer-3);border-bottom:1px solid var(--dsw-alias-border-l2);justify-content:space-between;align-items:center;padding:.75rem 1rem;display:flex}._9xG1AW_panelTitleGroup{align-items:center;gap:.5rem;display:flex}._9xG1AW_panelTitle{color:var(--dsw-alias-label-primary);letter-spacing:-.01em;font-size:.875rem;font-weight:700}._9xG1AW_statusBadge{background-color:color-mix(in srgb, var(--dsw-alias-state-success-primary) 14%, transparent);color:var(--dsw-alias-state-success-primary);border:1px solid color-mix(in srgb, var(--dsw-alias-state-success-primary) 30%, transparent);border-radius:.25rem;align-items:center;gap:.25rem;padding:.125rem .5rem;font-size:.625rem;font-weight:600;display:flex}._9xG1AW_panelBody{flex-direction:column;gap:.75rem;padding:.875rem;display:flex}._9xG1AW_panelStatus{color:var(--dsw-alias-label-secondary);margin:0;padding:.75rem 1rem;font-size:12px}._9xG1AW_sectionHeader{justify-content:space-between;align-items:center;margin-bottom:.375rem;display:flex}._9xG1AW_sectionTitle{color:var(--dsw-alias-label-tertiary);text-transform:uppercase;letter-spacing:.05em;font-size:.6875rem;font-weight:700}._9xG1AW_heroCard{background:linear-gradient(180deg, var(--dsw-alias-bg-layer-2) 0%, color-mix(in srgb, var(--dsw-alias-bg-layer-2) 55%, transparent) 100%);border:1px solid var(--dsw-alias-border-l2);border-radius:.75rem;padding:.75rem;box-shadow:0 1px 2px #00000014}._9xG1AW_heroTopGrid{border-bottom:1px solid var(--dsw-alias-border-l2);text-align:center;grid-template-columns:repeat(2,minmax(0,1fr));padding-bottom:.625rem;display:grid}._9xG1AW_heroCol{padding:0 .5rem}._9xG1AW_heroCol:first-child{border-right:1px solid var(--dsw-alias-border-l2)}._9xG1AW_statNumGroup{justify-content:center;align-items:baseline;display:flex}._9xG1AW_statNumber{color:var(--dsw-alias-label-primary);letter-spacing:-.025em;font-variant-numeric:tabular-nums;font-size:1.5rem;font-weight:700}._9xG1AW_statNumberCost{color:var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary))}._9xG1AW_statUnit{color:var(--dsw-alias-label-secondary);margin-left:.125rem;font-size:.75rem;font-weight:600}._9xG1AW_statLabel{color:var(--dsw-alias-label-secondary);margin-top:.125rem;font-size:.6875rem;font-weight:500}._9xG1AW_heroBottomGrid{text-align:center;grid-template-columns:repeat(2,minmax(0,1fr));padding-top:.625rem;font-size:.6875rem;display:grid}._9xG1AW_metaCol{padding:0 .5rem}._9xG1AW_metaCol:first-child{border-right:1px solid color-mix(in srgb, var(--dsw-alias-border-l2) 60%, transparent)}._9xG1AW_metaLabel{color:var(--dsw-alias-label-tertiary);margin-bottom:.25rem;font-size:.625rem;line-height:1;display:block}._9xG1AW_metaValText{color:var(--dsw-alias-label-primary);font-weight:600}._9xG1AW_metaValEmerald{color:var(--dsw-alias-state-success-primary);font-weight:600}._9xG1AW_recentCard{background-color:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l2);border-radius:.75rem;flex-direction:column;gap:.375rem;padding:.625rem;display:flex;box-shadow:0 1px 2px #00000014}._9xG1AW_recentGrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:baseline;gap:.3125rem .75rem;font-size:.6875rem;display:grid}._9xG1AW_recentLabel{color:var(--dsw-alias-label-secondary);white-space:nowrap;text-overflow:ellipsis;overflow:hidden}._9xG1AW_recentValue{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;text-align:right;text-overflow:ellipsis;white-space:nowrap;min-width:0;font-weight:600;overflow:hidden}._9xG1AW_recentValueEmerald{color:var(--dsw-alias-state-success-primary);font-variant-numeric:tabular-nums;text-align:right;text-overflow:ellipsis;white-space:nowrap;min-width:0;font-weight:600;overflow:hidden}._9xG1AW_recentValueCost{color:var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary))}._9xG1AW_unpricedHint{color:var(--dsw-alias-state-warn-primary);margin:.375rem 0 0;font-size:.6875rem;line-height:1.4}._9xG1AW_strongText{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;font-weight:600}._9xG1AW_panelFooter{background-color:color-mix(in srgb, var(--dsw-alias-bg-layer-2) 70%, transparent);border-top:1px solid var(--dsw-alias-border-l2);padding:.625rem .875rem;font-size:.75rem}._9xG1AW_footerFlex{align-items:center;display:flex}._9xG1AW_balanceText{color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;min-width:0;font-size:.6875rem;font-weight:500;overflow:hidden}._9xG1AW_balanceVal{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;font-weight:700}._9xG1AW_quotaRows{flex-direction:column;gap:3px;margin-bottom:6px;display:flex}._9xG1AW_quotaRow{grid-template-columns:minmax(0,1fr) 3.25rem minmax(0,1fr);align-items:baseline;gap:.75rem;font-size:.6875rem;display:grid}._9xG1AW_quotaLabel{color:var(--dsw-alias-label-secondary);white-space:nowrap;text-overflow:ellipsis;font-weight:500;overflow:hidden}._9xG1AW_quotaPercent{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;font-weight:700}._9xG1AW_quotaReset{color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right;text-overflow:ellipsis;overflow:hidden}._9xG1AW_quotaView{flex-direction:column;gap:12px;min-width:0;display:flex}._9xG1AW_quotaGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem;min-width:0;display:grid}._9xG1AW_noticeBar{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);border-radius:8px;align-items:flex-start;gap:8px;padding:10px 12px;font-size:11px;line-height:1.5;display:flex}._9xG1AW_noticeIcon{width:14px;height:14px;color:var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary));flex:none;margin-top:1px}._9xG1AW_quotaCard{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);border-radius:.75rem;flex-direction:column;gap:.5rem;min-width:0;padding:.875rem;transition:border-color .16s,box-shadow .16s;display:flex}._9xG1AW_quotaCard:hover{box-shadow:0 1px 3px #0000000f}._9xG1AW_quotaCardActive{border-color:color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 45%, var(--dsw-alias-border-l2));background:color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 6%, var(--dsw-alias-bg-layer-2))}._9xG1AW_quotaCardTop{justify-content:space-between;align-items:center;gap:.5rem;min-width:0;display:flex}._9xG1AW_quotaCardLabel{color:var(--dsw-alias-label-primary);white-space:nowrap;text-overflow:ellipsis;font-size:.75rem;font-weight:700;overflow:hidden}._9xG1AW_chipNeutral{background:color-mix(in srgb, var(--dsw-alias-label-tertiary) 14%, transparent);color:var(--dsw-alias-label-secondary);border:1px solid color-mix(in srgb, var(--dsw-alias-label-tertiary) 30%, transparent)}._9xG1AW_quotaCardValue{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;align-items:baseline;gap:2px;font-size:1.75rem;font-weight:900;line-height:1.1;display:flex}._9xG1AW_quotaCardUnit{color:var(--dsw-alias-label-secondary);font-size:.875rem;font-weight:400}._9xG1AW_progressBarBg{background:color-mix(in srgb, var(--dsw-alias-label-tertiary) 16%, transparent);border-radius:9999px;width:100%;height:.5rem;overflow:hidden}._9xG1AW_progressBarFill{border-radius:9999px;height:100%;transition:width .3s}._9xG1AW_quotaCardReset{border-top:1px dashed color-mix(in srgb, var(--dsw-alias-border-l2) 80%, transparent);color:var(--dsw-alias-label-tertiary);justify-content:space-between;align-items:center;gap:.5rem;min-width:0;padding-top:.5rem;font-size:.6875rem;display:flex}._9xG1AW_quotaCardReset strong{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;white-space:nowrap;text-overflow:ellipsis;font-weight:600;overflow:hidden}._9xG1AW_deepseekCard{border:1px solid color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 40%, var(--dsw-alias-border-l2));background:linear-gradient(to right, color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 10%, var(--dsw-alias-bg-layer-2)), var(--dsw-alias-bg-layer-2));border-radius:.75rem;flex-direction:column;gap:.5rem;min-width:0;padding:1rem 1.25rem;display:flex}._9xG1AW_deepseekRow{justify-content:space-between;align-items:center;gap:.5rem;min-width:0;display:flex}._9xG1AW_deepseekLabel{color:var(--dsw-alias-label-secondary);white-space:nowrap;text-overflow:ellipsis;font-size:.75rem;overflow:hidden}._9xG1AW_deepseekAmount{color:var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary));font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-size:2rem;font-weight:700;line-height:1.1}._9xG1AW_deepseekCurrency{color:var(--dsw-alias-label-secondary);font-size:.875rem;font-weight:400}._9xG1AW_deepseekEstimate{color:var(--dsw-alias-state-success-primary);font-variant-numeric:tabular-nums;background:color-mix(in srgb, var(--dsw-alias-state-success-primary) 10%, transparent);border:1px solid color-mix(in srgb, var(--dsw-alias-state-success-primary) 25%, transparent);border-radius:6px;align-self:flex-start;padding:2px 8px;font-size:.75rem;font-weight:600}._9xG1AW_deepseekActions{align-items:stretch;gap:.5rem;margin-top:.25rem;display:flex}._9xG1AW_btnPrimary{font:inherit;border:1px solid var(--dsw-alias-button-info-fill);background:var(--dsw-alias-button-info-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border-radius:6px;justify-content:center;align-items:center;padding:4px 14px;font-size:12px;font-weight:600;text-decoration:none;transition:filter .13s;display:inline-flex}._9xG1AW_btnPrimary:hover{filter:brightness(1.1)}@media (prefers-reduced-motion:reduce){._9xG1AW_kpiCard,._9xG1AW_tokenStackedSeg,._9xG1AW_sessionUsage,._9xG1AW_sessionUsageActive,._9xG1AW_chevronIcon{transition:none}._9xG1AW_sessionUsagePanel{animation:none}._9xG1AW_pulseDotPing{opacity:0;animation:none}}._9xG1AW_sectionPage{flex-direction:column;gap:16px;min-width:0;padding:4px 2px 16px;display:flex}._9xG1AW_sectionHeaderRow{border-bottom:1px solid var(--dsw-alias-border-l2);align-items:center;gap:12px;min-width:0;padding-bottom:14px;display:flex}._9xG1AW_sectionIconBadge{background:var(--dsw-alias-button-info-fill);width:40px;height:40px;color:var(--dsw-alias-label-primary-foreground);border-radius:10px;flex:none;justify-content:center;align-items:center;display:inline-flex;box-shadow:0 2px 4px #0000001f}._9xG1AW_sectionHeaderText{flex-direction:column;gap:2px;min-width:0;display:flex}._9xG1AW_sectionPageTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:700}._9xG1AW_sectionPageDesc{color:var(--dsw-alias-label-tertiary);margin:0;font-size:12px}\n";document.head.appendChild(tag)}})();
 window.__ModuleLoader__.load({
 	id: "@abcdefu_cja/dsh-usage-stats",
 	factory: (require) => {
@@ -35,204 +36,195 @@ window.__ModuleLoader__.load({
 			return (await response.json()).providers;
 		}
 		//#endregion
-		//#region \0dsh-css:D:\VibeCoding\whatever\dsh-usage-stats\src\client\card.module.css.mjs
-		const css = ".aYL_6G_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);border-radius:6px;min-width:0;list-style:none;transition:border-color .16s,background .16s;overflow:hidden}.aYL_6G_content{flex-direction:column;gap:14px;min-width:0;display:flex}.aYL_6G_cardOpen{background:var(--dsw-alias-bg-layer-2);border-color:var(--dsw-alias-label-dimmed)}.aYL_6G_header{width:100%;min-height:70.5px;color:inherit;cursor:pointer;text-align:left;font:inherit;background:0 0;border:0;justify-content:space-between;align-items:center;gap:8px;padding:12px 14px;display:flex}.aYL_6G_header:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.aYL_6G_header:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}.aYL_6G_header:focus-visible{box-shadow:inset 0 0 0 2px var(--dsw-alias-button-info-fill);outline:none}.aYL_6G_headText{flex-direction:column;flex:1;gap:3px;min-width:0;display:flex;overflow:hidden}.aYL_6G_nameRow{align-items:center;gap:8px;min-width:0;display:flex}.aYL_6G_name{color:var(--dsw-alias-label-primary);white-space:nowrap;text-overflow:ellipsis;font-weight:600;overflow:hidden}.aYL_6G_iconBadge{background:var(--dsw-alias-button-info-fill);width:32px;height:32px;color:var(--dsw-alias-label-primary-foreground);border-radius:8px;flex:none;justify-content:center;align-items:center;display:inline-flex;box-shadow:0 1px 2px #0000001f}.aYL_6G_activeBadge{background:color-mix(in srgb, var(--dsw-alias-state-success-primary) 14%, transparent);color:var(--dsw-alias-state-success-primary);border:1px solid color-mix(in srgb, var(--dsw-alias-state-success-primary) 30%, transparent);border-radius:999px;flex:none;padding:1px 8px;font-size:10px;font-weight:600;line-height:1.5}.aYL_6G_description{color:var(--dsw-alias-label-tertiary);white-space:nowrap;text-overflow:ellipsis;font-size:13px;line-height:1.35;overflow:hidden}.aYL_6G_pending{color:var(--dsw-alias-state-warn-primary);white-space:nowrap;flex:none;font-size:12px}.aYL_6G_chevron{color:var(--dsw-alias-label-tertiary);flex:none;margin-left:10px;font-size:13px;transition:transform .12s}.aYL_6G_body{border-top:1px solid var(--dsw-alias-border-l2);flex-direction:column;gap:14px;padding:2px 12px 12px;display:flex}.aYL_6G_readOnly{color:var(--dsw-alias-label-tertiary);margin:0;font-size:12px}.aYL_6G_footer{justify-content:flex-end;align-items:center;gap:8px;display:flex}.aYL_6G_failed{color:var(--dsw-alias-state-error-primary);margin:0 auto 0 0;font-size:12px}.aYL_6G_discard,.aYL_6G_save{font:inherit;cursor:pointer;border-radius:6px;padding:5px 12px;font-size:13px;transition:background-color .13s,border-color .13s,color .13s}.aYL_6G_discard{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);background:0 0}.aYL_6G_discard:hover:not(:disabled){color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed);background:var(--dsw-alias-interactive-bg-hover)}.aYL_6G_discard:active:not(:disabled){color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed);background:var(--dsw-alias-interactive-bg-active)}.aYL_6G_discard:focus-visible,.aYL_6G_save:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}.aYL_6G_save{border:1px solid var(--dsw-alias-button-info-fill);background:var(--dsw-alias-button-info-fill);color:var(--dsw-alias-label-primary-foreground)}.aYL_6G_save:hover:not(:disabled),.aYL_6G_save:active:not(:disabled){border-color:var(--dsw-alias-button-info-hover);background:var(--dsw-alias-button-info-hover)}.aYL_6G_discard:disabled,.aYL_6G_save:disabled{opacity:.5;cursor:default}.aYL_6G_field{flex-direction:column;gap:4px;min-width:0;display:flex}.aYL_6G_head{align-items:center;gap:8px;display:flex}.aYL_6G_label{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:500}.aYL_6G_badges{flex:none;align-items:center;gap:6px;min-width:0;margin-left:auto;display:flex}.aYL_6G_badge{background:var(--dsw-alias-interactive-bg-hover-accent);color:var(--dsw-alias-state-business-primary);white-space:nowrap;border-radius:999px;flex:none;padding:1px 6px;font-size:11px}.aYL_6G_reset{color:var(--dsw-alias-state-business-primary);cursor:pointer;white-space:nowrap;background:0 0;border:0;flex:none;padding:0;font-size:11px}.aYL_6G_reset:hover:not(:disabled){color:var(--dsw-alias-label-primary);text-decoration:underline}.aYL_6G_reset:active:not(:disabled){color:var(--dsw-alias-state-business-primary)}.aYL_6G_reset:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px;border-radius:2px}.aYL_6G_reset:disabled{opacity:.5;cursor:default}.aYL_6G_input,.aYL_6G_select{border:1px solid var(--dsw-alias-border-l2);font:inherit;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border-radius:6px;padding:6px 8px;font-size:13px;transition:border-color .13s,box-shadow .13s}.aYL_6G_input:hover:not(:disabled),.aYL_6G_select:hover:not(:disabled){border-color:var(--dsw-alias-label-dimmed)}.aYL_6G_input:focus-visible,.aYL_6G_select:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:1px}.aYL_6G_inputInvalid{border:1px solid var(--dsw-alias-state-error-primary);font:inherit;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary);border-radius:6px;padding:6px 8px;font-size:13px;transition:border-color .13s,box-shadow .13s}.aYL_6G_inputInvalid:hover:not(:disabled){border-color:var(--dsw-alias-state-error-primary)}.aYL_6G_inputInvalid:focus-visible{outline:2px solid var(--dsw-alias-state-error-primary);outline-offset:1px}.aYL_6G_input:disabled,.aYL_6G_select:disabled{opacity:.6;cursor:default}.aYL_6G_hint{color:var(--dsw-alias-label-secondary);margin:0;font-size:12px}.aYL_6G_invalid{color:var(--dsw-alias-state-error-primary);margin:0;font-size:12px}@media (prefers-reduced-motion:reduce){.aYL_6G_card,.aYL_6G_chevron,.aYL_6G_discard,.aYL_6G_save,.aYL_6G_input,.aYL_6G_select,.aYL_6G_inputInvalid{transition:none}}.aYL_6G_controlBar{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:8px;display:flex}.aYL_6G_timeSegment{background:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;align-items:center;gap:2px;padding:3px;display:flex}.aYL_6G_timeBtn,.aYL_6G_timeBtnActive{font:inherit;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;border-radius:6px;padding:4px 10px;font-size:12px;transition:background-color .13s,color .13s}.aYL_6G_timeBtn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.aYL_6G_timeBtnActive{background:var(--dsw-alias-button-info-fill);color:var(--dsw-alias-label-primary-foreground);font-weight:600}.aYL_6G_providerRow{flex-wrap:wrap;align-items:center;gap:6px;min-width:0;display:flex}.aYL_6G_providerLabel{color:var(--dsw-alias-label-tertiary);white-space:nowrap;font-size:11px}.aYL_6G_providerPill,.aYL_6G_providerPillActive{font:inherit;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:999px;padding:4px 10px;font-size:12px;transition:background-color .13s,border-color .13s,color .13s}.aYL_6G_providerPill:hover{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed);background:var(--dsw-alias-interactive-bg-hover)}.aYL_6G_providerPillActive{border-color:var(--dsw-alias-button-info-fill);background:var(--dsw-alias-button-info-fill);color:var(--dsw-alias-label-primary-foreground)}.aYL_6G_tabNav{border-bottom:1px solid var(--dsw-alias-border-l2);gap:2px;margin:0;padding:0;display:flex}.aYL_6G_tabBtn,.aYL_6G_tabBtnActive{font:inherit;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;border-bottom:2px solid #0000;margin-bottom:-1px;padding:7px 14px;font-size:12px;font-weight:500;transition:color .13s,border-color .13s}.aYL_6G_tabBtn:hover{color:var(--dsw-alias-label-primary)}.aYL_6G_tabBtnActive{color:var(--dsw-alias-label-primary);border-bottom-color:var(--dsw-alias-button-info-fill);font-weight:600}.aYL_6G_customRow{color:var(--dsw-alias-label-secondary);flex-wrap:wrap;align-items:center;gap:10px;font-size:12px;display:flex}.aYL_6G_customRow label{align-items:center;gap:6px;min-width:0;display:flex}.aYL_6G_customRow input{font:inherit;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border-radius:6px;padding:4px 6px;font-size:12px}.aYL_6G_status{color:var(--dsw-alias-label-secondary);margin:0;font-size:12px}.aYL_6G_metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 16px;min-width:0;margin:0;display:grid}.aYL_6G_metrics>div{min-width:0}.aYL_6G_metrics dt{color:var(--dsw-alias-label-tertiary);white-space:nowrap;text-overflow:ellipsis;font-size:11px;display:block;overflow:hidden}.aYL_6G_metrics dd{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary);white-space:nowrap;text-overflow:ellipsis;margin:0;font-size:13px;font-weight:600;display:block;overflow:hidden}.aYL_6G_tokenSplit{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-secondary);flex-direction:column;gap:8px;min-width:0;font-size:12px;display:flex}.aYL_6G_tokenStacked{background:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l2);border-radius:4px;width:100%;height:10px;display:flex;overflow:hidden}.aYL_6G_tokenStackedSeg{min-width:0;height:100%;transition:width .3s}.aYL_6G_tokenLegend{flex-wrap:wrap;gap:6px 14px;display:flex}.aYL_6G_tokenShare{color:var(--dsw-alias-label-tertiary);font-size:10px}.aYL_6G_heading{color:var(--dsw-alias-label-primary);margin:0;font-size:12px;font-weight:600}.aYL_6G_trendChart{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);border-radius:8px;flex-direction:column;gap:6px;min-width:0;padding:10px 12px 8px;display:flex}.aYL_6G_trendBody{align-items:stretch;gap:8px;min-width:0;display:flex}.aYL_6G_trendYAxis{flex:none;width:52px;height:140px;position:relative}.aYL_6G_trendYTick{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-tertiary);white-space:nowrap;font-size:10px;line-height:1;position:absolute;right:6px}.aYL_6G_trendPlot{flex:1;min-width:0;position:relative}.aYL_6G_trendSvg{width:100%;height:140px;display:block}.aYL_6G_trendHit{cursor:pointer}.aYL_6G_trendTooltip{z-index:5;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);pointer-events:none;border-radius:8px;min-width:200px;max-width:260px;padding:8px 10px;font-size:11px;position:absolute;top:4px;box-shadow:0 4px 16px #0000002e}.aYL_6G_tooltipDate{color:var(--dsw-alias-label-primary);margin-bottom:4px;font-size:12px;font-weight:700}.aYL_6G_tooltipRow{color:var(--dsw-alias-label-secondary);justify-content:space-between;align-items:center;gap:8px;line-height:1.5;display:flex}.aYL_6G_tooltipRow strong{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;font-weight:600}.aYL_6G_tooltipModels{border-top:1px dashed var(--dsw-alias-border-l2);border-bottom:1px dashed var(--dsw-alias-border-l2);flex-direction:column;gap:2px;margin:4px 0;padding:4px 0;display:flex}.aYL_6G_tooltipModel{align-items:center;gap:6px;line-height:1.6;display:flex}.aYL_6G_tooltipModelName{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-secondary);flex:1;overflow:hidden}.aYL_6G_tooltipModel strong{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary);font-weight:600}.aYL_6G_trendAxis{border-top:1px solid var(--dsw-alias-border-l2);justify-content:space-between;gap:2px;margin-left:60px;padding-top:6px;display:flex}.aYL_6G_trendTick{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-tertiary);white-space:nowrap;font-size:10px}.aYL_6G_tableCard{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);border-radius:8px;min-width:0;overflow:hidden}.aYL_6G_table{border-collapse:collapse;font-variant-numeric:tabular-nums;width:100%;min-width:0;font-size:12px}.aYL_6G_table th,.aYL_6G_table td{border-bottom:1px solid var(--dsw-alias-border-l2);text-align:left;white-space:nowrap;text-overflow:ellipsis;padding:6px 10px;overflow:hidden}.aYL_6G_table thead th{background:color-mix(in srgb, var(--dsw-alias-bg-layer-3) 60%, transparent)}.aYL_6G_table th{color:var(--dsw-alias-label-tertiary);font-size:11px;font-weight:500}.aYL_6G_table td{color:var(--dsw-alias-label-primary)}.aYL_6G_table tbody tr:last-child td{border-bottom:0}.aYL_6G_thRight{text-align:right}.aYL_6G_tdRight{text-align:right;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}.aYL_6G_tdStrong{font-weight:600}.aYL_6G_trHover:hover td{background:color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 6%, transparent)}.aYL_6G_modelDot{vertical-align:middle;border-radius:50%;width:8px;height:8px;margin-right:6px;display:inline-block}.aYL_6G_balance{flex-direction:column;gap:4px;display:flex}.aYL_6G_refresh{font:inherit;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:6px;align-self:flex-start;padding:3px 10px;font-size:12px;transition:background-color .13s,border-color .13s,color .13s}.aYL_6G_refresh:hover:not(:disabled){color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed);background:var(--dsw-alias-interactive-bg-hover)}.aYL_6G_refresh:disabled{opacity:.5;cursor:default}.aYL_6G_kpiGrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;min-width:0;display:grid}.aYL_6G_kpiCard{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);border-radius:10px;flex-direction:column;gap:3px;min-width:0;padding:12px 14px 10px;transition:border-color .16s,background .16s;display:flex;position:relative;overflow:hidden}.aYL_6G_kpiCard:hover{border-color:var(--dsw-alias-label-dimmed);background:var(--dsw-alias-interactive-bg-hover)}.aYL_6G_kpiTop{min-width:0;color:var(--dsw-alias-label-secondary);white-space:nowrap;justify-content:space-between;align-items:center;gap:6px;font-size:11px;font-weight:500;display:flex}.aYL_6G_kpiTop svg{color:var(--dsw-alias-label-tertiary);flex:none}.aYL_6G_kpiValue{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary);letter-spacing:-.02em;white-space:nowrap;text-overflow:ellipsis;margin:0;font-size:20px;font-weight:700;overflow:hidden}.aYL_6G_kpiSub{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-tertiary);white-space:nowrap;text-overflow:ellipsis;min-height:13px;margin:2px 0 0;font-size:10px;overflow:hidden}.aYL_6G_kpiCostVal{color:var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary));font-variant-numeric:tabular-nums;font-weight:600}.aYL_6G_kpiValueEmerald{font-variant-numeric:tabular-nums;color:var(--dsw-alias-state-success-primary);letter-spacing:-.02em;white-space:nowrap;text-overflow:ellipsis;margin:0;font-size:20px;font-weight:700;overflow:hidden}.aYL_6G_kpiCardDynamic{border:1px solid color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 40%, var(--dsw-alias-border-l2));background:color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 8%, var(--dsw-alias-bg-layer-2));border-radius:10px;flex-direction:column;gap:3px;min-width:0;padding:12px 14px 10px;display:flex;position:relative;overflow:hidden}.aYL_6G_kpiTopRow{justify-content:space-between;align-items:center;gap:6px;min-width:0;display:flex}.aYL_6G_kpiDynamicLabel{color:var(--dsw-alias-label-primary);white-space:nowrap;text-overflow:ellipsis;font-size:11px;font-weight:600;overflow:hidden}.aYL_6G_kpiValueAccent{font-variant-numeric:tabular-nums;color:var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary));letter-spacing:-.02em;white-space:nowrap;text-overflow:ellipsis;margin:0;font-size:20px;font-weight:700;overflow:hidden}.aYL_6G_chip{white-space:nowrap;border-radius:999px;flex:none;padding:1px 7px;font-size:10px;font-weight:700}.aYL_6G_chipBlue{background:color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 14%, transparent);color:var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary));border:1px solid color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 30%, transparent)}.aYL_6G_chipEmerald{background:color-mix(in srgb, var(--dsw-alias-state-success-primary) 14%, transparent);color:var(--dsw-alias-state-success-primary);border:1px solid color-mix(in srgb, var(--dsw-alias-state-success-primary) 30%, transparent)}.aYL_6G_chipAmber{background:color-mix(in srgb, var(--dsw-alias-state-warn-primary) 14%, transparent);color:var(--dsw-alias-state-warn-primary);border:1px solid color-mix(in srgb, var(--dsw-alias-state-warn-primary) 30%, transparent)}.aYL_6G_chipError{background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 14%, transparent);color:var(--dsw-alias-state-error-primary);border:1px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 30%, transparent)}.aYL_6G_tokenItem{align-items:center;gap:6px;display:inline-flex}.aYL_6G_dot{border-radius:9999px;flex:none;width:8px;height:8px}.aYL_6G_cacheDiag{background:color-mix(in srgb, var(--dsw-alias-state-success-primary) 10%, transparent);border:1px solid color-mix(in srgb, var(--dsw-alias-state-success-primary) 30%, transparent);color:var(--dsw-alias-state-success-primary);border-radius:8px;flex-direction:column;gap:4px;padding:10px 12px;font-size:12px;display:flex}.aYL_6G_cacheDiag strong{font-weight:700}.aYL_6G_cacheDiag span{color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums;font-size:11px}.aYL_6G_cacheDiagRows{border-top:1px solid color-mix(in srgb, var(--dsw-alias-state-success-primary) 20%, transparent);flex-direction:column;gap:4px;margin-top:2px;padding-top:6px;display:flex}.aYL_6G_cacheDiagRow{color:var(--dsw-alias-label-secondary);justify-content:space-between;align-items:center;gap:8px;font-size:11px;display:flex}.aYL_6G_cacheDiagRow strong{color:var(--dsw-alias-state-success-primary);font-variant-numeric:tabular-nums;font-weight:600}.aYL_6G_chartRow{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;min-width:0;display:grid}.aYL_6G_chartCell{flex-direction:column;gap:8px;min-width:0;display:flex}.aYL_6G_donutWrap{align-items:center;gap:12px;min-width:0;display:flex}.aYL_6G_donutSvgWrap{flex:none;width:92px;height:92px;position:relative}.aYL_6G_donutSvg{width:100%;height:100%;display:block;transform:rotate(-90deg)}.aYL_6G_donutHole{pointer-events:none;background:0 0;border-radius:50%;flex-direction:column;justify-content:center;align-items:center;gap:0;display:flex;position:absolute;inset:22%}.aYL_6G_donutTotal{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary);font-size:15px;font-weight:700;line-height:1.1}.aYL_6G_donutTotalLabel{color:var(--dsw-alias-label-tertiary);font-size:9px}.aYL_6G_legend{flex-direction:column;flex:1;gap:3px;min-width:0;margin:0;padding:0;list-style:none;display:flex}.aYL_6G_legend li{min-width:0;color:var(--dsw-alias-label-secondary);align-items:center;gap:6px;font-size:11px;display:flex}.aYL_6G_legendDot{border-radius:2px;flex:none;width:8px;height:8px}.aYL_6G_legendModel{white-space:nowrap;text-overflow:ellipsis;flex:1;min-width:0;overflow:hidden}.aYL_6G_legendShare{font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary);flex:none}.aYL_6G_sessionUsageRoot{text-align:left;display:inline-block;position:relative}.aYL_6G_sessionUsage,.aYL_6G_sessionUsageActive{white-space:nowrap;background-color:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);font:inherit;cursor:pointer;border-radius:.5rem;flex-wrap:nowrap;flex:none;align-items:center;gap:.5rem;padding:.375rem .75rem;font-size:.75rem;font-weight:500;transition:background-color .2s cubic-bezier(.16,1,.3,1),border-color .2s cubic-bezier(.16,1,.3,1),color .2s cubic-bezier(.16,1,.3,1);display:inline-flex;box-shadow:0 1px 2px #00000014}.aYL_6G_sessionUsage>span,.aYL_6G_sessionUsageActive>span{white-space:nowrap;flex:none}.aYL_6G_sessionUsage:hover{background-color:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-label-dimmed)}.aYL_6G_sessionUsage:focus-visible,.aYL_6G_sessionUsageActive:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}.aYL_6G_sessionUsageActive{border-color:var(--dsw-alias-state-business-primary)}.aYL_6G_pulseDotContainer{width:.5rem;height:.5rem;display:flex;position:relative}.aYL_6G_pulseDotPing{background-color:var(--dsw-alias-state-success-primary);opacity:.75;border-radius:9999px;width:100%;height:100%;animation:1.5s cubic-bezier(0,0,.2,1) infinite aYL_6G_usagePing;display:inline-flex;position:absolute}.aYL_6G_pulseDot{background-color:var(--dsw-alias-state-success-primary);border-radius:9999px;width:.5rem;height:.5rem;display:inline-flex;position:relative}@keyframes aYL_6G_usagePing{75%,to{opacity:0;transform:scale(2)}}.aYL_6G_labelMuted{color:var(--dsw-alias-label-tertiary)}.aYL_6G_valHighlightTokens{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;font-weight:700}.aYL_6G_valHighlightCost{color:var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary));font-variant-numeric:tabular-nums;font-weight:500}.aYL_6G_valSeparator{color:var(--dsw-alias-label-dimmed)}.aYL_6G_chevronIcon{width:.875rem;height:.875rem;color:var(--dsw-alias-label-tertiary);transition:transform .2s}.aYL_6G_chevronOpen{transform:rotate(180deg)}.aYL_6G_sessionUsagePanel{background-color:var(--dsw-alias-bg-layer-3);width:330px;max-width:calc(100vw - 32px);color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);z-index:100;transform-origin:100% 0;border-radius:1rem;margin-top:.5rem;animation:.2s cubic-bezier(.34,1.56,.64,1) forwards aYL_6G_usagePanelEnter;position:absolute;right:0;overflow:hidden;box-shadow:0 20px 25px -5px #02061780,0 8px 10px -6px #0206174d}@keyframes aYL_6G_usagePanelEnter{0%{opacity:0;transform:translateY(-6px)scale(.9)}to{opacity:1;transform:translateY(0)scale(1)}}.aYL_6G_panelHeader{background-color:var(--dsw-alias-bg-layer-3);border-bottom:1px solid var(--dsw-alias-border-l2);justify-content:space-between;align-items:center;padding:.75rem 1rem;display:flex}.aYL_6G_panelTitleGroup{align-items:center;gap:.5rem;display:flex}.aYL_6G_panelTitle{color:var(--dsw-alias-label-primary);letter-spacing:-.01em;font-size:.875rem;font-weight:700}.aYL_6G_statusBadge{background-color:color-mix(in srgb, var(--dsw-alias-state-success-primary) 14%, transparent);color:var(--dsw-alias-state-success-primary);border:1px solid color-mix(in srgb, var(--dsw-alias-state-success-primary) 30%, transparent);border-radius:.25rem;align-items:center;gap:.25rem;padding:.125rem .5rem;font-size:.625rem;font-weight:600;display:flex}.aYL_6G_panelBody{flex-direction:column;gap:.75rem;padding:.875rem;display:flex}.aYL_6G_panelStatus{color:var(--dsw-alias-label-secondary);margin:0;padding:.75rem 1rem;font-size:12px}.aYL_6G_sectionHeader{justify-content:space-between;align-items:center;margin-bottom:.375rem;display:flex}.aYL_6G_sectionTitle{color:var(--dsw-alias-label-tertiary);text-transform:uppercase;letter-spacing:.05em;font-size:.6875rem;font-weight:700}.aYL_6G_heroCard{background:linear-gradient(180deg, var(--dsw-alias-bg-layer-2) 0%, color-mix(in srgb, var(--dsw-alias-bg-layer-2) 55%, transparent) 100%);border:1px solid var(--dsw-alias-border-l2);border-radius:.75rem;padding:.75rem;box-shadow:0 1px 2px #00000014}.aYL_6G_heroTopGrid{border-bottom:1px solid var(--dsw-alias-border-l2);text-align:center;grid-template-columns:repeat(2,minmax(0,1fr));padding-bottom:.625rem;display:grid}.aYL_6G_heroCol{padding:0 .5rem}.aYL_6G_heroCol:first-child{border-right:1px solid var(--dsw-alias-border-l2)}.aYL_6G_statNumGroup{justify-content:center;align-items:baseline;display:flex}.aYL_6G_statNumber{color:var(--dsw-alias-label-primary);letter-spacing:-.025em;font-variant-numeric:tabular-nums;font-size:1.5rem;font-weight:700}.aYL_6G_statNumberCost{color:var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary))}.aYL_6G_statUnit{color:var(--dsw-alias-label-secondary);margin-left:.125rem;font-size:.75rem;font-weight:600}.aYL_6G_statLabel{color:var(--dsw-alias-label-secondary);margin-top:.125rem;font-size:.6875rem;font-weight:500}.aYL_6G_heroBottomGrid{text-align:center;grid-template-columns:repeat(2,minmax(0,1fr));padding-top:.625rem;font-size:.6875rem;display:grid}.aYL_6G_metaCol{padding:0 .5rem}.aYL_6G_metaCol:first-child{border-right:1px solid color-mix(in srgb, var(--dsw-alias-border-l2) 60%, transparent)}.aYL_6G_metaLabel{color:var(--dsw-alias-label-tertiary);margin-bottom:.25rem;font-size:.625rem;line-height:1;display:block}.aYL_6G_metaValText{color:var(--dsw-alias-label-primary);font-weight:600}.aYL_6G_metaValEmerald{color:var(--dsw-alias-state-success-primary);font-weight:600}.aYL_6G_recentCard{background-color:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l2);border-radius:.75rem;flex-direction:column;gap:.375rem;padding:.625rem;display:flex;box-shadow:0 1px 2px #00000014}.aYL_6G_recentGrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:baseline;gap:.3125rem .75rem;font-size:.6875rem;display:grid}.aYL_6G_recentLabel{color:var(--dsw-alias-label-secondary);white-space:nowrap;text-overflow:ellipsis;overflow:hidden}.aYL_6G_recentValue{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;text-align:right;text-overflow:ellipsis;white-space:nowrap;min-width:0;font-weight:600;overflow:hidden}.aYL_6G_recentValueEmerald{color:var(--dsw-alias-state-success-primary);font-variant-numeric:tabular-nums;text-align:right;text-overflow:ellipsis;white-space:nowrap;min-width:0;font-weight:600;overflow:hidden}.aYL_6G_recentValueCost{color:var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary))}.aYL_6G_unpricedHint{color:var(--dsw-alias-state-warn-primary);margin:.375rem 0 0;font-size:.6875rem;line-height:1.4}.aYL_6G_strongText{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;font-weight:600}.aYL_6G_panelFooter{background-color:color-mix(in srgb, var(--dsw-alias-bg-layer-2) 70%, transparent);border-top:1px solid var(--dsw-alias-border-l2);padding:.625rem .875rem;font-size:.75rem}.aYL_6G_footerFlex{align-items:center;display:flex}.aYL_6G_balanceText{color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;min-width:0;font-size:.6875rem;font-weight:500;overflow:hidden}.aYL_6G_balanceVal{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;font-weight:700}.aYL_6G_quotaRows{flex-direction:column;gap:3px;margin-bottom:6px;display:flex}.aYL_6G_quotaRow{grid-template-columns:minmax(0,1fr) 3.25rem minmax(0,1fr);align-items:baseline;gap:.75rem;font-size:.6875rem;display:grid}.aYL_6G_quotaLabel{color:var(--dsw-alias-label-secondary);white-space:nowrap;text-overflow:ellipsis;font-weight:500;overflow:hidden}.aYL_6G_quotaPercent{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;font-weight:700}.aYL_6G_quotaReset{color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right;text-overflow:ellipsis;overflow:hidden}.aYL_6G_quotaView{flex-direction:column;gap:12px;min-width:0;display:flex}.aYL_6G_quotaGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem;min-width:0;display:grid}.aYL_6G_noticeBar{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);border-radius:8px;align-items:flex-start;gap:8px;padding:10px 12px;font-size:11px;line-height:1.5;display:flex}.aYL_6G_noticeIcon{width:14px;height:14px;color:var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary));flex:none;margin-top:1px}.aYL_6G_quotaCard{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);border-radius:.75rem;flex-direction:column;gap:.5rem;min-width:0;padding:.875rem;transition:border-color .16s,box-shadow .16s;display:flex}.aYL_6G_quotaCard:hover{box-shadow:0 1px 3px #0000000f}.aYL_6G_quotaCardActive{border-color:color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 45%, var(--dsw-alias-border-l2));background:color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 6%, var(--dsw-alias-bg-layer-2))}.aYL_6G_quotaCardTop{justify-content:space-between;align-items:center;gap:.5rem;min-width:0;display:flex}.aYL_6G_quotaCardLabel{color:var(--dsw-alias-label-primary);white-space:nowrap;text-overflow:ellipsis;font-size:.75rem;font-weight:700;overflow:hidden}.aYL_6G_chipNeutral{background:color-mix(in srgb, var(--dsw-alias-label-tertiary) 14%, transparent);color:var(--dsw-alias-label-secondary);border:1px solid color-mix(in srgb, var(--dsw-alias-label-tertiary) 30%, transparent)}.aYL_6G_quotaCardValue{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;align-items:baseline;gap:2px;font-size:1.75rem;font-weight:900;line-height:1.1;display:flex}.aYL_6G_quotaCardUnit{color:var(--dsw-alias-label-secondary);font-size:.875rem;font-weight:400}.aYL_6G_progressBarBg{background:color-mix(in srgb, var(--dsw-alias-label-tertiary) 16%, transparent);border-radius:9999px;width:100%;height:.5rem;overflow:hidden}.aYL_6G_progressBarFill{border-radius:9999px;height:100%;transition:width .3s}.aYL_6G_quotaCardReset{border-top:1px dashed color-mix(in srgb, var(--dsw-alias-border-l2) 80%, transparent);color:var(--dsw-alias-label-tertiary);justify-content:space-between;align-items:center;gap:.5rem;min-width:0;padding-top:.5rem;font-size:.6875rem;display:flex}.aYL_6G_quotaCardReset strong{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;white-space:nowrap;text-overflow:ellipsis;font-weight:600;overflow:hidden}.aYL_6G_deepseekCard{border:1px solid color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 40%, var(--dsw-alias-border-l2));background:linear-gradient(to right, color-mix(in srgb, var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary)) 10%, var(--dsw-alias-bg-layer-2)), var(--dsw-alias-bg-layer-2));border-radius:.75rem;flex-direction:column;gap:.5rem;min-width:0;padding:1rem 1.25rem;display:flex}.aYL_6G_deepseekRow{justify-content:space-between;align-items:center;gap:.5rem;min-width:0;display:flex}.aYL_6G_deepseekLabel{color:var(--dsw-alias-label-secondary);white-space:nowrap;text-overflow:ellipsis;font-size:.75rem;overflow:hidden}.aYL_6G_deepseekAmount{color:var(--dsw-alias-state-info-primary,var(--dsw-alias-state-business-primary));font-variant-numeric:tabular-nums;letter-spacing:-.02em;font-size:2rem;font-weight:700;line-height:1.1}.aYL_6G_deepseekCurrency{color:var(--dsw-alias-label-secondary);font-size:.875rem;font-weight:400}.aYL_6G_deepseekEstimate{color:var(--dsw-alias-state-success-primary);font-variant-numeric:tabular-nums;background:color-mix(in srgb, var(--dsw-alias-state-success-primary) 10%, transparent);border:1px solid color-mix(in srgb, var(--dsw-alias-state-success-primary) 25%, transparent);border-radius:6px;align-self:flex-start;padding:2px 8px;font-size:.75rem;font-weight:600}.aYL_6G_deepseekActions{align-items:stretch;gap:.5rem;margin-top:.25rem;display:flex}.aYL_6G_btnPrimary{font:inherit;border:1px solid var(--dsw-alias-button-info-fill);background:var(--dsw-alias-button-info-fill);color:var(--dsw-alias-label-primary-foreground);cursor:pointer;border-radius:6px;justify-content:center;align-items:center;padding:4px 14px;font-size:12px;font-weight:600;text-decoration:none;transition:filter .13s;display:inline-flex}.aYL_6G_btnPrimary:hover{filter:brightness(1.1)}@media (prefers-reduced-motion:reduce){.aYL_6G_kpiCard,.aYL_6G_tokenStackedSeg,.aYL_6G_sessionUsage,.aYL_6G_sessionUsageActive,.aYL_6G_chevronIcon{transition:none}.aYL_6G_sessionUsagePanel{animation:none}.aYL_6G_pulseDotPing{opacity:0;animation:none}}.aYL_6G_sectionPage{flex-direction:column;gap:16px;min-width:0;padding:4px 2px 16px;display:flex}.aYL_6G_sectionHeaderRow{border-bottom:1px solid var(--dsw-alias-border-l2);align-items:center;gap:12px;min-width:0;padding-bottom:14px;display:flex}.aYL_6G_sectionIconBadge{background:var(--dsw-alias-button-info-fill);width:40px;height:40px;color:var(--dsw-alias-label-primary-foreground);border-radius:10px;flex:none;justify-content:center;align-items:center;display:inline-flex;box-shadow:0 2px 4px #0000001f}.aYL_6G_sectionHeaderText{flex-direction:column;gap:2px;min-width:0;display:flex}.aYL_6G_sectionPageTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:700}.aYL_6G_sectionPageDesc{color:var(--dsw-alias-label-tertiary);margin:0;font-size:12px}";
-		const tagId = "@abcdefu_cja/dsh-usage-stats/card.module.css";
-		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId) + "]") === null) {
-			const tag = document.createElement("style");
-			tag.dataset.plugin = "@abcdefu_cja/dsh-usage-stats";
-			tag.dataset.pluginCss = tagId;
-			tag.textContent = css;
-			document.head.appendChild(tag);
-		}
-		var card_module_css_default = {
-			"activeBadge": "aYL_6G_activeBadge",
-			"badge": "aYL_6G_badge",
-			"badges": "aYL_6G_badges",
-			"balance": "aYL_6G_balance",
-			"balanceText": "aYL_6G_balanceText",
-			"balanceVal": "aYL_6G_balanceVal",
-			"body": "aYL_6G_body",
-			"btnPrimary": "aYL_6G_btnPrimary",
-			"cacheDiag": "aYL_6G_cacheDiag",
-			"cacheDiagRow": "aYL_6G_cacheDiagRow",
-			"cacheDiagRows": "aYL_6G_cacheDiagRows",
-			"card": "aYL_6G_card",
-			"cardOpen": "aYL_6G_cardOpen",
-			"chartCell": "aYL_6G_chartCell",
-			"chartRow": "aYL_6G_chartRow",
-			"chevron": "aYL_6G_chevron",
-			"chevronIcon": "aYL_6G_chevronIcon",
-			"chevronOpen": "aYL_6G_chevronOpen",
-			"chip": "aYL_6G_chip",
-			"chipAmber": "aYL_6G_chipAmber",
-			"chipBlue": "aYL_6G_chipBlue",
-			"chipEmerald": "aYL_6G_chipEmerald",
-			"chipError": "aYL_6G_chipError",
-			"chipNeutral": "aYL_6G_chipNeutral",
-			"content": "aYL_6G_content",
-			"controlBar": "aYL_6G_controlBar",
-			"customRow": "aYL_6G_customRow",
-			"deepseekActions": "aYL_6G_deepseekActions",
-			"deepseekAmount": "aYL_6G_deepseekAmount",
-			"deepseekCard": "aYL_6G_deepseekCard",
-			"deepseekCurrency": "aYL_6G_deepseekCurrency",
-			"deepseekEstimate": "aYL_6G_deepseekEstimate",
-			"deepseekLabel": "aYL_6G_deepseekLabel",
-			"deepseekRow": "aYL_6G_deepseekRow",
-			"description": "aYL_6G_description",
-			"discard": "aYL_6G_discard",
-			"donutHole": "aYL_6G_donutHole",
-			"donutSvg": "aYL_6G_donutSvg",
-			"donutSvgWrap": "aYL_6G_donutSvgWrap",
-			"donutTotal": "aYL_6G_donutTotal",
-			"donutTotalLabel": "aYL_6G_donutTotalLabel",
-			"donutWrap": "aYL_6G_donutWrap",
-			"dot": "aYL_6G_dot",
-			"failed": "aYL_6G_failed",
-			"field": "aYL_6G_field",
-			"footer": "aYL_6G_footer",
-			"footerFlex": "aYL_6G_footerFlex",
-			"head": "aYL_6G_head",
-			"headText": "aYL_6G_headText",
-			"header": "aYL_6G_header",
-			"heading": "aYL_6G_heading",
-			"heroBottomGrid": "aYL_6G_heroBottomGrid",
-			"heroCard": "aYL_6G_heroCard",
-			"heroCol": "aYL_6G_heroCol",
-			"heroTopGrid": "aYL_6G_heroTopGrid",
-			"hint": "aYL_6G_hint",
-			"iconBadge": "aYL_6G_iconBadge",
-			"input": "aYL_6G_input",
-			"inputInvalid": "aYL_6G_inputInvalid",
-			"invalid": "aYL_6G_invalid",
-			"kpiCard": "aYL_6G_kpiCard",
-			"kpiCardDynamic": "aYL_6G_kpiCardDynamic",
-			"kpiCostVal": "aYL_6G_kpiCostVal",
-			"kpiDynamicLabel": "aYL_6G_kpiDynamicLabel",
-			"kpiGrid": "aYL_6G_kpiGrid",
-			"kpiSub": "aYL_6G_kpiSub",
-			"kpiTop": "aYL_6G_kpiTop",
-			"kpiTopRow": "aYL_6G_kpiTopRow",
-			"kpiValue": "aYL_6G_kpiValue",
-			"kpiValueAccent": "aYL_6G_kpiValueAccent",
-			"kpiValueEmerald": "aYL_6G_kpiValueEmerald",
-			"label": "aYL_6G_label",
-			"labelMuted": "aYL_6G_labelMuted",
-			"legend": "aYL_6G_legend",
-			"legendDot": "aYL_6G_legendDot",
-			"legendModel": "aYL_6G_legendModel",
-			"legendShare": "aYL_6G_legendShare",
-			"metaCol": "aYL_6G_metaCol",
-			"metaLabel": "aYL_6G_metaLabel",
-			"metaValEmerald": "aYL_6G_metaValEmerald",
-			"metaValText": "aYL_6G_metaValText",
-			"metrics": "aYL_6G_metrics",
-			"modelDot": "aYL_6G_modelDot",
-			"name": "aYL_6G_name",
-			"nameRow": "aYL_6G_nameRow",
-			"noticeBar": "aYL_6G_noticeBar",
-			"noticeIcon": "aYL_6G_noticeIcon",
-			"panelBody": "aYL_6G_panelBody",
-			"panelFooter": "aYL_6G_panelFooter",
-			"panelHeader": "aYL_6G_panelHeader",
-			"panelStatus": "aYL_6G_panelStatus",
-			"panelTitle": "aYL_6G_panelTitle",
-			"panelTitleGroup": "aYL_6G_panelTitleGroup",
-			"pending": "aYL_6G_pending",
-			"progressBarBg": "aYL_6G_progressBarBg",
-			"progressBarFill": "aYL_6G_progressBarFill",
-			"providerLabel": "aYL_6G_providerLabel",
-			"providerPill": "aYL_6G_providerPill",
-			"providerPillActive": "aYL_6G_providerPillActive",
-			"providerRow": "aYL_6G_providerRow",
-			"pulseDot": "aYL_6G_pulseDot",
-			"pulseDotContainer": "aYL_6G_pulseDotContainer",
-			"pulseDotPing": "aYL_6G_pulseDotPing",
-			"quotaCard": "aYL_6G_quotaCard",
-			"quotaCardActive": "aYL_6G_quotaCardActive",
-			"quotaCardLabel": "aYL_6G_quotaCardLabel",
-			"quotaCardReset": "aYL_6G_quotaCardReset",
-			"quotaCardTop": "aYL_6G_quotaCardTop",
-			"quotaCardUnit": "aYL_6G_quotaCardUnit",
-			"quotaCardValue": "aYL_6G_quotaCardValue",
-			"quotaGrid": "aYL_6G_quotaGrid",
-			"quotaLabel": "aYL_6G_quotaLabel",
-			"quotaPercent": "aYL_6G_quotaPercent",
-			"quotaReset": "aYL_6G_quotaReset",
-			"quotaRow": "aYL_6G_quotaRow",
-			"quotaRows": "aYL_6G_quotaRows",
-			"quotaView": "aYL_6G_quotaView",
-			"readOnly": "aYL_6G_readOnly",
-			"recentCard": "aYL_6G_recentCard",
-			"recentGrid": "aYL_6G_recentGrid",
-			"recentLabel": "aYL_6G_recentLabel",
-			"recentValue": "aYL_6G_recentValue",
-			"recentValueCost": "aYL_6G_recentValueCost",
-			"recentValueEmerald": "aYL_6G_recentValueEmerald",
-			"refresh": "aYL_6G_refresh",
-			"reset": "aYL_6G_reset",
-			"save": "aYL_6G_save",
-			"sectionHeader": "aYL_6G_sectionHeader",
-			"sectionHeaderRow": "aYL_6G_sectionHeaderRow",
-			"sectionHeaderText": "aYL_6G_sectionHeaderText",
-			"sectionIconBadge": "aYL_6G_sectionIconBadge",
-			"sectionPage": "aYL_6G_sectionPage",
-			"sectionPageDesc": "aYL_6G_sectionPageDesc",
-			"sectionPageTitle": "aYL_6G_sectionPageTitle",
-			"sectionTitle": "aYL_6G_sectionTitle",
-			"select": "aYL_6G_select",
-			"sessionUsage": "aYL_6G_sessionUsage",
-			"sessionUsageActive": "aYL_6G_sessionUsageActive",
-			"sessionUsagePanel": "aYL_6G_sessionUsagePanel",
-			"sessionUsageRoot": "aYL_6G_sessionUsageRoot",
-			"statLabel": "aYL_6G_statLabel",
-			"statNumGroup": "aYL_6G_statNumGroup",
-			"statNumber": "aYL_6G_statNumber",
-			"statNumberCost": "aYL_6G_statNumberCost",
-			"statUnit": "aYL_6G_statUnit",
-			"status": "aYL_6G_status",
-			"statusBadge": "aYL_6G_statusBadge",
-			"strongText": "aYL_6G_strongText",
-			"tabBtn": "aYL_6G_tabBtn",
-			"tabBtnActive": "aYL_6G_tabBtnActive",
-			"tabNav": "aYL_6G_tabNav",
-			"table": "aYL_6G_table",
-			"tableCard": "aYL_6G_tableCard",
-			"tdRight": "aYL_6G_tdRight",
-			"tdStrong": "aYL_6G_tdStrong",
-			"thRight": "aYL_6G_thRight",
-			"timeBtn": "aYL_6G_timeBtn",
-			"timeBtnActive": "aYL_6G_timeBtnActive",
-			"timeSegment": "aYL_6G_timeSegment",
-			"tokenItem": "aYL_6G_tokenItem",
-			"tokenLegend": "aYL_6G_tokenLegend",
-			"tokenShare": "aYL_6G_tokenShare",
-			"tokenSplit": "aYL_6G_tokenSplit",
-			"tokenStacked": "aYL_6G_tokenStacked",
-			"tokenStackedSeg": "aYL_6G_tokenStackedSeg",
-			"tooltipDate": "aYL_6G_tooltipDate",
-			"tooltipModel": "aYL_6G_tooltipModel",
-			"tooltipModelName": "aYL_6G_tooltipModelName",
-			"tooltipModels": "aYL_6G_tooltipModels",
-			"tooltipRow": "aYL_6G_tooltipRow",
-			"trHover": "aYL_6G_trHover",
-			"trendAxis": "aYL_6G_trendAxis",
-			"trendBody": "aYL_6G_trendBody",
-			"trendChart": "aYL_6G_trendChart",
-			"trendHit": "aYL_6G_trendHit",
-			"trendPlot": "aYL_6G_trendPlot",
-			"trendSvg": "aYL_6G_trendSvg",
-			"trendTick": "aYL_6G_trendTick",
-			"trendTooltip": "aYL_6G_trendTooltip",
-			"trendYAxis": "aYL_6G_trendYAxis",
-			"trendYTick": "aYL_6G_trendYTick",
-			"unpricedHint": "aYL_6G_unpricedHint",
-			"usagePanelEnter": "aYL_6G_usagePanelEnter",
-			"usagePing": "aYL_6G_usagePing",
-			"valHighlightCost": "aYL_6G_valHighlightCost",
-			"valHighlightTokens": "aYL_6G_valHighlightTokens",
-			"valSeparator": "aYL_6G_valSeparator"
+		//#region src/client/card.module.css
+		var card_module_default = {
+			"activeBadge": "_9xG1AW_activeBadge",
+			"badge": "_9xG1AW_badge",
+			"badges": "_9xG1AW_badges",
+			"balance": "_9xG1AW_balance",
+			"balanceText": "_9xG1AW_balanceText",
+			"balanceVal": "_9xG1AW_balanceVal",
+			"body": "_9xG1AW_body",
+			"btnPrimary": "_9xG1AW_btnPrimary",
+			"cacheDiag": "_9xG1AW_cacheDiag",
+			"cacheDiagRow": "_9xG1AW_cacheDiagRow",
+			"cacheDiagRows": "_9xG1AW_cacheDiagRows",
+			"card": "_9xG1AW_card",
+			"cardOpen": "_9xG1AW_cardOpen",
+			"chartCell": "_9xG1AW_chartCell",
+			"chartRow": "_9xG1AW_chartRow",
+			"chevron": "_9xG1AW_chevron",
+			"chevronIcon": "_9xG1AW_chevronIcon",
+			"chevronOpen": "_9xG1AW_chevronOpen",
+			"chip": "_9xG1AW_chip",
+			"chipAmber": "_9xG1AW_chipAmber",
+			"chipBlue": "_9xG1AW_chipBlue",
+			"chipEmerald": "_9xG1AW_chipEmerald",
+			"chipError": "_9xG1AW_chipError",
+			"chipNeutral": "_9xG1AW_chipNeutral",
+			"content": "_9xG1AW_content",
+			"controlBar": "_9xG1AW_controlBar",
+			"customRow": "_9xG1AW_customRow",
+			"deepseekActions": "_9xG1AW_deepseekActions",
+			"deepseekAmount": "_9xG1AW_deepseekAmount",
+			"deepseekCard": "_9xG1AW_deepseekCard",
+			"deepseekCurrency": "_9xG1AW_deepseekCurrency",
+			"deepseekEstimate": "_9xG1AW_deepseekEstimate",
+			"deepseekLabel": "_9xG1AW_deepseekLabel",
+			"deepseekRow": "_9xG1AW_deepseekRow",
+			"description": "_9xG1AW_description",
+			"discard": "_9xG1AW_discard",
+			"donutHole": "_9xG1AW_donutHole",
+			"donutSvg": "_9xG1AW_donutSvg",
+			"donutSvgWrap": "_9xG1AW_donutSvgWrap",
+			"donutTotal": "_9xG1AW_donutTotal",
+			"donutTotalLabel": "_9xG1AW_donutTotalLabel",
+			"donutWrap": "_9xG1AW_donutWrap",
+			"dot": "_9xG1AW_dot",
+			"failed": "_9xG1AW_failed",
+			"field": "_9xG1AW_field",
+			"footer": "_9xG1AW_footer",
+			"footerFlex": "_9xG1AW_footerFlex",
+			"head": "_9xG1AW_head",
+			"header": "_9xG1AW_header",
+			"heading": "_9xG1AW_heading",
+			"headText": "_9xG1AW_headText",
+			"heroBottomGrid": "_9xG1AW_heroBottomGrid",
+			"heroCard": "_9xG1AW_heroCard",
+			"heroCol": "_9xG1AW_heroCol",
+			"heroTopGrid": "_9xG1AW_heroTopGrid",
+			"hint": "_9xG1AW_hint",
+			"iconBadge": "_9xG1AW_iconBadge",
+			"input": "_9xG1AW_input",
+			"inputInvalid": "_9xG1AW_inputInvalid",
+			"invalid": "_9xG1AW_invalid",
+			"kpiCard": "_9xG1AW_kpiCard",
+			"kpiCardDynamic": "_9xG1AW_kpiCardDynamic",
+			"kpiCostVal": "_9xG1AW_kpiCostVal",
+			"kpiDynamicLabel": "_9xG1AW_kpiDynamicLabel",
+			"kpiGrid": "_9xG1AW_kpiGrid",
+			"kpiSub": "_9xG1AW_kpiSub",
+			"kpiTop": "_9xG1AW_kpiTop",
+			"kpiTopRow": "_9xG1AW_kpiTopRow",
+			"kpiValue": "_9xG1AW_kpiValue",
+			"kpiValueAccent": "_9xG1AW_kpiValueAccent",
+			"kpiValueEmerald": "_9xG1AW_kpiValueEmerald",
+			"label": "_9xG1AW_label",
+			"labelMuted": "_9xG1AW_labelMuted",
+			"legend": "_9xG1AW_legend",
+			"legendDot": "_9xG1AW_legendDot",
+			"legendModel": "_9xG1AW_legendModel",
+			"legendShare": "_9xG1AW_legendShare",
+			"metaCol": "_9xG1AW_metaCol",
+			"metaLabel": "_9xG1AW_metaLabel",
+			"metaValEmerald": "_9xG1AW_metaValEmerald",
+			"metaValText": "_9xG1AW_metaValText",
+			"metrics": "_9xG1AW_metrics",
+			"modelDot": "_9xG1AW_modelDot",
+			"name": "_9xG1AW_name",
+			"nameRow": "_9xG1AW_nameRow",
+			"noticeBar": "_9xG1AW_noticeBar",
+			"noticeIcon": "_9xG1AW_noticeIcon",
+			"panelBody": "_9xG1AW_panelBody",
+			"panelFooter": "_9xG1AW_panelFooter",
+			"panelHeader": "_9xG1AW_panelHeader",
+			"panelStatus": "_9xG1AW_panelStatus",
+			"panelTitle": "_9xG1AW_panelTitle",
+			"panelTitleGroup": "_9xG1AW_panelTitleGroup",
+			"pending": "_9xG1AW_pending",
+			"progressBarBg": "_9xG1AW_progressBarBg",
+			"progressBarFill": "_9xG1AW_progressBarFill",
+			"providerLabel": "_9xG1AW_providerLabel",
+			"providerPill": "_9xG1AW_providerPill",
+			"providerPillActive": "_9xG1AW_providerPillActive",
+			"providerRow": "_9xG1AW_providerRow",
+			"pulseDot": "_9xG1AW_pulseDot",
+			"pulseDotContainer": "_9xG1AW_pulseDotContainer",
+			"pulseDotPing": "_9xG1AW_pulseDotPing",
+			"quotaCard": "_9xG1AW_quotaCard",
+			"quotaCardActive": "_9xG1AW_quotaCardActive",
+			"quotaCardLabel": "_9xG1AW_quotaCardLabel",
+			"quotaCardReset": "_9xG1AW_quotaCardReset",
+			"quotaCardTop": "_9xG1AW_quotaCardTop",
+			"quotaCardUnit": "_9xG1AW_quotaCardUnit",
+			"quotaCardValue": "_9xG1AW_quotaCardValue",
+			"quotaGrid": "_9xG1AW_quotaGrid",
+			"quotaLabel": "_9xG1AW_quotaLabel",
+			"quotaPercent": "_9xG1AW_quotaPercent",
+			"quotaReset": "_9xG1AW_quotaReset",
+			"quotaRow": "_9xG1AW_quotaRow",
+			"quotaRows": "_9xG1AW_quotaRows",
+			"quotaView": "_9xG1AW_quotaView",
+			"readOnly": "_9xG1AW_readOnly",
+			"recentCard": "_9xG1AW_recentCard",
+			"recentGrid": "_9xG1AW_recentGrid",
+			"recentLabel": "_9xG1AW_recentLabel",
+			"recentValue": "_9xG1AW_recentValue",
+			"recentValueCost": "_9xG1AW_recentValueCost",
+			"recentValueEmerald": "_9xG1AW_recentValueEmerald",
+			"refresh": "_9xG1AW_refresh",
+			"reset": "_9xG1AW_reset",
+			"save": "_9xG1AW_save",
+			"sectionHeader": "_9xG1AW_sectionHeader",
+			"sectionHeaderRow": "_9xG1AW_sectionHeaderRow",
+			"sectionHeaderText": "_9xG1AW_sectionHeaderText",
+			"sectionIconBadge": "_9xG1AW_sectionIconBadge",
+			"sectionPage": "_9xG1AW_sectionPage",
+			"sectionPageDesc": "_9xG1AW_sectionPageDesc",
+			"sectionPageTitle": "_9xG1AW_sectionPageTitle",
+			"sectionTitle": "_9xG1AW_sectionTitle",
+			"select": "_9xG1AW_select",
+			"sessionUsage": "_9xG1AW_sessionUsage",
+			"sessionUsageActive": "_9xG1AW_sessionUsageActive",
+			"sessionUsagePanel": "_9xG1AW_sessionUsagePanel",
+			"sessionUsageRoot": "_9xG1AW_sessionUsageRoot",
+			"statLabel": "_9xG1AW_statLabel",
+			"statNumber": "_9xG1AW_statNumber",
+			"statNumberCost": "_9xG1AW_statNumberCost",
+			"statNumGroup": "_9xG1AW_statNumGroup",
+			"statUnit": "_9xG1AW_statUnit",
+			"status": "_9xG1AW_status",
+			"statusBadge": "_9xG1AW_statusBadge",
+			"strongText": "_9xG1AW_strongText",
+			"tabBtn": "_9xG1AW_tabBtn",
+			"tabBtnActive": "_9xG1AW_tabBtnActive",
+			"table": "_9xG1AW_table",
+			"tableCard": "_9xG1AW_tableCard",
+			"tabNav": "_9xG1AW_tabNav",
+			"tdRight": "_9xG1AW_tdRight",
+			"tdStrong": "_9xG1AW_tdStrong",
+			"thRight": "_9xG1AW_thRight",
+			"timeBtn": "_9xG1AW_timeBtn",
+			"timeBtnActive": "_9xG1AW_timeBtnActive",
+			"timeSegment": "_9xG1AW_timeSegment",
+			"tokenItem": "_9xG1AW_tokenItem",
+			"tokenLegend": "_9xG1AW_tokenLegend",
+			"tokenShare": "_9xG1AW_tokenShare",
+			"tokenSplit": "_9xG1AW_tokenSplit",
+			"tokenStacked": "_9xG1AW_tokenStacked",
+			"tokenStackedSeg": "_9xG1AW_tokenStackedSeg",
+			"tooltipDate": "_9xG1AW_tooltipDate",
+			"tooltipModel": "_9xG1AW_tooltipModel",
+			"tooltipModelName": "_9xG1AW_tooltipModelName",
+			"tooltipModels": "_9xG1AW_tooltipModels",
+			"tooltipRow": "_9xG1AW_tooltipRow",
+			"trendAxis": "_9xG1AW_trendAxis",
+			"trendBody": "_9xG1AW_trendBody",
+			"trendChart": "_9xG1AW_trendChart",
+			"trendHit": "_9xG1AW_trendHit",
+			"trendPlot": "_9xG1AW_trendPlot",
+			"trendSvg": "_9xG1AW_trendSvg",
+			"trendTick": "_9xG1AW_trendTick",
+			"trendTooltip": "_9xG1AW_trendTooltip",
+			"trendYAxis": "_9xG1AW_trendYAxis",
+			"trendYTick": "_9xG1AW_trendYTick",
+			"trHover": "_9xG1AW_trHover",
+			"unpricedHint": "_9xG1AW_unpricedHint",
+			"usagePanelEnter": "_9xG1AW_usagePanelEnter",
+			"usagePing": "_9xG1AW_usagePing",
+			"valHighlightCost": "_9xG1AW_valHighlightCost",
+			"valHighlightTokens": "_9xG1AW_valHighlightTokens",
+			"valSeparator": "_9xG1AW_valSeparator"
 		};
 		//#endregion
 		//#region src/client/UsageStatsCard.tsx
@@ -298,12 +290,12 @@ window.__ModuleLoader__.load({
 			const track = `M 18 2.0845 a ${R} ${R} 0 0 1 0 31.831 a ${R} ${R} 0 0 1 0 -31.831`;
 			let cursor = 0;
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-				className: card_module_css_default.donutWrap,
+				className: card_module_default.donutWrap,
 				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-					className: card_module_css_default.donutSvgWrap,
+					className: card_module_default.donutSvgWrap,
 					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 						viewBox: "0 0 36 36",
-						className: card_module_css_default.donutSvg,
+						className: card_module_default.donutSvg,
 						role: "img",
 						"aria-label": segments.map((s) => `${s.model}: ${Math.round(s.share * 100)}%`).join("; "),
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", {
@@ -324,28 +316,28 @@ window.__ModuleLoader__.load({
 							}, s.model);
 						})]
 					}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.donutHole,
+						className: card_module_default.donutHole,
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: card_module_css_default.donutTotal,
+							className: card_module_default.donutTotal,
 							children: total
 						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: card_module_css_default.donutTotalLabel,
+							className: card_module_default.donutTotalLabel,
 							children: centerLabel
 						})]
 					})]
 				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("ul", {
-					className: card_module_css_default.legend,
+					className: card_module_default.legend,
 					children: segments.map((s) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("li", { children: [
 						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: card_module_css_default.legendDot,
+							className: card_module_default.legendDot,
 							style: { background: s.colorVar }
 						}),
 						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: card_module_css_default.legendModel,
+							className: card_module_default.legendModel,
 							children: s.model === "__other__" ? t("chart.other") : s.model
 						}),
 						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-							className: card_module_css_default.legendShare,
+							className: card_module_default.legendShare,
 							children: [Math.round(s.share * 100), "%"]
 						})
 					] }, s.model))
@@ -484,32 +476,32 @@ window.__ModuleLoader__.load({
 			const { t, buckets } = props;
 			const total = buckets.reduce((sum, b) => sum + b.tokens, 0);
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-				className: card_module_css_default.tokenSplit,
+				className: card_module_default.tokenSplit,
 				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-					className: card_module_css_default.tokenStacked,
+					className: card_module_default.tokenStacked,
 					role: "img",
 					"aria-label": buckets.map((b, i) => `${b.label}: ${formatTokens(b.tokens)} (${total > 0 ? Math.round(b.tokens / total * 100) : 0}%)`).join("; "),
 					children: buckets.map((b, i) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-						className: card_module_css_default.tokenStackedSeg,
+						className: card_module_default.tokenStackedSeg,
 						style: {
 							width: total > 0 ? `${b.tokens / total * 100}%` : "0%",
 							background: TOKEN_SPLIT_COLORS[i % TOKEN_SPLIT_COLORS.length]
 						}
 					}, b.label))
 				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-					className: card_module_css_default.tokenLegend,
+					className: card_module_default.tokenLegend,
 					children: buckets.map((b, i) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-						className: card_module_css_default.tokenItem,
+						className: card_module_default.tokenItem,
 						children: [
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-								className: card_module_css_default.dot,
+								className: card_module_default.dot,
 								style: { background: TOKEN_SPLIT_COLORS[i % TOKEN_SPLIT_COLORS.length] }
 							}),
 							b.label,
 							" ",
 							formatTokens(b.tokens),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-								className: card_module_css_default.tokenShare,
+								className: card_module_default.tokenShare,
 								children: total > 0 ? `${Math.round(b.tokens / total * 100)}%` : "0%"
 							})
 						]
@@ -553,7 +545,7 @@ window.__ModuleLoader__.load({
 			const padY = 12;
 			const padX = 4;
 			if (series.length < 2) return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-				className: card_module_css_default.status,
+				className: card_module_default.status,
 				children: t("chart.insufficientData")
 			});
 			const dataMax = Math.max(...series.map((p) => p.tokens), 0);
@@ -575,14 +567,14 @@ window.__ModuleLoader__.load({
 			const hovered = hover !== null ? series[hover] : null;
 			const hoverCenter = hover !== null ? (hover + .5) / series.length * 100 : 0;
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-				className: card_module_css_default.trendChart,
+				className: card_module_default.trendChart,
 				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-					className: card_module_css_default.trendBody,
+					className: card_module_default.trendBody,
 					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-						className: card_module_css_default.trendYAxis,
+						className: card_module_default.trendYAxis,
 						"aria-hidden": "true",
 						children: ticks.map((v) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: card_module_css_default.trendYTick,
+							className: card_module_default.trendYTick,
 							style: {
 								top: `${y(v) / height * 100}%`,
 								transform: v === 0 ? "translateY(0)" : v === axisMax ? "translateY(-100%)" : "translateY(-50%)"
@@ -590,10 +582,10 @@ window.__ModuleLoader__.load({
 							children: formatCnTokens(v)
 						}, v))
 					}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.trendPlot,
+						className: card_module_default.trendPlot,
 						onMouseLeave: () => setHover(null),
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
-							className: card_module_css_default.trendSvg,
+							className: card_module_default.trendSvg,
 							viewBox: `0 0 ${width} ${height}`,
 							preserveAspectRatio: "none",
 							role: "img",
@@ -614,7 +606,7 @@ window.__ModuleLoader__.load({
 									children: [
 										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
 											"data-trend-hit": "true",
-											className: card_module_css_default.trendHit,
+											className: card_module_default.trendHit,
 											x: padX + i * colW,
 											y: padY,
 											width: colW,
@@ -645,7 +637,7 @@ window.__ModuleLoader__.load({
 								}, p.bucket);
 							})]
 						}), hovered !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-							className: card_module_css_default.trendTooltip,
+							className: card_module_default.trendTooltip,
 							style: {
 								left: `${hoverCenter}%`,
 								transform: hoverCenter > 78 ? "translateX(-100%)" : "translateX(-50%)"
@@ -653,28 +645,28 @@ window.__ModuleLoader__.load({
 							role: "tooltip",
 							children: [
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-									className: card_module_css_default.tooltipDate,
+									className: card_module_default.tooltipDate,
 									children: hovered.bucket
 								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-									className: card_module_css_default.tooltipRow,
+									className: card_module_default.tooltipRow,
 									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("trend.total") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", { children: formatCnTokens(hovered.tokens) })]
 								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-									className: card_module_css_default.tooltipRow,
+									className: card_module_default.tooltipRow,
 									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("trend.cost") }), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("strong", { children: [costSymbol$1(costCurrency), formatCost$1(hovered.cost)] })]
 								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-									className: card_module_css_default.tooltipModels,
+									className: card_module_default.tooltipModels,
 									children: bucketSegments(hovered, t).map((s) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-										className: card_module_css_default.tooltipModel,
+										className: card_module_default.tooltipModel,
 										children: [
 											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: card_module_css_default.dot,
+												className: card_module_default.dot,
 												style: { background: s.colorVar }
 											}),
 											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: card_module_css_default.tooltipModelName,
+												className: card_module_default.tooltipModelName,
 												children: s.model
 											}),
 											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", { children: formatCnTokens(s.tokens) })
@@ -682,16 +674,16 @@ window.__ModuleLoader__.load({
 									}, s.model))
 								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-									className: card_module_css_default.tooltipRow,
+									className: card_module_default.tooltipRow,
 									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("trend.hitRate") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", { children: formatRate(hovered.hitRate) })]
 								})
 							]
 						}) : null]
 					})]
 				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-					className: card_module_css_default.trendAxis,
+					className: card_module_default.trendAxis,
 					children: xTicks.map((p) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-						className: card_module_css_default.trendTick,
+						className: card_module_default.trendTick,
 						children: p.bucket.slice(5)
 					}, p.bucket))
 				})]
@@ -720,27 +712,27 @@ window.__ModuleLoader__.load({
 				dynamicSub = balance?.updatedAt !== null && balance?.updatedAt !== void 0 ? `${t("balance.updated")} ${new Date(balance.updatedAt).toLocaleString()}` : t("provider.notConnected");
 			}
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-				className: card_module_css_default.kpiGrid,
+				className: card_module_default.kpiGrid,
 				children: [
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.kpiCard,
+						className: card_module_default.kpiCard,
 						children: [
 							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-								className: card_module_css_default.kpiTop,
+								className: card_module_default.kpiTop,
 								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("metric.tokens") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(KpiIcon, { kind: "chart" })]
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", {
-								className: card_module_css_default.kpiValue,
+								className: card_module_default.kpiValue,
 								title: t("metric.tokensHint"),
 								children: formatTokens(summary.tokens.total)
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("dd", {
-								className: card_module_css_default.kpiSub,
+								className: card_module_default.kpiSub,
 								children: [
 									t("kpi.costPrefix"),
 									": ",
 									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("strong", {
-										className: card_module_css_default.kpiCostVal,
+										className: card_module_default.kpiCostVal,
 										children: [costSymbol$1(balance?.costCurrency ?? ""), formatCost$1(summary.cost)]
 									})
 								]
@@ -748,69 +740,69 @@ window.__ModuleLoader__.load({
 						]
 					}),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.kpiCard,
+						className: card_module_default.kpiCard,
 						children: [
 							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-								className: card_module_css_default.kpiTop,
+								className: card_module_default.kpiTop,
 								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("metric.requests") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(KpiIcon, { kind: "send" })]
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", {
-								className: card_module_css_default.kpiValue,
+								className: card_module_default.kpiValue,
 								children: summary.requests
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", {
-								className: card_module_css_default.kpiSub,
+								className: card_module_default.kpiSub,
 								children: summary.uncountedRequests > 0 ? `${t("metric.uncounted")} ${summary.uncountedRequests}` : ""
 							})
 						]
 					}),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.kpiCard,
+						className: card_module_default.kpiCard,
 						children: [
 							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-								className: card_module_css_default.kpiTop,
+								className: card_module_default.kpiTop,
 								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("metric.turns") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(KpiIcon, { kind: "turns" })]
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", {
-								className: card_module_css_default.kpiValue,
+								className: card_module_default.kpiValue,
 								children: summary.turns
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", {
-								className: card_module_css_default.kpiSub,
+								className: card_module_default.kpiSub,
 								children: t("metric.turns")
 							})
 						]
 					}),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.kpiCard,
+						className: card_module_default.kpiCard,
 						children: [
 							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-								className: card_module_css_default.kpiTop,
+								className: card_module_default.kpiTop,
 								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("metric.activeDays") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(KpiIcon, { kind: "days" })]
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", {
-								className: card_module_css_default.kpiValue,
+								className: card_module_default.kpiValue,
 								children: summary.activeDays
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", {
-								className: card_module_css_default.kpiSub,
+								className: card_module_default.kpiSub,
 								children: t("kpi.daysUnit")
 							})
 						]
 					}),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.kpiCard,
+						className: card_module_default.kpiCard,
 						children: [
 							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-								className: card_module_css_default.kpiTop,
+								className: card_module_default.kpiTop,
 								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("metric.avgHitRate") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(KpiIcon, { kind: "bolt" })]
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", {
-								className: card_module_css_default.kpiValueEmerald,
+								className: card_module_default.kpiValueEmerald,
 								children: formatRate(summary.avgCacheHitRate)
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("dd", {
-								className: card_module_css_default.kpiSub,
+								className: card_module_default.kpiSub,
 								children: [
 									t("kpi.hitTokens"),
 									" ",
@@ -820,24 +812,24 @@ window.__ModuleLoader__.load({
 						]
 					}),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.kpiCardDynamic,
+						className: card_module_default.kpiCardDynamic,
 						children: [
 							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-								className: card_module_css_default.kpiTopRow,
+								className: card_module_default.kpiTopRow,
 								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-									className: card_module_css_default.kpiDynamicLabel,
+									className: card_module_default.kpiDynamicLabel,
 									children: provider === "opencode" ? t("provider.opencode") : t("provider.deepseek")
 								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-									className: `${card_module_css_default.chip} ${card_module_css_default.chipBlue}`,
+									className: `${card_module_default.chip} ${card_module_default.chipBlue}`,
 									children: dynamicChip
 								})]
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", {
-								className: card_module_css_default.kpiValueAccent,
+								className: card_module_default.kpiValueAccent,
 								children: dynamicValue
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", {
-								className: card_module_css_default.kpiSub,
+								className: card_module_default.kpiSub,
 								children: dynamicSub
 							})
 						]
@@ -870,7 +862,7 @@ window.__ModuleLoader__.load({
 			const { t, summary, costCurrency } = props;
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
 				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h4", {
-					className: card_module_css_default.heading,
+					className: card_module_default.heading,
 					children: t("trend.title")
 				}),
 				/* @__PURE__ */ (0, react_jsx_runtime.jsx)(TrendAreaChart, {
@@ -879,7 +871,7 @@ window.__ModuleLoader__.load({
 					series: summary.series
 				}),
 				summary.perSession !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("dl", {
-					className: card_module_css_default.metrics,
+					className: card_module_default.metrics,
 					children: [
 						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dt", { children: t("metric.lastHit") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", { children: summary.perSession.lastRequestHitRate === null ? "-" : formatRate(summary.perSession.lastRequestHitRate) })] }),
 						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dt", { children: t("metric.lastCost") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", { children: summary.perSession.lastRequestCost === null ? "-" : formatCost$1(summary.perSession.lastRequestCost) })] }),
@@ -888,46 +880,46 @@ window.__ModuleLoader__.load({
 					]
 				}) : null,
 				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h4", {
-					className: card_module_css_default.heading,
+					className: card_module_default.heading,
 					children: t("model.table")
 				}),
 				/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-					className: card_module_css_default.tableCard,
+					className: card_module_default.tableCard,
 					children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("table", {
-						className: card_module_css_default.table,
+						className: card_module_default.table,
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("thead", { children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("tr", { children: [
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("th", { children: t("metric.topModel") }),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("th", {
-								className: card_module_css_default.thRight,
+								className: card_module_default.thRight,
 								children: t("metric.requests")
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("th", {
-								className: card_module_css_default.thRight,
+								className: card_module_default.thRight,
 								children: t("metric.tokens")
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("th", {
-								className: card_module_css_default.thRight,
+								className: card_module_default.thRight,
 								children: t("metric.cost")
 							})
 						] }) }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("tbody", { children: summary.byModel.map((m, i) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("tr", {
-							className: card_module_css_default.trHover,
+							className: card_module_default.trHover,
 							children: [
 								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("td", { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-									className: card_module_css_default.modelDot,
+									className: card_module_default.modelDot,
 									style: { background: DONUT_SEGMENT_VARS[i % DONUT_SEGMENT_VARS.length] }
 								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", { children: m.model === "__unknown__" ? t("model.unknown") : m.model })] }),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("td", {
-									className: card_module_css_default.tdRight,
+									className: card_module_default.tdRight,
 									children: m.requests
 								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("td", {
-									className: `${card_module_css_default.tdRight} ${card_module_css_default.tdStrong}`,
+									className: `${card_module_default.tdRight} ${card_module_default.tdStrong}`,
 									children: formatTokens(m.tokens)
 								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("td", {
-									className: card_module_css_default.tdRight,
+									className: card_module_default.tdRight,
 									children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-										className: card_module_css_default.kpiCostVal,
+										className: card_module_default.kpiCostVal,
 										children: [costSymbol$1(costCurrency), formatCost$1(m.cost)]
 									})
 								})
@@ -936,7 +928,7 @@ window.__ModuleLoader__.load({
 					})
 				}),
 				summary.uncountedRequests > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
-					className: card_module_css_default.status,
+					className: card_module_default.status,
 					children: [
 						t("metric.uncounted"),
 						": ",
@@ -951,14 +943,14 @@ window.__ModuleLoader__.load({
 			const inputTotal = summary.tokens.uncachedInputTokens + summary.tokens.cacheReadTokens + summary.tokens.cacheWriteTokens;
 			const savedRatio = inputTotal > 0 ? summary.tokens.cacheReadTokens / inputTotal * 100 : 0;
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-				className: card_module_css_default.chartRow,
+				className: card_module_default.chartRow,
 				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-					className: card_module_css_default.chartCell,
+					className: card_module_default.chartCell,
 					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h4", {
-						className: card_module_css_default.heading,
+						className: card_module_default.heading,
 						children: t("chart.donut")
 					}), segments.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-						className: card_module_css_default.status,
+						className: card_module_default.status,
 						children: t("chart.noData")
 					}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(DonutChart, {
 						t,
@@ -967,12 +959,12 @@ window.__ModuleLoader__.load({
 						centerLabel: t("metric.requests")
 					})]
 				}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-					className: card_module_css_default.chartCell,
+					className: card_module_default.chartCell,
 					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h4", {
-						className: card_module_css_default.heading,
+						className: card_module_default.heading,
 						children: t("chart.cacheDiag")
 					}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.cacheDiag,
+						className: card_module_default.cacheDiag,
 						children: [
 							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("strong", { children: [
 								t("chart.cacheHigh"),
@@ -986,12 +978,12 @@ window.__ModuleLoader__.load({
 								formatTokens(summary.tokens.cacheReadTokens)
 							] }),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-								className: card_module_css_default.cacheDiagRows,
+								className: card_module_default.cacheDiagRows,
 								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-									className: card_module_css_default.cacheDiagRow,
+									className: card_module_default.cacheDiagRow,
 									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("kpi.hitTokens") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", { children: formatTokens(summary.tokens.cacheReadTokens) })]
 								}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-									className: card_module_css_default.cacheDiagRow,
+									className: card_module_default.cacheDiagRow,
 									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("chart.savedRatio") }), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("strong", { children: [savedRatio.toFixed(1), "%"] })]
 								})]
 							})
@@ -1027,26 +1019,26 @@ window.__ModuleLoader__.load({
 		function QuotaWindowCard(props) {
 			const { t, label, window, highlight } = props;
 			if (window === null) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-				className: `${card_module_css_default.quotaCard} ${highlight ? card_module_css_default.quotaCardActive : ""}`,
+				className: `${card_module_default.quotaCard} ${highlight ? card_module_default.quotaCardActive : ""}`,
 				children: [
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.quotaCardTop,
+						className: card_module_default.quotaCardTop,
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: card_module_css_default.quotaCardLabel,
+							className: card_module_default.quotaCardLabel,
 							children: label
 						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: `${card_module_css_default.chip} ${card_module_css_default.chipNeutral}`,
+							className: `${card_module_default.chip} ${card_module_default.chipNeutral}`,
 							children: "-"
 						})]
 					}),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-						className: card_module_css_default.quotaCardValue,
+						className: card_module_default.quotaCardValue,
 						children: "-"
 					}),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-						className: card_module_css_default.progressBarBg,
+						className: card_module_default.progressBarBg,
 						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-							className: card_module_css_default.progressBarFill,
+							className: card_module_default.progressBarFill,
 							style: {
 								width: "0%",
 								background: "var(--dsw-alias-label-tertiary)"
@@ -1054,36 +1046,36 @@ window.__ModuleLoader__.load({
 						})
 					}),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.quotaCardReset,
+						className: card_module_default.quotaCardReset,
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("quota.resetLabel") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", { children: "-" })]
 					})
 				]
 			});
 			const level = quotaLevel(window.percent);
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-				className: `${card_module_css_default.quotaCard} ${highlight ? card_module_css_default.quotaCardActive : ""}`,
+				className: `${card_module_default.quotaCard} ${highlight ? card_module_default.quotaCardActive : ""}`,
 				children: [
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.quotaCardTop,
+						className: card_module_default.quotaCardTop,
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: card_module_css_default.quotaCardLabel,
+							className: card_module_default.quotaCardLabel,
 							children: label
 						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: `${card_module_css_default.chip} ${card_module_css_default[level.chipClass]}`,
+							className: `${card_module_default.chip} ${card_module_default[level.chipClass]}`,
 							children: t(level.labelKey)
 						})]
 					}),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.quotaCardValue,
+						className: card_module_default.quotaCardValue,
 						children: [window.percent, /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: card_module_css_default.quotaCardUnit,
+							className: card_module_default.quotaCardUnit,
 							children: "%"
 						})]
 					}),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-						className: card_module_css_default.progressBarBg,
+						className: card_module_default.progressBarBg,
 						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-							className: card_module_css_default.progressBarFill,
+							className: card_module_default.progressBarFill,
 							style: {
 								width: `${Math.min(100, window.percent)}%`,
 								background: level.colorVar
@@ -1091,7 +1083,7 @@ window.__ModuleLoader__.load({
 						})
 					}),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.quotaCardReset,
+						className: card_module_default.quotaCardReset,
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("quota.resetLabel") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", { children: formatResetCountdown(window.resetsAt, t) })]
 					})
 				]
@@ -1102,12 +1094,12 @@ window.__ModuleLoader__.load({
 			const { t, provider, summary, balance, balanceRefreshing, onRefreshBalance } = props;
 			const quota = balance?.quota ?? null;
 			if (balance === null) return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-				className: card_module_css_default.status,
+				className: card_module_default.status,
 				children: t("loading")
 			});
 			if (provider === "opencode") {
 				if (quota === null) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
-					className: card_module_css_default.status,
+					className: card_module_default.status,
 					children: [t("balance.unavailable"), balance.error !== null ? `: ${balance.error}` : ""]
 				});
 				const rows = [
@@ -1128,9 +1120,9 @@ window.__ModuleLoader__.load({
 					}
 				];
 				return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-					className: card_module_css_default.quotaView,
+					className: card_module_default.quotaView,
 					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-						className: card_module_css_default.quotaGrid,
+						className: card_module_default.quotaGrid,
 						children: rows.map((row) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)(QuotaWindowCard, {
 							t,
 							label: row.label,
@@ -1138,9 +1130,9 @@ window.__ModuleLoader__.load({
 							highlight: row.key === "weekly"
 						}, row.key))
 					}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.noticeBar,
+						className: card_module_default.noticeBar,
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
-							className: card_module_css_default.noticeIcon,
+							className: card_module_default.noticeIcon,
 							viewBox: "0 0 24 24",
 							fill: "none",
 							stroke: "currentColor",
@@ -1163,44 +1155,44 @@ window.__ModuleLoader__.load({
 			}
 			if (provider === "deepseek") {
 				if (balance.balance === null) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
-					className: card_module_css_default.status,
+					className: card_module_default.status,
 					children: [t("balance.unavailable"), balance.error !== null ? `: ${balance.error}` : ""]
 				});
 				const dailyCost = summary.activeDays > 0 ? summary.cost / summary.activeDays : 0;
 				const estDays = dailyCost > 0 ? Math.floor(balance.balance / dailyCost) : null;
 				return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-					className: card_module_css_default.deepseekCard,
+					className: card_module_default.deepseekCard,
 					children: [
 						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-							className: card_module_css_default.deepseekRow,
+							className: card_module_default.deepseekRow,
 							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-								className: card_module_css_default.deepseekLabel,
+								className: card_module_default.deepseekLabel,
 								children: [
 									t("provider.deepseek"),
 									" · ",
 									t("balance.amount")
 								]
 							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-								className: `${card_module_css_default.chip} ${card_module_css_default.chipBlue}`,
+								className: `${card_module_default.chip} ${card_module_default.chipBlue}`,
 								children: t("provider.prepay")
 							})]
 						}),
 						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-							className: card_module_css_default.deepseekAmount,
+							className: card_module_default.deepseekAmount,
 							children: [
 								balance.balance,
 								" ",
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-									className: card_module_css_default.deepseekCurrency,
+									className: card_module_default.deepseekCurrency,
 									children: balance.currency
 								})
 							]
 						}),
 						balance.balance <= 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-							className: card_module_css_default.deepseekEstimate,
+							className: card_module_default.deepseekEstimate,
 							children: t("balance.negative")
 						}) : estDays !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-							className: card_module_css_default.deepseekEstimate,
+							className: card_module_default.deepseekEstimate,
 							children: [
 								t("balance.estimate"),
 								" ",
@@ -1212,9 +1204,9 @@ window.__ModuleLoader__.load({
 							]
 						}) : null,
 						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-							className: card_module_css_default.deepseekActions,
+							className: card_module_default.deepseekActions,
 							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("a", {
-								className: card_module_css_default.btnPrimary,
+								className: card_module_default.btnPrimary,
 								href: "https://platform.deepseek.com/top_up",
 								target: "_blank",
 								rel: "noopener noreferrer",
@@ -1225,14 +1217,14 @@ window.__ModuleLoader__.load({
 								children: t("balance.recharge")
 							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 								type: "button",
-								className: card_module_css_default.refresh,
+								className: card_module_default.refresh,
 								disabled: balanceRefreshing,
 								onClick: onRefreshBalance,
 								children: balanceRefreshing ? t("balance.refreshing") : t("balance.refresh")
 							})]
 						}),
 						balance.updatedAt !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
-							className: card_module_css_default.status,
+							className: card_module_default.status,
 							children: [
 								t("balance.updated"),
 								": ",
@@ -1240,7 +1232,7 @@ window.__ModuleLoader__.load({
 							]
 						}) : null,
 						balance.source !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
-							className: card_module_css_default.status,
+							className: card_module_default.status,
 							children: [
 								t("balance.source"),
 								": ",
@@ -1275,38 +1267,38 @@ window.__ModuleLoader__.load({
 			const balance = balances?.[provider] ?? null;
 			const segments = (0, react.useMemo)(() => summary === null ? [] : donutSegments(summary.byModel), [summary]);
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-				className: card_module_css_default.content,
+				className: card_module_default.content,
 				children: [
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.controlBar,
+						className: card_module_default.controlBar,
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-							className: card_module_css_default.timeSegment,
+							className: card_module_default.timeSegment,
 							children: [RANGES.map((r) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 								type: "button",
-								className: props.rangeDays === r.days ? card_module_css_default.timeBtnActive : card_module_css_default.timeBtn,
+								className: props.rangeDays === r.days ? card_module_default.timeBtnActive : card_module_default.timeBtn,
 								onClick: () => props.onRangeDays(r.days),
 								children: t("range." + r.key)
 							}, r.key)), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 								type: "button",
-								className: props.rangeDays === "custom" ? card_module_css_default.timeBtnActive : card_module_css_default.timeBtn,
+								className: props.rangeDays === "custom" ? card_module_default.timeBtnActive : card_module_default.timeBtn,
 								onClick: () => props.onRangeDays("custom"),
 								children: t("range.custom")
 							})]
 						}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-							className: card_module_css_default.providerRow,
+							className: card_module_default.providerRow,
 							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-								className: card_module_css_default.providerLabel,
+								className: card_module_default.providerLabel,
 								children: t("provider.switch")
 							}), PROVIDERS.map((p) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 								type: "button",
-								className: provider === p.key ? card_module_css_default.providerPillActive : card_module_css_default.providerPill,
+								className: provider === p.key ? card_module_default.providerPillActive : card_module_default.providerPill,
 								onClick: () => setProvider(p.key),
 								children: t(p.labelKey)
 							}, p.key))]
 						})]
 					}),
 					props.rangeDays === "custom" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.customRow,
+						className: card_module_default.customRow,
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", { children: [t("range.from"), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
 							type: "date",
 							value: props.customFrom,
@@ -1318,11 +1310,11 @@ window.__ModuleLoader__.load({
 						})] })]
 					}) : null,
 					loading && summary === null ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-						className: card_module_css_default.status,
+						className: card_module_default.status,
 						children: t("loading")
 					}) : null,
 					error !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
-						className: card_module_css_default.status,
+						className: card_module_default.status,
 						children: [
 							t("error"),
 							": ",
@@ -1337,7 +1329,7 @@ window.__ModuleLoader__.load({
 							balance
 						}),
 						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-							className: card_module_css_default.tabNav,
+							className: card_module_default.tabNav,
 							children: [
 								{
 									key: "overview",
@@ -1353,7 +1345,7 @@ window.__ModuleLoader__.load({
 								}
 							].map((tab) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 								type: "button",
-								className: activeTab === tab.key ? card_module_css_default.tabBtnActive : card_module_css_default.tabBtn,
+								className: activeTab === tab.key ? card_module_default.tabBtnActive : card_module_default.tabBtn,
 								onClick: () => setActiveTab(tab.key),
 								children: t(tab.labelKey)
 							}, tab.key))
@@ -1584,11 +1576,11 @@ window.__ModuleLoader__.load({
 				if (!shared.face.hooks.usageStatsCard.getSnapshot().expanded) shared.face.onToggleExpanded();
 			}, []);
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-				className: card_module_css_default.sectionPage,
+				className: card_module_default.sectionPage,
 				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-					className: card_module_css_default.sectionHeaderRow,
+					className: card_module_default.sectionHeaderRow,
 					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-						className: card_module_css_default.sectionIconBadge,
+						className: card_module_default.sectionIconBadge,
 						"aria-hidden": "true",
 						children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
 							width: "18",
@@ -1625,12 +1617,12 @@ window.__ModuleLoader__.load({
 							]
 						})
 					}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: card_module_css_default.sectionHeaderText,
+						className: card_module_default.sectionHeaderText,
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
-							className: card_module_css_default.sectionPageTitle,
+							className: card_module_default.sectionPageTitle,
 							children: t("settings.title")
 						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-							className: card_module_css_default.sectionPageDesc,
+							className: card_module_default.sectionPageDesc,
 							children: t("settings.description")
 						})]
 					})]
@@ -1706,7 +1698,7 @@ window.__ModuleLoader__.load({
 					if (controller.signal.aborted) return null;
 					this.error = String(e?.message ?? e);
 					return null;
-				}), fetchBalance(controller.signal).then((map) => map["deepseek"] ?? map["opencode"] ?? null).catch((e) => {
+				}), fetchBalance(controller.signal).then((map) => map["opencode"] ?? map["deepseek"] ?? null).catch((e) => {
 					if (controller.signal.aborted) return null;
 					return {
 						balance: null,
@@ -1779,7 +1771,7 @@ window.__ModuleLoader__.load({
 		/** 触发按钮图标（内联 SVG，无外部依赖）。 */
 		function ChevronDownIcon(props) {
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("svg", {
-				className: props.open ? card_module_css_default.chevronOpen : card_module_css_default.chevronIcon,
+				className: props.open ? card_module_default.chevronOpen : card_module_default.chevronIcon,
 				viewBox: "0 0 24 24",
 				fill: "none",
 				stroke: "currentColor",
@@ -1791,8 +1783,8 @@ window.__ModuleLoader__.load({
 		}
 		function PulseDot() {
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-				className: card_module_css_default.pulseDotContainer,
-				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { className: card_module_css_default.pulseDotPing }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { className: card_module_css_default.pulseDot })]
+				className: card_module_default.pulseDotContainer,
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { className: card_module_default.pulseDotPing }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { className: card_module_default.pulseDot })]
 			});
 		}
 		/** 自适应 token 缩写：≥1M 用 M，否则 K。 */
@@ -1878,55 +1870,55 @@ window.__ModuleLoader__.load({
 				}
 			];
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-				className: card_module_css_default.sessionUsageRoot,
+				className: card_module_default.sessionUsageRoot,
 				ref: rootRef,
 				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 					type: "button",
-					className: state.open ? card_module_css_default.sessionUsageActive : card_module_css_default.sessionUsage,
+					className: state.open ? card_module_default.sessionUsageActive : card_module_default.sessionUsage,
 					"aria-expanded": state.open,
 					"aria-haspopup": "true",
 					onClick: onToggle,
 					children: [
 						/* @__PURE__ */ (0, react_jsx_runtime.jsx)(PulseDot, {}),
 						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: card_module_css_default.labelMuted,
+							className: card_module_default.labelMuted,
 							children: t("session.usageLabel")
 						}),
 						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: card_module_css_default.valHighlightTokens,
+							className: card_module_default.valHighlightTokens,
 							children: tokens === null ? "-" : `${tokens.value}${tokens.unit}`
 						}),
 						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: card_module_css_default.valSeparator,
+							className: card_module_default.valSeparator,
 							children: "|"
 						}),
 						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: card_module_css_default.valHighlightCost,
+							className: card_module_default.valHighlightCost,
 							children: session === null ? "-" : `${costSym}${formatCost(session.cost)}`
 						}),
 						/* @__PURE__ */ (0, react_jsx_runtime.jsx)(ChevronDownIcon, { open: state.open })
 					]
 				}), state.open ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-					className: card_module_css_default.sessionUsagePanel,
+					className: card_module_default.sessionUsagePanel,
 					role: "dialog",
 					"aria-label": t("session.panelTitle"),
 					children: [
 						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-							className: card_module_css_default.panelHeader,
+							className: card_module_default.panelHeader,
 							children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-								className: card_module_css_default.panelTitleGroup,
+								className: card_module_default.panelTitleGroup,
 								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(PulseDot, {}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-									className: card_module_css_default.panelTitle,
+									className: card_module_default.panelTitle,
 									children: t("session.panelTitle")
 								})]
 							})
 						}),
 						state.loading && session === null ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-							className: card_module_css_default.panelStatus,
+							className: card_module_default.panelStatus,
 							children: t("loading")
 						}) : null,
 						state.error !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
-							className: card_module_css_default.panelStatus,
+							className: card_module_default.panelStatus,
 							children: [
 								t("error"),
 								": ",
@@ -1934,42 +1926,42 @@ window.__ModuleLoader__.load({
 							]
 						}) : null,
 						!state.loading && state.error === null && session === null ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-							className: card_module_css_default.panelStatus,
+							className: card_module_default.panelStatus,
 							children: t("session.noRecord")
 						}) : null,
 						session !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-							className: card_module_css_default.panelBody,
+							className: card_module_default.panelBody,
 							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-								className: card_module_css_default.sectionHeader,
+								className: card_module_default.sectionHeader,
 								children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-									className: card_module_css_default.sectionTitle,
+									className: card_module_default.sectionTitle,
 									children: t("session.heroTitle")
 								})
 							}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-								className: card_module_css_default.heroCard,
+								className: card_module_default.heroCard,
 								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-									className: card_module_css_default.heroTopGrid,
+									className: card_module_default.heroTopGrid,
 									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-										className: card_module_css_default.heroCol,
+										className: card_module_default.heroCol,
 										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-											className: card_module_css_default.statNumGroup,
+											className: card_module_default.statNumGroup,
 											children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: card_module_css_default.statNumber,
+												className: card_module_default.statNumber,
 												children: tokens?.value
 											}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: card_module_css_default.statUnit,
+												className: card_module_default.statUnit,
 												children: tokens?.unit
 											})]
 										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-											className: card_module_css_default.statLabel,
+											className: card_module_default.statLabel,
 											children: t("session.heroTokens")
 										})]
 									}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-										className: card_module_css_default.heroCol,
+										className: card_module_default.heroCol,
 										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-											className: card_module_css_default.statNumGroup,
+											className: card_module_default.statNumGroup,
 											children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-												className: `${card_module_css_default.statNumber} ${card_module_css_default.statNumberCost}`,
+												className: `${card_module_default.statNumber} ${card_module_default.statNumberCost}`,
 												children: [
 													costSym,
 													formatCost(session.cost),
@@ -1977,115 +1969,115 @@ window.__ModuleLoader__.load({
 												]
 											})
 										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-											className: card_module_css_default.statLabel,
+											className: card_module_default.statLabel,
 											children: t("session.heroCost")
 										})]
 									})]
 								}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-									className: card_module_css_default.heroBottomGrid,
+									className: card_module_default.heroBottomGrid,
 									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-										className: card_module_css_default.metaCol,
+										className: card_module_default.metaCol,
 										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-											className: card_module_css_default.metaLabel,
+											className: card_module_default.metaLabel,
 											children: t("session.heroRounds")
 										}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-											className: card_module_css_default.metaValText,
+											className: card_module_default.metaValText,
 											children: [session.turns, " 次"]
 										})]
 									}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-										className: card_module_css_default.metaCol,
+										className: card_module_default.metaCol,
 										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-											className: card_module_css_default.metaLabel,
+											className: card_module_default.metaLabel,
 											children: t("session.heroAvgHit")
 										}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-											className: card_module_css_default.metaValEmerald,
+											className: card_module_default.metaValEmerald,
 											children: [avgHit.toFixed(2), "%"]
 										})]
 									})]
 								})]
 							})] }), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-									className: card_module_css_default.sectionTitle,
+									className: card_module_default.sectionTitle,
 									style: { marginBottom: "6px" },
 									children: t("session.recentTitle")
 								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-									className: card_module_css_default.recentCard,
+									className: card_module_default.recentCard,
 									children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-										className: card_module_css_default.recentGrid,
+										className: card_module_default.recentGrid,
 										children: [
 											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: card_module_css_default.recentLabel,
+												className: card_module_default.recentLabel,
 												children: t("session.recentModel")
 											}),
 											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: card_module_css_default.recentValue,
+												className: card_module_default.recentValue,
 												title: session.lastModel ?? void 0,
 												children: session.lastModel ?? "-"
 											}),
 											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: card_module_css_default.recentLabel,
+												className: card_module_default.recentLabel,
 												children: t("session.recentHit")
 											}),
 											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: card_module_css_default.recentValueEmerald,
+												className: card_module_default.recentValueEmerald,
 												children: recentHit === null ? "-" : `${recentHit.toFixed(2)}%`
 											}),
 											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: card_module_css_default.recentLabel,
+												className: card_module_default.recentLabel,
 												children: t("session.recentTokens")
 											}),
 											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: card_module_css_default.recentValue,
+												className: card_module_default.recentValue,
 												children: turnTokensCompact === null ? "-" : `${turnTokensCompact.value}${turnTokensCompact.unit} Tokens`
 											}),
 											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: card_module_css_default.recentLabel,
+												className: card_module_default.recentLabel,
 												children: t("session.recentCost")
 											}),
 											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: `${card_module_css_default.recentValue} ${card_module_css_default.recentValueCost}`,
+												className: `${card_module_default.recentValue} ${card_module_default.recentValueCost}`,
 												children: turnCost === null ? "-" : `${costSym}${formatCost(turnCost)}`
 											})
 										]
 									})
 								}),
 								unpriced ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-									className: card_module_css_default.unpricedHint,
+									className: card_module_default.unpricedHint,
 									children: t("session.unpricedHint")
 								}) : null
 							] })]
 						}) : null,
 						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-							className: card_module_css_default.panelFooter,
+							className: card_module_default.panelFooter,
 							children: [quotaRows.length > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-								className: card_module_css_default.quotaRows,
+								className: card_module_default.quotaRows,
 								children: quotaRows.map((row) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-									className: card_module_css_default.quotaRow,
+									className: card_module_default.quotaRow,
 									children: [
 										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-											className: card_module_css_default.quotaLabel,
+											className: card_module_default.quotaLabel,
 											children: row.label
 										}),
 										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-											className: card_module_css_default.quotaPercent,
+											className: card_module_default.quotaPercent,
 											children: row.window === null ? "-" : `${row.window.percent}%`
 										}),
 										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-											className: card_module_css_default.quotaReset,
+											className: card_module_default.quotaReset,
 											children: row.window === null ? "" : formatReset(row.window.resetsAt)
 										})
 									]
 								}, row.key))
 							}) : null, quota === null ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-								className: card_module_css_default.footerFlex,
+								className: card_module_default.footerFlex,
 								children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-									className: card_module_css_default.balanceText,
+									className: card_module_default.balanceText,
 									children: [
 										t("session.balance"),
 										": ",
 										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", {
-											className: card_module_css_default.balanceVal,
+											className: card_module_default.balanceVal,
 											children: balance === null ? "-" : balance.balance === null ? balance.error ?? t("balance.unavailable") : `${balance.balance} ${balance.currency}`
 										})
 									]
@@ -2399,5 +2391,3 @@ window.__ModuleLoader__.load({
 		return module.exports;
 	}
 });
-
-//# sourceMappingURL=client.js.map

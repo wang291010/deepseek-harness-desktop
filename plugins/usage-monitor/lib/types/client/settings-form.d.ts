@@ -123,4 +123,3 @@ export declare class CardForm<T> {
     private stored;
     private publish;
 }
-//# sourceMappingURL=settings-form.d.ts.map

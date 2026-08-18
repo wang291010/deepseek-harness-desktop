@@ -28,4 +28,3 @@ export declare class UsageStatsStore {
     save(state: UsageStatsState, installedAt: string | null): void;
     private backup;
 }
-//# sourceMappingURL=store.d.ts.map

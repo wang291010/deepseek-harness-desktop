@@ -18,7 +18,7 @@ DSH Web 的 API 用量统计插件：精确统计 token、请求、完成轮次�
 
 ## 架构
 
-- **宿主端**：订阅 `session/event`（全局、所有会话），把每次请求折入 `UsageStatsMeter`（token / 请求 / 轮次 / 费用 / 最近请求元数据）。按日（本地时区 `YYYY-MM-DD`）与分模型桶聚合，落盘到 `~/.dsh/dsh-usage-stats.json`（30s 防抖写盘 + flush/dispose 即时写，原子 `tmp + rename`，损坏文件转 `.bak` 重建）。只读路由 `/api/dsh-usage-stats/*` 带 loopback 围栏。余额客户端**并行**拉取全部已检测 provider 的快照（OpenCode `/v1/usage` 配额 + DeepSeek `/user/balance` 金额），各自失败互不影响。
+- **宿主端**：订阅 `session/event`（全局、所有会话），把每次请求折入 `UsageStatsMeter`（token / 请求 / 轮次 / 费用 / 最近请求元数据）。按日（本地时区 `YYYY-MM-DD`）与分模型桶聚合，优先落盘到 `$DSH_HOME/dsh-usage-stats.json`（未设置时回退 `~/.dsh/dsh-usage-stats.json`；30s 防抖写盘 + flush/dispose 即时写，原子 `tmp + rename`，损坏文件转 `.bak` 重建）。只读路由 `/api/dsh-usage-stats/*` 带 loopback 围栏。余额客户端**并行**拉取全部已检测 provider 的快照（OpenCode `/v1/usage` 配额 + DeepSeek `/user/balance` 金额），各自失败互不影响。
 - **浏览器端**：注册设置页左侧导航独立 Tab（官方 `settings.section` 槽，id `usage-stats`；不属于任何家族分组）。也注册会话页用量按钮（`conversation.session.header.utilities` 槽）。
 
 ## 安装

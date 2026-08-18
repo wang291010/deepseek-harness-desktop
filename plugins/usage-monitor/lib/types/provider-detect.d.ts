@@ -47,4 +47,3 @@ export declare function detectBalanceEndpoint(ctx: Context, settings: BalanceSet
 export declare function detectBalanceEndpoints(ctx: Context, settings: BalanceSettings, settingsService?: {
     get(ns: unknown): unknown;
 }): Record<string, DetectResult>;
-//# sourceMappingURL=provider-detect.d.ts.map

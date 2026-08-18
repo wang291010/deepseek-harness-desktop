@@ -6,4 +6,3 @@ import type { BalanceClient } from './balance.ts';
 export declare function isLoopbackRequest(request: IncomingMessage): boolean;
 /** 构造 usage-stats 全部只读路由（loopback 围栏，全部先过 isLoopbackRequest）。 */
 export declare function makeRoutes(ctx: Context, balance: BalanceClient): WebRoute[];
-//# sourceMappingURL=routes.d.ts.map

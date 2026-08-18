@@ -105,4 +105,3 @@ export declare class UsageStatsMeter {
     private sessionOf;
     private foldOf;
 }
-//# sourceMappingURL=meter.d.ts.map

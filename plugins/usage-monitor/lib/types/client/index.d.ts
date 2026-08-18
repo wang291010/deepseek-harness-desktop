@@ -9,4 +9,3 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     }
 }
 export declare function apply(ctx: ClientContext): void;
-//# sourceMappingURL=index.d.ts.map

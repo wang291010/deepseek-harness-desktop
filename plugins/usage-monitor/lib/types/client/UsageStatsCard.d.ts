@@ -105,4 +105,3 @@ export declare class UsageStatsCardController {
     /** 构建插槽注册侧注入面。 */
     inject(): UsageStatsCardFace;
 }
-//# sourceMappingURL=UsageStatsCard.d.ts.map

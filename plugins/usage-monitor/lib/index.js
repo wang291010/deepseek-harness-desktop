@@ -1,8 +1,8 @@
-import { homedir } from "node:os";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve, sep } from "node:path";
 import { installSettingsSection, settingsNamespace } from "@deepseek-ai/dsh-settings";
 import z from "schemastery";
+import { dirname, join, resolve, sep } from "node:path";
+import { homedir } from "node:os";
 /** 缓存命中率口径：cacheRead / (uncached + cacheRead + cacheWrite)；无输入为 0。 */
 function hitRateOf(buckets) {
 	const input = buckets.uncachedInputTokens + buckets.cacheReadTokens + buckets.cacheWriteTokens;
@@ -264,6 +264,10 @@ var UsageStatsMeter = class {
 * 内置价格表（每百万 token）。DeepSeek 官方价按 CNY；OpenCode Zen Go
 * （opencode-go provider）价格取自 pi-ai 官方 catalog（USD 口径）。
 * 货币标签以插件设置 currency 为准；混用两套计价时费用为估算值。
+*
+* ⚠️ DeepSeek-V4 系列自 2026-08-17 0 时（北京时间）起实行峰谷定价：
+* 高峰时段（每日 9:00、14:00 起，见 DEFAULT_PEAK_HOURS）价格为空闲
+* 时段的 2 倍。下表 base 字段为空闲时段价，peak 字段为高峰时段价。
 */
 const DEFAULT_DEEPSEEK_PRICES = {
 	"deepseek-chat": {
@@ -398,29 +402,14 @@ function resolvePrices(userPrices) {
 	};
 }
 /**
-* 按每百万 token 单价估算一次用量的费用。各分项除以 1e6 后乘以对应单价，
-* 四项累加。未知模型且未提供兜底价时返回 0。
-*
-* 防御：defaultPrice 可能是 schemastery 对未配置对象字段解析出的空对象 {}，
-* 其单价字段为 undefined，直接参与乘法会产生 NaN 污染累计状态（NaN 经
-* JSON 序列化为 null）——空对象、缺失或非有限单价一律视为无价格，返回 0。
+* 默认高峰时段（北京时间小时，[startHour, endHour) 左闭右开）。
+* DeepSeek 官方公告：高峰时段为每日 9:00、14:00 起，其余时间为空闲时段。
+* 如官方后续明确结束时间，可在插件设置中调整 peakHours。
 */
-function priceBuckets(model, buckets, prices, defaultPrice) {
-	const price = prices[model] ?? defaultPrice;
-	if (price === void 0 || price === null || typeof price !== "object") return 0;
-	const { input, cacheRead, cacheWrite, output } = price;
-	if (!Number.isFinite(input) || !Number.isFinite(cacheRead) || !Number.isFinite(cacheWrite) || !Number.isFinite(output)) return 0;
-	const perMillion = 1e6;
-	return buckets.uncachedInputTokens / perMillion * input + buckets.cacheReadTokens / perMillion * cacheRead + buckets.cacheWriteTokens / perMillion * cacheWrite + buckets.outputTokens / perMillion * output;
-}
-/** 默认高峰时段（北京时间小时，[startHour, endHour)）。DeepSeek 官方公告：每日 9:00、14:00 起。 */
-const DEFAULT_PEAK_HOURS = [
-	[9, 10],
-	[14, 15]
-];
+const DEFAULT_PEAK_HOURS = [[9, 10], [14, 15]];
 /** 判断 timeMs（epoch 毫秒）是否落在高峰时段（按北京时区 UTC+8）。 */
 function isPeakHour(timeMs, peakHours = DEFAULT_PEAK_HOURS) {
-	const hour = new Date(timeMs + 8 * 36e5).getUTCHours();
+	const hour = new Date(timeMs + 288e5).getUTCHours();
 	return peakHours.some(([start, end]) => hour >= start && hour < end);
 }
 /** 单价是否完整有效（四项均为有限数；空对象/缺失/非有限一律视为无效）。 */
@@ -428,7 +417,11 @@ function isValidPrice(price) {
 	if (price === void 0 || price === null || typeof price !== "object") return false;
 	return Number.isFinite(price.input) && Number.isFinite(price.cacheRead) && Number.isFinite(price.cacheWrite) && Number.isFinite(price.output);
 }
-/** 按请求时间选价估算：高峰时段优先用模型的 peak 价（无效则回退基础价），空闲时段用基础价。 */
+/**
+* 按请求时间（timeMs）选取生效单价后估算费用：高峰时段优先使用模型的
+* peak 价（无 peak 或 peak 无效时回退基础价），空闲时段用基础价。
+* 未提供 timeMs 时按基础价计算（兼容旧调用）。
+*/
 function priceBucketsAt(model, buckets, prices, defaultPrice, timeMs, peakHours = DEFAULT_PEAK_HOURS) {
 	const price = prices[model] ?? defaultPrice;
 	if (!isValidPrice(price)) return 0;
@@ -974,6 +967,10 @@ var BalanceClient = class {
 		return () => clearInterval(timer);
 	}
 };
+//#endregion
+//#region src/provider-detect.ts
+/** 默认凭据环境变量名（与 DeepSeek 适配器一致）。 */
+const DEFAULT_API_KEY_ENV = "DEEPSEEK_API_KEY";
 const DEFAULT_BALANCE_PATH = "/user/balance";
 /** 已知 provider 的内置端点表：profile 不暴露 baseURL（适配器内置端点）时
 *  也能推断余额/配额接口。key 为 llm 的 provider id；apiKeyEnv 可被
@@ -1033,7 +1030,6 @@ function detectProviderEndpoint(ctx, provider, settingsService) {
 	}
 	const record = typeof profile === "object" && profile !== null ? profile : {};
 	const baseURL = typeof record.baseURL === "string" ? record.baseURL : typeof record.baseUrl === "string" ? record.baseUrl : void 0;
-	const apiKeyEnv = typeof record.apiKeyEnv === "string" ? record.apiKeyEnv : void 0;
 	if (baseURL === void 0) {
 		const known = knownProviderEndpoints[provider];
 		if (known !== void 0) return {
@@ -1064,7 +1060,7 @@ function detectProviderEndpoint(ctx, provider, settingsService) {
 		endpoint: {
 			baseUrl: new URL(baseURL).origin,
 			path: DEFAULT_BALANCE_PATH,
-			apiKeyEnv: "DEEPSEEK_API_KEY",
+			apiKeyEnv: DEFAULT_API_KEY_ENV,
 			source: `auto:${provider}`
 		}
 	};
@@ -1116,13 +1112,40 @@ function detectBalanceEndpoints(ctx, settings, settingsService) {
 	return result;
 }
 //#endregion
+//#region src/dsh-home.ts
+/**
+* Resolve the active DSH data root.
+*
+* Desktop distributions set DSH_HOME before the plugin runtime loads. The
+* legacy ~/.dsh fallback is retained for standalone DSH CLI installations.
+*/
+function resolveDshHome(env = process.env, fallbackHome = homedir()) {
+	const configured = env.DSH_HOME?.trim();
+	return configured ? resolve(configured) : resolve(fallbackHome, ".dsh");
+}
+function resolveCredentialsFile(env = process.env, fallbackHome = homedir()) {
+	return join(resolveDshHome(env, fallbackHome), ".credentials.yaml");
+}
+function resolveUsageFile(value, env = process.env, fallbackHome = homedir()) {
+	const dshRoot = resolveDshHome(env, fallbackHome);
+	const legacy = resolve(dshRoot, "dsh-usage-stats.json");
+	const managed = resolve(dshRoot, "usage-stats");
+	if (value === void 0 || value.trim() === "") return legacy;
+	const requested = resolve(value);
+	const normalize = (path) => process.platform === "win32" ? path.toLowerCase() : path;
+	const target = normalize(requested);
+	const allowedRoot = normalize(managed);
+	if (target === normalize(legacy) || target === allowedRoot || target.startsWith(allowedRoot + sep)) return requested;
+	return legacy;
+}
+//#endregion
 //#region src/index.ts
 /**
-* 读取 DSH 凭据文件（~/.dsh/.credentials.yaml，形如 "KEY: value" 行）。
+* 读取当前 DSH_HOME 下的凭据文件（未设置时回退 ~/.dsh/.credentials.yaml）。
 * 失败/缺失返回空对象；结果缓存（凭据变更需重启）。
 */
 function readCredentialsFile() {
-	const file = join(homedir(), ".dsh", ".credentials.yaml");
+	const file = resolveCredentialsFile();
 	if (!existsSync(file)) return {};
 	try {
 		const entries = {};
@@ -1146,15 +1169,7 @@ const inject = [
 const USAGE_STATS_METER_KEY = Symbol("usage-stats.meter");
 const USAGE_STATS_SETTINGS_NAMESPACE = settingsNamespace("usage-stats");
 function safeUsageFilePath(value) {
-	const dshRoot = resolve(homedir(), ".dsh");
-	const legacy = resolve(dshRoot, "dsh-usage-stats.json");
-	const managed = resolve(dshRoot, "usage-stats");
-	if (value === void 0 || value.trim() === "") return legacy;
-	const requested = resolve(value);
-	const normalize = (path) => process.platform === "win32" ? path.toLowerCase() : path;
-	const normalizedRequested = normalize(requested);
-	if (normalizedRequested === normalize(legacy) || normalizedRequested.startsWith(`${normalize(managed)}${sep}`)) return requested;
-	return legacy;
+	return resolveUsageFile(value);
 }
 const priceSchema = z.object({
 	input: z.number().min(0),
@@ -1175,10 +1190,7 @@ const Config = z.object({
 	prices: z.dict(priceSchema),
 	defaultPrice: priceSchema,
 	currency: z.string().default("CNY"),
-	peakHours: z.array(z.tuple([z.number(), z.number()])).default([
-		[9, 10],
-		[14, 15]
-	]),
+	peakHours: z.array(z.tuple([z.number(), z.number()])).default([[9, 10], [14, 15]]),
 	balance: z.object({
 		mode: z.union([
 			z.const("auto"),

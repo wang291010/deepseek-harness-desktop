@@ -69,4 +69,3 @@ type SessionUsageSlotProps = PropsRuntime<'conversation.session.header.utilities
 /** 插槽适配：bridge 注入面到受控按钮组件。 */
 export declare function SessionUsageSlotButton(props: SessionUsageSlotProps): ReactElement;
 export {};
-//# sourceMappingURL=session-usage.d.ts.map

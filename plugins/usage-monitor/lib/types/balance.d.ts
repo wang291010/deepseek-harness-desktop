@@ -59,4 +59,3 @@ export declare class BalanceClient {
     /** 立即刷新一次并定时刷新；返回定时器 disposer。 */
     start(intervalMs: number): () => void;
 }
-//# sourceMappingURL=balance.d.ts.map

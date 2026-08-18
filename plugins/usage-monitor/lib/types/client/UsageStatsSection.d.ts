@@ -6,4 +6,3 @@ import type { PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots';
  * useSyncExternalStore 直接订阅 apply 注入的共享 controller store。
  */
 export declare function UsageStatsSection(_props: PropsRuntime<'settings.section'>): ReactElement;
-//# sourceMappingURL=UsageStatsSection.d.ts.map

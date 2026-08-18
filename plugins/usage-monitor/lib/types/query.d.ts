@@ -54,4 +54,3 @@ export declare function parseRange(fromRaw: string | undefined, toRaw: string | 
 /** 对区间内 byDay 条目聚合：总量指标、分模型、趋势序列。 */
 export declare function summarizeRange(state: UsageStatsState, query: RangeQuery): RangeSummary;
 export { hitRateOf };
-//# sourceMappingURL=query.d.ts.map

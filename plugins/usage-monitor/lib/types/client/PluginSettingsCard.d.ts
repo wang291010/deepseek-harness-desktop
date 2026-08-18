@@ -75,4 +75,3 @@ export declare function BooleanField(props: FieldProps & {
     /** Copy for the off option. */
     offLabel: string;
 }): import("react").JSX.Element;
-//# sourceMappingURL=PluginSettingsCard.d.ts.map
