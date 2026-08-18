@@ -5,14 +5,8 @@ import { chmod, lstat, mkdir, open, rename, unlink } from 'node:fs/promises'
 import { isAbsolute, join, resolve } from 'node:path'
 import { parseSemVer } from './update-checker.ts'
 
-/** Desktop platforms with a fixed installer download endpoint. */
+/** Desktop platforms with an installer validation profile. */
 export type DesktopDownloadPlatform = 'darwin' | 'win32'
-
-/** Fixed download endpoints that record one user-confirmed installer download. */
-export const DESKTOP_DOWNLOAD_URLS: Readonly<Record<DesktopDownloadPlatform, string>> = {
-  darwin: 'https://www.dshdesktop.cn/api/downloads/mac',
-  win32: 'https://www.dshdesktop.cn/api/downloads/windows',
-}
 
 /** Maximum accepted installer size, in bytes. */
 export const MAX_UPDATE_DOWNLOAD_BYTES = 1024 * 1024 * 1024
@@ -32,10 +26,12 @@ export type UpdateArtifactRequest = (url: string, init: RequestInit) => Promise<
 
 /** Inputs for one user-confirmed installer download. */
 export interface DownloadDesktopUpdateOptions {
-  /** Host platform selecting the fixed endpoint and installer validation. */
+  /** Host platform selecting the installer validation. */
   readonly platform: DesktopDownloadPlatform
   /** Stable release version used as one private directory segment. */
   readonly version: string
+  /** Direct HTTPS installer asset URL from the GitHub release. */
+  readonly url: string
   /** Absolute Electron user-data directory that owns update artifacts. */
   readonly userDataPath: string
   /** Request implementation, normally backed by Electron `net.fetch`. */
@@ -93,13 +89,14 @@ interface DownloadPaths {
 export async function downloadDesktopUpdate(options: DownloadDesktopUpdateOptions): Promise<string> {
   const platform = validatedPlatform(options.platform)
   const version = validatedVersion(options.version)
+  const url = validatedUpdateUrl(options.url)
   const userDataPath = validatedUserDataPath(options.userDataPath)
   const paths = await prepareDownloadPaths(userDataPath, platform, version)
   throwIfAborted(options.signal)
 
   let response: Response
   try {
-    response = await options.request(DESKTOP_DOWNLOAD_URLS[platform], {
+    response = await options.request(url, {
       method: 'GET',
       cache: 'no-store',
       redirect: 'follow',
@@ -156,6 +153,27 @@ function validatedVersion(version: string): string {
     throw new UpdateDownloadError('invalid-options', 'The update version must be stable Semantic Versioning.')
   }
   return version
+}
+
+/** Reject update URLs outside the GitHub release download surface. */
+function validatedUpdateUrl(url: string): string {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    throw new UpdateDownloadError('invalid-options', 'The update download URL must be a valid HTTPS GitHub asset URL.')
+  }
+  if (parsed.protocol !== 'https:' || parsed.port !== '' || parsed.username !== '' || parsed.password !== '') {
+    throw new UpdateDownloadError('invalid-options', 'The update download URL must be a valid HTTPS GitHub asset URL.')
+  }
+  const host = parsed.hostname.toLowerCase()
+  const isGitHubHost = host === 'github.com'
+    || host.endsWith('.github.com')
+    || host.endsWith('.githubusercontent.com')
+  if (!isGitHubHost) {
+    throw new UpdateDownloadError('invalid-options', 'The update download URL must be a valid HTTPS GitHub asset URL.')
+  }
+  return url
 }
 
 function validatedUserDataPath(userDataPath: string): string {

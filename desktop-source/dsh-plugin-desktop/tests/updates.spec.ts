@@ -18,8 +18,17 @@ const testConfig: UpdateConfig = {
   requestTimeoutMs: 1000,
 }
 
-function versionResponse(version: unknown): Response {
-  return Response.json({ version })
+const ASSET_URL = 'https://github.com/example/deepseek-harness-desktop/releases/download/v2.1.0/DeepSeek-Harness-Desktop-2.1.0-x64-Setup.exe'
+
+function releaseResponse(version: string): Response {
+  const tag = version.startsWith('v') ? version : `v${version}`
+  return Response.json({
+    tag_name: tag,
+    assets: [{
+      name: `DeepSeek-Harness-Desktop-${version}-x64-Setup.exe`,
+      browser_download_url: ASSET_URL,
+    }],
+  })
 }
 
 interface Harness {
@@ -42,7 +51,7 @@ async function createHarness(options: {
   readonly request?: DesktopRuntime['updates']['request']
   readonly confirmDownload?: (version: string) => Promise<boolean>
   readonly showManualCheckResult?: (result: UpdateCheckResult | null) => Promise<void>
-  readonly downloadAndOpen?: (version: string, signal: AbortSignal) => Promise<void>
+  readonly downloadAndOpen?: (result: UpdateCheckResult, signal: AbortSignal) => Promise<void>
   readonly notify?: (notification: DesktopNotification) => void
   readonly state?: string
 } = {}): Promise<Harness> {
@@ -67,7 +76,7 @@ async function createHarness(options: {
       currentVersion: '2.0.0',
       statePath,
       canDownload: options.canDownload ?? true,
-      request: options.request ?? (async () => versionResponse('2.0.0')),
+      request: options.request ?? (async () => releaseResponse('2.0.0')),
       confirmDownload,
       showManualCheckResult,
       downloadAndOpen,
@@ -125,7 +134,7 @@ describe('desktop update Host plugin', () => {
     { packaged: true, enabled: false },
   ])('reports a manual up-to-date result while automatic polling is disabled: %#', async ({ packaged, enabled }) => {
     vi.useFakeTimers()
-    const request = vi.fn(async () => versionResponse('2.0.0'))
+    const request = vi.fn(async () => releaseResponse('2.0.0'))
     const harness = await createHarness({
       packaged,
       request,
@@ -141,6 +150,7 @@ describe('desktop update Host plugin', () => {
       status: 'up-to-date',
       currentVersion: '2.0.0',
       latestVersion: '2.0.0',
+      downloadUrl: ASSET_URL,
     })
     expect(harness.confirmDownload).not.toHaveBeenCalled()
     expect(harness.downloadAndOpen).not.toHaveBeenCalled()
@@ -150,7 +160,7 @@ describe('desktop update Host plugin', () => {
 
   it('prompts once for a background update and persists only state v2 prompt history', async () => {
     vi.useFakeTimers()
-    const request = vi.fn(async () => versionResponse('2.1.0'))
+    const request = vi.fn(async () => releaseResponse('2.1.0'))
     const harness = await createHarness({ request })
 
     await vi.advanceTimersByTimeAsync(testConfig.initialDelayMs)
@@ -177,15 +187,15 @@ describe('desktop update Host plugin', () => {
     let resolveDownload!: () => void
     const download = new Promise<void>(resolve => { resolveDownload = resolve })
     const harness = await createHarness({
-      request: async () => versionResponse('2.1.0'),
+      request: async () => releaseResponse('2.1.0'),
       confirmDownload: async () => true,
       downloadAndOpen: async () => download,
     })
 
     await vi.advanceTimersByTimeAsync(testConfig.initialDelayMs)
     await vi.waitFor(() => { expect(harness.downloadAndOpen).toHaveBeenCalledOnce() })
-    const [version, signal] = harness.downloadAndOpen.mock.calls[0] as [string, AbortSignal]
-    expect(version).toBe('2.1.0')
+    const [result, signal] = harness.downloadAndOpen.mock.calls[0] as [UpdateCheckResult, AbortSignal]
+    expect(result).toMatchObject({ latestVersion: '2.1.0', downloadUrl: ASSET_URL })
     expect(signal).toBeInstanceOf(AbortSignal)
     expect(signal.aborted).toBe(false)
     expect(harness.tray.label()).toBe('Downloading DeepSeek Harness Desktop 2.1.0…')
@@ -203,7 +213,7 @@ describe('desktop update Host plugin', () => {
       .mockResolvedValueOnce(true)
     const harness = await createHarness({
       packaged: false,
-      request: async () => versionResponse('2.1.0'),
+      request: async () => releaseResponse('2.1.0'),
       confirmDownload,
     })
 
@@ -220,8 +230,8 @@ describe('desktop update Host plugin', () => {
 
   it('rechecks the version after confirmation and skips a rotated download', async () => {
     const request = vi.fn()
-      .mockResolvedValueOnce(versionResponse('2.1.0'))
-      .mockResolvedValueOnce(versionResponse('2.2.0'))
+      .mockResolvedValueOnce(releaseResponse('2.1.0'))
+      .mockResolvedValueOnce(releaseResponse('2.2.0'))
     const harness = await createHarness({
       packaged: false,
       request,
@@ -238,7 +248,7 @@ describe('desktop update Host plugin', () => {
   })
 
   it.each([
-    ['up-to-date', async () => versionResponse('2.0.0')],
+    ['up-to-date', async () => releaseResponse('2.0.0')],
     ['failed', async () => new Response('unavailable', { status: 503 })],
   ] as const)('keeps an automatic %s result silent', async (_case, request) => {
     vi.useFakeTimers()
@@ -254,13 +264,15 @@ describe('desktop update Host plugin', () => {
   })
 
   it.each([
-    ['same version', async () => versionResponse('2.0.0'), {
+    ['same version', async () => releaseResponse('2.0.0'), {
       status: 'up-to-date', currentVersion: '2.0.0', latestVersion: '2.0.0',
+      downloadUrl: ASSET_URL,
     }],
-    ['older version', async () => versionResponse('1.9.9'), {
+    ['older version', async () => releaseResponse('1.9.9'), {
       status: 'up-to-date', currentVersion: '2.0.0', latestVersion: '1.9.9',
+      downloadUrl: ASSET_URL,
     }],
-    ['invalid version', async () => versionResponse('v2.1.0'), null],
+    ['invalid version', async () => Response.json({ tag_name: 'v2.01.0', assets: [] }), null],
     ['service unavailable', async () => new Response('unavailable', { status: 503 }), null],
     ['network failure', async () => { throw new TypeError('offline') }, null],
   ] as const)('reports a manual %s result without prompting or downloading', async (_case, request, expected) => {
@@ -279,7 +291,7 @@ describe('desktop update Host plugin', () => {
   it('silently resets legacy state and does not use it as an available version cache', async () => {
     vi.useFakeTimers()
     const harness = await createHarness({
-      request: async () => versionResponse('2.1.0'),
+      request: async () => releaseResponse('2.1.0'),
       state: JSON.stringify({
         version: 1,
         checkedVersion: '2.0.0',
@@ -309,7 +321,7 @@ describe('desktop update Host plugin', () => {
     const harness = await createHarness({
       packaged: false,
       canDownload: false,
-      request: async () => versionResponse('2.1.0'),
+      request: async () => releaseResponse('2.1.0'),
     })
 
     await harness.tray.invoke()
@@ -319,6 +331,7 @@ describe('desktop update Host plugin', () => {
       status: 'update-available',
       currentVersion: '2.0.0',
       latestVersion: '2.1.0',
+      downloadUrl: ASSET_URL,
     })
     expect(harness.downloadAndOpen).not.toHaveBeenCalled()
     expect(harness.notifications).toEqual([])
@@ -330,7 +343,7 @@ describe('desktop update Host plugin', () => {
     const download = new Promise<void>((_resolve, reject) => { rejectDownload = reject })
     const harness = await createHarness({
       packaged: false,
-      request: async () => versionResponse('2.1.0'),
+      request: async () => releaseResponse('2.1.0'),
       confirmDownload: async () => true,
       downloadAndOpen: async () => download,
     })
@@ -370,9 +383,9 @@ describe('desktop update Host plugin', () => {
     let downloadSignal: AbortSignal | undefined
     const downloading = await createHarness({
       packaged: false,
-      request: async () => versionResponse('2.1.0'),
+      request: async () => releaseResponse('2.1.0'),
       confirmDownload: async () => true,
-      downloadAndOpen: async (_version, signal) => new Promise<void>((_resolve, reject) => {
+      downloadAndOpen: async (_result, signal) => new Promise<void>((_resolve, reject) => {
         downloadSignal = signal
         signal.addEventListener('abort', () => {
           reject(new DOMException('disposed', 'AbortError'))

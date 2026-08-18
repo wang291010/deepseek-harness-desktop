@@ -67,13 +67,13 @@ export class ElectronDesktopRuntime implements DesktopRuntime {
   readonly platform: DesktopPlatform
   readonly updates: DesktopUpdateAdapter = {
     get isPackaged() { return app.isPackaged },
-    get canDownload() { return app.isPackaged && (process.platform === 'darwin' || process.platform === 'win32') },
+    get canDownload() { return app.isPackaged && process.platform === 'win32' },
     get currentVersion() { return PRODUCT_VERSION },
     get statePath() { return join(app.getPath('userData'), 'updates', 'state.json') },
     request: (url, init) => net.fetch(url, init),
     confirmDownload: version => this.confirmUpdateDownload(version),
     showManualCheckResult: result => this.showManualUpdateCheckResult(result),
-    downloadAndOpen: (version, signal) => this.downloadAndOpenUpdate(version, signal),
+    downloadAndOpen: (result, signal) => this.downloadAndOpenUpdate(result, signal),
     notify: notification => { this.showNotification(notification) },
   }
 
@@ -317,14 +317,15 @@ export class ElectronDesktopRuntime implements DesktopRuntime {
     })
   }
 
-  /** Download a confirmed installer and hand it to the native installation flow. */
-  private async downloadAndOpenUpdate(version: string, signal: AbortSignal): Promise<void> {
+  /** Download a confirmed GitHub release installer and hand it to the native installation flow. */
+  private async downloadAndOpenUpdate(result: UpdateCheckResult, signal: AbortSignal): Promise<void> {
     if (this.platform !== 'darwin' && this.platform !== 'win32') {
       throw new Error(`dsh-plugin-desktop: updates are unavailable on ${this.platform}`)
     }
     const artifactPath = await downloadDesktopUpdate({
       platform: this.platform,
-      version,
+      version: result.latestVersion,
+      url: result.downloadUrl,
       userDataPath: app.getPath('userData'),
       request: (url, init) => net.fetch(url, init),
       signal,
@@ -338,7 +339,7 @@ export class ElectronDesktopRuntime implements DesktopRuntime {
       await dialog.showMessageBox({
         type: 'info',
         title: 'DeepSeek Harness Desktop Update Downloaded',
-        message: `DeepSeek Harness Desktop ${version} is ready to install.`,
+        message: `DeepSeek Harness Desktop ${result.latestVersion} is ready to install.`,
         detail: 'The disk image has opened. Replace DeepSeek Harness Desktop in Applications, then reopen it.',
         buttons: ['OK'],
         defaultId: 0,
@@ -347,17 +348,17 @@ export class ElectronDesktopRuntime implements DesktopRuntime {
       return
     }
 
-    const result = await dialog.showMessageBox({
+    const installChoice = await dialog.showMessageBox({
       type: 'info',
       title: 'DeepSeek Harness Desktop Update Downloaded',
-      message: `DeepSeek Harness Desktop ${version} is ready to install.`,
+      message: `DeepSeek Harness Desktop ${result.latestVersion} is ready to install.`,
       detail: 'Restart DeepSeek Harness Desktop and run the installer now?',
       buttons: ['Restart and Install', 'Later'],
       defaultId: 1,
       cancelId: 1,
       noLink: true,
     })
-    if (result.response !== 0) return
+    if (installChoice.response !== 0) return
 
     const spec = this.scheduled
     if (spec === undefined) throw new Error('dsh-plugin-desktop: no active shell can exit for update installation')

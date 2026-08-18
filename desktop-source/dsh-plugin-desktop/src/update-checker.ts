@@ -1,10 +1,12 @@
-/** Headless version checks against the public DSH Desktop release service. */
+/** Headless version checks against the DSH Desktop GitHub Releases source. */
 
-/** Public endpoint returning the latest stable DSH Desktop version. */
-export const DESKTOP_VERSION_ENDPOINT = 'https://www.dshdesktop.cn/api/desktop/version'
+import {
+  UPDATE_RELEASES_ENDPOINT,
+  UPDATE_WINDOWS_INSTALLER_PATTERN,
+} from './update-source.ts'
 
-/** Maximum response body bytes accepted from the version service. */
-export const MAX_VERSION_RESPONSE_BYTES = 4 * 1024
+/** Maximum response body bytes accepted from the release service. */
+export const MAX_VERSION_RESPONSE_BYTES = 1024 * 1024
 
 /** Strictly parsed SemVer components. Numeric components remain strings to avoid overflow. */
 export interface ParsedSemVer {
@@ -35,7 +37,7 @@ export interface UpdateCheckOptions {
   readonly request?: UpdateRequest
 }
 
-/** Successful comparison returned by the stable version service. */
+/** Successful comparison returned by the stable release service. */
 export type UpdateCheckResult = {
   /** Whether the service reports a version newer than the installed application. */
   readonly status: 'up-to-date' | 'update-available'
@@ -43,6 +45,8 @@ export type UpdateCheckResult = {
   readonly currentVersion: string
   /** Canonical latest stable version returned by the service. */
   readonly latestVersion: string
+  /** Direct HTTPS asset URL for the latest Windows x64 installer. */
+  readonly downloadUrl: string
 }
 
 const SEMVER_PATTERN =
@@ -85,7 +89,7 @@ export function compareSemVerVersions(left: string, right: string): number | nul
 }
 
 /**
- * Check the fixed DSH Desktop version endpoint for a newer stable release.
+ * Check the GitHub Releases endpoint for a newer stable release.
  * @param options - installed version, caller-owned signal, and optional request adapter.
  * @returns a successful comparison, or null when any request or validation step fails.
  */
@@ -97,7 +101,10 @@ export async function checkForStableUpdate(
 
   const init: RequestInit = {
     method: 'GET',
-    headers: { Accept: 'application/json' },
+    headers: {
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    },
     cache: 'no-store',
     redirect: 'error',
     ...(options.signal === undefined ? {} : { signal: options.signal }),
@@ -106,7 +113,7 @@ export async function checkForStableUpdate(
 
   let response: Response
   try {
-    response = await request(DESKTOP_VERSION_ENDPOINT, init)
+    response = await request(UPDATE_RELEASES_ENDPOINT, init)
   } catch {
     return null
   }
@@ -119,12 +126,13 @@ export async function checkForStableUpdate(
     return null
   }
 
-  const latest = parseVersionResponse(body)
-  if (latest === null) return null
+  const release = parseReleaseResponse(body)
+  if (release === null) return null
   return {
-    status: compareParsedSemVer(latest, current) > 0 ? 'update-available' : 'up-to-date',
+    status: compareParsedSemVer(release.latestVersion, current) > 0 ? 'update-available' : 'up-to-date',
     currentVersion: current.version,
-    latestVersion: latest.version,
+    latestVersion: release.latestVersion.version,
+    downloadUrl: release.downloadUrl,
   }
 }
 
@@ -162,15 +170,40 @@ async function readLimitedBody(response: Response): Promise<string> {
   }
 }
 
-function parseVersionResponse(body: string): ParsedSemVer | null {
+function parseReleaseResponse(body: string): { latestVersion: ParsedSemVer; downloadUrl: string } | null {
   let value: unknown
   try {
     value = JSON.parse(body)
   } catch {
     return null
   }
-  if (!isRecord(value) || typeof value.version !== 'string') return null
-  return parseCanonicalStableVersion(value.version)
+  if (!isRecord(value) || typeof value.tag_name !== 'string') return null
+  const latestVersion = parseCanonicalStableVersion(
+    value.tag_name.startsWith('v') ? value.tag_name.slice(1) : value.tag_name,
+  )
+  if (latestVersion === null) return null
+  const downloadUrl = selectWindowsInstallerAsset(value.assets)
+  if (downloadUrl === null) return null
+  return { latestVersion, downloadUrl }
+}
+
+/** Select the Windows x64 NSIS installer asset of a GitHub release. */
+function selectWindowsInstallerAsset(assets: unknown): string | null {
+  if (!Array.isArray(assets)) return null
+  for (const candidate of assets) {
+    if (!isRecord(candidate) || typeof candidate.name !== 'string') continue
+    if (!UPDATE_WINDOWS_INSTALLER_PATTERN.test(candidate.name)) continue
+    if (typeof candidate.browser_download_url !== 'string') continue
+    let parsed: URL
+    try {
+      parsed = new URL(candidate.browser_download_url)
+    } catch {
+      continue
+    }
+    if (parsed.protocol !== 'https:') continue
+    return candidate.browser_download_url
+  }
+  return null
 }
 
 function parseCanonicalStableVersion(input: string): ParsedSemVer | null {

@@ -3,13 +3,14 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
-  DESKTOP_DOWNLOAD_URLS,
   MAX_UPDATE_DOWNLOAD_BYTES,
   UpdateDownloadError,
   downloadDesktopUpdate,
   type DesktopDownloadPlatform,
   type UpdateArtifactRequest,
 } from '../src/update-download.ts'
+
+const WINDOWS_ASSET_URL = 'https://github.com/example/deepseek-harness-desktop/releases/download/v2.1.0/DeepSeek-Harness-Desktop-2.1.0-x64-Setup.exe'
 
 const temporaryRoots: string[] = []
 
@@ -69,7 +70,7 @@ afterEach(async () => {
 })
 
 describe('desktop update installer download', () => {
-  it('streams a macOS DMG from only the fixed endpoint and atomically completes it', async () => {
+  it('streams a macOS DMG from the release asset URL and atomically completes it', async () => {
     const userDataPath = await temporaryUserData()
     const artifact = dmgArtifact()
     const calls: Array<{ url: string; init: RequestInit }> = []
@@ -81,6 +82,7 @@ describe('desktop update installer download', () => {
     const result = await downloadDesktopUpdate({
       platform: 'darwin',
       version: '2.1.0',
+      url: WINDOWS_ASSET_URL,
       userDataPath,
       request,
     })
@@ -88,7 +90,7 @@ describe('desktop update installer download', () => {
     expect(result).toBe(join(userDataPath, 'updates', '2.1.0', 'DeepSeek-Harness-Desktop-2.1.0-mac.dmg'))
     expect(await readFile(result)).toEqual(Buffer.from(artifact))
     expect(calls).toHaveLength(1)
-    expect(calls[0]?.url).toBe(DESKTOP_DOWNLOAD_URLS.darwin)
+    expect(calls[0]?.url).toBe(WINDOWS_ASSET_URL)
     expect(calls[0]?.init).toMatchObject({ method: 'GET', cache: 'no-store', redirect: 'follow' })
     await expectNoPartialFiles(userDataPath, '2.1.0')
   })
@@ -99,9 +101,10 @@ describe('desktop update installer download', () => {
     const result = await downloadDesktopUpdate({
       platform: 'win32',
       version: '2.2.0',
+      url: WINDOWS_ASSET_URL,
       userDataPath,
       request: async (url) => {
-        expect(url).toBe(DESKTOP_DOWNLOAD_URLS.win32)
+        expect(url).toBe(WINDOWS_ASSET_URL)
         return chunkedResponse([artifact])
       },
     })
@@ -116,6 +119,7 @@ describe('desktop update installer download', () => {
     const result = await downloadDesktopUpdate({
       platform: 'darwin',
       version: '2.8.0+build',
+      url: WINDOWS_ASSET_URL,
       userDataPath,
       request: async () => chunkedResponse([dmgArtifact()]),
     })
@@ -137,6 +141,7 @@ describe('desktop update installer download', () => {
     await expectFailure(downloadDesktopUpdate({
       platform,
       version: '2.3.0',
+      url: WINDOWS_ASSET_URL,
       userDataPath,
       request: async () => chunkedResponse([artifact]),
     }), 'invalid-artifact')
@@ -153,6 +158,7 @@ describe('desktop update installer download', () => {
     await expectFailure(downloadDesktopUpdate({
       platform: 'darwin',
       version: '2.4.0',
+      url: WINDOWS_ASSET_URL,
       userDataPath,
       request,
     }), code)
@@ -164,6 +170,7 @@ describe('desktop update installer download', () => {
     await expectFailure(downloadDesktopUpdate({
       platform: 'darwin',
       version: '2.5.0',
+      url: WINDOWS_ASSET_URL,
       userDataPath,
       request: async () => chunkedResponse(
         [dmgArtifact()],
@@ -190,6 +197,7 @@ describe('desktop update installer download', () => {
     await expectFailure(downloadDesktopUpdate({
       platform: 'darwin',
       version: '2.6.0',
+      url: WINDOWS_ASSET_URL,
       userDataPath,
       request,
       signal: controller.signal,
@@ -203,12 +211,14 @@ describe('desktop update installer download', () => {
     await expectFailure(downloadDesktopUpdate({
       platform: 'darwin',
       version: '2.7.0',
+      url: WINDOWS_ASSET_URL,
       userDataPath,
       request: async () => { throw new DOMException('cancelled', 'AbortError') },
     }), 'aborted')
     await expectFailure(downloadDesktopUpdate({
       platform: 'darwin',
       version: '2.7.1',
+      url: WINDOWS_ASSET_URL,
       userDataPath,
       request: async () => { throw new Error('offline') },
     }), 'network')
@@ -227,10 +237,32 @@ describe('desktop update installer download', () => {
     await expectFailure(downloadDesktopUpdate({
       platform: platform as DesktopDownloadPlatform,
       version,
+      url: WINDOWS_ASSET_URL,
       userDataPath,
       request: async () => {
         requested = true
         return chunkedResponse([dmgArtifact()])
+      },
+    }), 'invalid-options')
+    expect(requested).toBe(false)
+  })
+
+  it.each([
+    'not a url',
+    'http://github.com/example/releases/download/v2.9.0/x64-Setup.exe',
+    'https://example.com/DeepSeek-Harness-Desktop-2.9.0-x64-Setup.exe',
+    'https://user:pass@github.com/example/releases/download/v2.9.0/x64-Setup.exe',
+  ])('rejects update URL %s before requesting', async url => {
+    const userDataPath = await temporaryUserData()
+    let requested = false
+    await expectFailure(downloadDesktopUpdate({
+      platform: 'win32',
+      version: '2.9.0',
+      url,
+      userDataPath,
+      request: async () => {
+        requested = true
+        return chunkedResponse([windowsArtifact()])
       },
     }), 'invalid-options')
     expect(requested).toBe(false)
@@ -246,6 +278,7 @@ describe('desktop update installer download', () => {
     await expectFailure(downloadDesktopUpdate({
       platform: 'darwin',
       version: '2.9.0',
+      url: WINDOWS_ASSET_URL,
       userDataPath: 'relative',
       request,
     }), 'invalid-options')
@@ -266,6 +299,7 @@ describe('desktop update installer download', () => {
     await expectFailure(downloadDesktopUpdate({
       platform: 'darwin',
       version: '2.9.0',
+      url: WINDOWS_ASSET_URL,
       userDataPath: linked,
       request,
     }), 'invalid-options')

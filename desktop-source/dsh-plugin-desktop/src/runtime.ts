@@ -85,7 +85,7 @@ export interface DesktopNotification {
 export interface DesktopUpdateAdapter {
   /** Whether the running executable came from an Electron package. */
   readonly isPackaged: boolean
-  /** Whether this platform has a fixed installer download endpoint. */
+  /** Whether this platform has a GitHub release installer. */
   readonly canDownload: boolean
   /** Installed desktop product version. */
   readonly currentVersion: string
@@ -98,7 +98,7 @@ export interface DesktopUpdateAdapter {
   /** Present the outcome of a user-triggered version check. */
   showManualCheckResult(result: UpdateCheckResult | null): Promise<void>
   /** Download and hand one confirmed update to the platform installer. */
-  downloadAndOpen(version: string, signal: AbortSignal): Promise<void>
+  downloadAndOpen(result: UpdateCheckResult, signal: AbortSignal): Promise<void>
   /** Present a native status notification without blocking the Host tree. */
   notify(notification: DesktopNotification): void
 }

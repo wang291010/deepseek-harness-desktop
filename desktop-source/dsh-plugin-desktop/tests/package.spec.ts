@@ -149,7 +149,10 @@ describe('published package surface', () => {
     expect(main.indexOf('const homeDir = installDesktopDshHome'))
       .toBeLessThan(main.indexOf('const environment = loadLayeredEnv'))
     expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).toMatch(
-      /id: desktop-updates[\s\S]*?name: dsh-plugin-desktop\/updates[\s\S]*?disabled: true/u,
+      /id: desktop-updates[\s\S]*?name: dsh-plugin-desktop\/updates/u,
+    )
+    expect(readFileSync(new URL('cordis.patch.yml', packageRoot), 'utf8')).not.toContain(
+      'desktop-updates\n      disabled: true',
     )
     expect(manifest.build?.asarUnpack).toEqual([
       'package.json',

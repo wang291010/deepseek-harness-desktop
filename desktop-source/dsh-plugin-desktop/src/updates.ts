@@ -58,6 +58,7 @@ export function apply(ctx: Context, config: Config): void {
     let disposed = false
     let checking = false
     let availableVersion: string | undefined
+    let availableResult: UpdateCheckResult | undefined
     let downloadingVersion: string | undefined
     let state: UpdateStateV2 = EMPTY_STATE
     let pollTimer: ReturnType<typeof setTimeout> | undefined
@@ -127,35 +128,40 @@ export function apply(ctx: Context, config: Config): void {
       return task
     }
 
-    const observeResult = (result: UpdateCheckResult | null): string | undefined => {
+    const observeResult = (result: UpdateCheckResult | null): UpdateCheckResult | undefined => {
       if (disposed || result === null) return undefined
-      availableVersion = result.status === 'update-available' && adapter.canDownload
-        ? result.latestVersion
-        : undefined
+      const downloadable = result.status === 'update-available' && adapter.canDownload
+      availableVersion = downloadable ? result.latestVersion : undefined
+      availableResult = downloadable ? result : undefined
       refreshTray()
-      return availableVersion
+      return downloadable ? result : undefined
     }
 
-    const startDownload = (version: string): Promise<void> => {
+    const startDownload = (result: UpdateCheckResult): Promise<void> => {
       if (downloadTask !== undefined) return downloadTask
       const task = (async () => {
         let confirmed: boolean
         try {
-          confirmed = await adapter.confirmDownload(version)
+          confirmed = await adapter.confirmDownload(result.latestVersion)
         } catch {
           return
         }
         if (!confirmed || disposed) return
 
-        const confirmedVersion = observeResult(await startCheck())
-        if (confirmedVersion !== version || disposed) return
+        const confirmedResult = observeResult(await startCheck())
+        if (confirmedResult === undefined
+          || confirmedResult.latestVersion !== result.latestVersion
+          || confirmedResult.downloadUrl !== result.downloadUrl
+          || disposed) {
+          return
+        }
 
         const controller = new AbortController()
         downloadController = controller
-        downloadingVersion = version
+        downloadingVersion = confirmedResult.latestVersion
         refreshTray()
         try {
-          await adapter.downloadAndOpen(version, controller.signal)
+          await adapter.downloadAndOpen(confirmedResult, controller.signal)
         } catch {
           // Network, filesystem, and installer-opening failures are deliberately silent.
         } finally {
@@ -170,25 +176,25 @@ export function apply(ctx: Context, config: Config): void {
       return task
     }
 
-    const offerDownload = async (version: string, automatic: boolean): Promise<void> => {
+    const offerDownload = async (result: UpdateCheckResult, automatic: boolean): Promise<void> => {
       if (disposed || !adapter.canDownload) return
       await stateReady
-      if (disposed || (automatic && state.lastPromptedVersion === version)) return
-      await rememberPrompt(version)
-      if (!disposed) await startDownload(version)
+      if (disposed || (automatic && state.lastPromptedVersion === result.latestVersion)) return
+      await rememberPrompt(result.latestVersion)
+      if (!disposed) await startDownload(result)
     }
 
     const runManualCheck = (): Promise<void> => {
       manualTask ??= (async () => {
-        if (availableVersion !== undefined) {
-          await offerDownload(availableVersion, false)
+        if (availableResult !== undefined) {
+          await offerDownload(availableResult, false)
           return
         }
         const result = await startCheck()
         if (disposed) return
-        const version = observeResult(result)
-        if (version !== undefined) {
-          await offerDownload(version, false)
+        const available = observeResult(result)
+        if (available !== undefined) {
+          await offerDownload(available, false)
           return
         }
         await adapter.showManualCheckResult(result)
@@ -199,8 +205,8 @@ export function apply(ctx: Context, config: Config): void {
     const runBackgroundCheck = async (): Promise<void> => {
       if (inFlight !== undefined || disposed) return
       try {
-        const version = observeResult(await startCheck())
-        if (version !== undefined) await offerDownload(version, true)
+        const result = observeResult(await startCheck())
+        if (result !== undefined) await offerDownload(result, true)
       } catch {
         // Scheduled checks never surface failures to the user or the application log.
       }

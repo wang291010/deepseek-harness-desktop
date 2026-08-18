@@ -1,5 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DesktopShellSpec } from '../src/runtime.ts'
+import type { UpdateCheckResult } from '../src/update-checker.ts'
+import { UPDATE_RELEASES_ENDPOINT } from '../src/update-source.ts'
+
+const UPDATE_RESULT: UpdateCheckResult = {
+  status: 'update-available',
+  currentVersion: '2.0.0',
+  latestVersion: '2.1.0',
+  downloadUrl: 'https://github.com/example/deepseek-harness-desktop/releases/download/v2.1.0/DeepSeek-Harness-Desktop-2.1.0-x64-Setup.exe',
+}
 
 const terminal = vi.hoisted(() => ({ open: vi.fn() }))
 const updater = vi.hoisted(() => ({ download: vi.fn() }))
@@ -536,7 +545,7 @@ describe('Electron compatibility runtime', () => {
     const { ElectronDesktopRuntime } = await import('../src/electron-runtime.ts')
     const runtime = new ElectronDesktopRuntime(async () => {})
 
-    await expect(runtime.updates.request('https://www.dshdesktop.cn/api/desktop/version', { method: 'GET' }))
+    await expect(runtime.updates.request(UPDATE_RELEASES_ENDPOINT, { method: 'GET' }))
       .resolves.toBe(response)
     expect(runtime.updates).toMatchObject({
       isPackaged: false,
@@ -545,12 +554,13 @@ describe('Electron compatibility runtime', () => {
       statePath: '/tmp/dsh-desktop-user-data/updates/state.json',
     })
     electron.app.isPackaged = true
-    expect(runtime.updates).toMatchObject({ isPackaged: true, canDownload: true })
+    expect(runtime.updates).toMatchObject({ isPackaged: true, canDownload: false })
 
     await runtime.updates.showManualCheckResult({
       status: 'up-to-date',
       currentVersion: '2.0.0',
       latestVersion: '2.0.0',
+      downloadUrl: UPDATE_RESULT.downloadUrl,
     })
     expect(electron.dialog.showMessageBox).toHaveBeenLastCalledWith(expect.objectContaining({
       title: 'DeepSeek Harness Desktop Is Up to Date',
@@ -571,10 +581,11 @@ describe('Electron compatibility runtime', () => {
     electron.dialog.showMessageBox.mockResolvedValueOnce({ response: 0, checkboxChecked: false })
     await expect(runtime.updates.confirmDownload('2.1.0')).resolves.toBe(true)
     const controller = new AbortController()
-    await runtime.updates.downloadAndOpen('2.1.0', controller.signal)
+    await runtime.updates.downloadAndOpen(UPDATE_RESULT, controller.signal)
     expect(updater.download).toHaveBeenCalledWith({
       platform: 'darwin',
       version: '2.1.0',
+      url: UPDATE_RESULT.downloadUrl,
       userDataPath: '/tmp/dsh-desktop-user-data',
       request: expect.any(Function),
       signal: controller.signal,
@@ -606,7 +617,7 @@ describe('Electron compatibility runtime', () => {
     const runtime = new ElectronDesktopRuntime(async () => {})
     runtime.schedule({ ...spec, requestQuit })
 
-    const pending = runtime.updates.downloadAndOpen('2.1.0', new AbortController().signal)
+    const pending = runtime.updates.downloadAndOpen(UPDATE_RESULT, new AbortController().signal)
     await vi.waitFor(() => { expect(childProcess.spawn).toHaveBeenCalledOnce() })
     expect(childProcess.spawn).toHaveBeenCalledWith(
       'C:\\Updates\\DeepSeek-Harness-Desktop-2.1.0-windows.exe',
@@ -634,7 +645,7 @@ describe('Electron compatibility runtime', () => {
     const runtime = new ElectronDesktopRuntime(async () => {})
     runtime.schedule({ ...spec, requestQuit })
 
-    const pending = runtime.updates.downloadAndOpen('2.1.0', new AbortController().signal)
+    const pending = runtime.updates.downloadAndOpen(UPDATE_RESULT, new AbortController().signal)
     await vi.waitFor(() => { expect(childProcess.spawn).toHaveBeenCalledOnce() })
     childProcess.emit('error', new Error('blocked'))
 
@@ -650,7 +661,7 @@ describe('Electron compatibility runtime', () => {
     const { ElectronDesktopRuntime } = await import('../src/electron-runtime.ts')
     const runtime = new ElectronDesktopRuntime(async () => {})
 
-    await runtime.updates.downloadAndOpen('2.1.0', new AbortController().signal)
+    await runtime.updates.downloadAndOpen(UPDATE_RESULT, new AbortController().signal)
 
     expect(childProcess.spawn).not.toHaveBeenCalled()
   })
@@ -662,7 +673,7 @@ describe('Electron compatibility runtime', () => {
     const { ElectronDesktopRuntime } = await import('../src/electron-runtime.ts')
     const runtime = new ElectronDesktopRuntime(async () => {})
 
-    await expect(runtime.updates.downloadAndOpen('2.1.0', new AbortController().signal))
+    await expect(runtime.updates.downloadAndOpen(UPDATE_RESULT, new AbortController().signal))
       .rejects.toThrow('Launch Services rejected the image')
     expect(electron.dialog.showMessageBox).not.toHaveBeenCalled()
   })
@@ -678,7 +689,7 @@ describe('Electron compatibility runtime', () => {
     const runtime = new ElectronDesktopRuntime(async () => {})
     const controller = new AbortController()
 
-    const pending = runtime.updates.downloadAndOpen('2.1.0', controller.signal)
+    const pending = runtime.updates.downloadAndOpen(UPDATE_RESULT, controller.signal)
     await vi.waitFor(() => { expect(electron.shell.openPath).toHaveBeenCalledOnce() })
     controller.abort()
     finishOpen('')
