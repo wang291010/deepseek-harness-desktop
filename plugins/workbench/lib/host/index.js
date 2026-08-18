@@ -24,8 +24,9 @@
  *       `command/run` args — the `todo/write` event is the authoritative
  *       domain event.
  *
- * preset/* is confined to ~/.dsh/.agent-presets/<id>/. Filesystem and Git
- * routes are confined to canonical paths owned by ctx.workspaceRegistry.
+ * preset/* is confined to the DSH home (DSH_HOME, default ~/.dsh) under
+ * .agent-presets/<id>/. Filesystem and Git routes are confined to canonical
+ * paths owned by ctx.workspaceRegistry.
  */
 import { homedir } from 'node:os';
 import { isAbsolute, join, resolve, sep } from 'node:path';
@@ -35,7 +36,7 @@ import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 
 const name = 'dsh-workbench';
-const DSH_ROOT = join(homedir(), '.dsh');
+const DSH_ROOT = resolve((process.env.DSH_HOME ?? '').trim() || join(homedir(), '.dsh'));
 const PRESET_ROOT = join(DSH_ROOT, '.agent-presets');
 const MAX_READ_BYTES = 512 * 1024;
 const MAX_BODY_BYTES = 768 * 1024;
