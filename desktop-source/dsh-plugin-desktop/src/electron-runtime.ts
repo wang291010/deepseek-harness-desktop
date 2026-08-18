@@ -82,7 +82,6 @@ export class ElectronDesktopRuntime implements DesktopRuntime {
   private scheduled: DesktopShellSpec | undefined
   private mountTask: Promise<void> | undefined
   private release: (() => Promise<void>) | undefined
-  private quitting = false
   private readonly trayItems = new Map<symbol, DesktopTrayItem>()
   private terminalSpec: DesktopTerminalSpec | undefined
 
@@ -214,7 +213,8 @@ export class ElectronDesktopRuntime implements DesktopRuntime {
 
   /** @inheritdoc */
   prepareToQuit(): void {
-    this.quitting = true
+    // Window close now quits directly through the shutdown coordinator, so no
+    // separate close-guard state is needed for a final exit.
   }
 
   private contributedTrayItems(group: DesktopTrayItemGroup): Electron.MenuItemConstructorOptions[] {
@@ -363,7 +363,6 @@ export class ElectronDesktopRuntime implements DesktopRuntime {
     if (spec === undefined) throw new Error('dsh-plugin-desktop: no active shell can exit for update installation')
     signal.throwIfAborted()
     await this.launchWindowsUpdateInstaller(artifactPath)
-    this.quitting = true
     spec.requestQuit(0)
   }
 
@@ -455,11 +454,6 @@ export class ElectronDesktopRuntime implements DesktopRuntime {
     this.window = window
 
     const show = (): void => { this.show() }
-    const close = (event: Electron.Event): void => {
-      if (this.quitting) return
-      event.preventDefault()
-      window.hide()
-    }
     const preserveBlankTitle = (event: Electron.Event): void => { event.preventDefault() }
     const navigate = (event: Electron.Event<{ url: string }>): void => {
       let targetOrigin: string | undefined
@@ -472,7 +466,6 @@ export class ElectronDesktopRuntime implements DesktopRuntime {
     }
 
     app.on('activate', show)
-    window.on('close', close)
     window.on('page-title-updated', preserveBlankTitle)
     window.webContents.on('will-frame-navigate', navigate)
     window.webContents.on('will-redirect', navigate)
@@ -521,7 +514,6 @@ export class ElectronDesktopRuntime implements DesktopRuntime {
       if (released) return
       released = true
       app.off('activate', show)
-      window.off('close', close)
       window.off('page-title-updated', preserveBlankTitle)
       window.webContents.off('will-frame-navigate', navigate)
       window.webContents.off('will-redirect', navigate)

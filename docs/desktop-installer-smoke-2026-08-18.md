@@ -58,13 +58,18 @@ same pattern already used by `plugins/usage-monitor`. Rebuilt and re-verified:
 - The uninstaller left one packaged sourcemap file
   (`@opentelemetry/resources/.../getMachineId-unsupported.js.map`) plus its
   empty parent tree under `resources\app.asar.unpacked`. It contained no user
-  data and was removed manually. Cosmetic uninstaller issue.
+  data and was removed manually. The file timestamp shows it was extracted by
+  the interrupted in-place upgrade, so it was not in the first install's
+  uninstaller manifest. A clean install/uninstall cycle is re-verified before
+  the next release.
 
 ## Known release items
 
 - Installer and executable are unsigned by design (`signExecutable=false`);
   Authenticode signing remains a separate release gate.
+- Window close now quits the application (instead of hiding to the tray), so a
+  running application is never left behind for the installer's process check.
+  The in-place upgrade path is re-verified in the next release smoke.
 - The installer/exe file properties still show the package description
-  "DSH Desktop: an Electron shell composed as a DeepSeek Harness Cordis
-  plugin" (inherited from `package.json` `description`). Cosmetic branding
-  cleanup, no functional impact.
+  inherited from `package.json` `description`; updated to the DeepSeek Harness
+  Desktop wording. Cosmetic branding cleanup, no functional impact.
