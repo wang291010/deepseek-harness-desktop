@@ -38,6 +38,10 @@ coverage/
 .cache/
 .eslintcache
 
+# Desktop source ships these application icons as source assets.
+!desktop-source/dsh-plugin-desktop/build/
+!desktop-source/dsh-plugin-desktop/build/**
+
 # Editor and operating-system files
 .idea/
 .vscode/
