@@ -313,7 +313,7 @@ describe('published package surface', () => {
       {
         from: '../../plugins/workbench',
         to: 'app.asar.unpacked/node_modules/dsh-workbench',
-        filter: ['package.json', 'cordis.patch.yml', 'lib/**', 'README.md'],
+        filter: ['package.json', 'cordis.patch.yml', 'lib/**', 'tools/**', 'node_modules/**', 'README.md'],
       },
     ])
   })

@@ -1143,6 +1143,18 @@ verifiedBy/At，可一键移入 02-Atomic）→ 入索引（文本 + 向量 + �
   `verify-packaged-runtime.ts` 的必需条目可补充 tools/knowledge_embed.mjs 断言（下次构建时）。
 - 完整 `dist:win` 重建与 R2 覆盖安装实测留待构建环境执行（网络/工具链依赖）。
 
+**队列五 R2/R5 完成（2026-08-20）**：
+
+- 完整 `dist:win` 构建成功：安装器 `DeepSeek-Harness-Desktop-2.0.3-x64-Setup.exe`（SHA-256
+  `C9D54E0117B35177DE917A0B41B6779ABADBD169FA03F670FACF3F6303FFAF60`），门禁（113+4 测试 +
+  runtime closure）与安装器校验通过。
+- 覆盖安装实测：退出桌面端 → `/S` 静默覆盖安装 → exit 0，无“application cannot be closed”；
+  harness-home 数据保留；新版本工作台 API 正常、`bge-node` 向量实测 512 维通过
+  （依赖随安装包内置，朋友机器免 Python）。
+- 打包依赖方案：`@huggingface/transformers` 加入 dsh-plugin-desktop dependencies（进入
+  app.asar.unpacked/node_modules），工作台 Node 桥从上级 node_modules 解析；打包门禁测试与
+  verify-packaged-runtime 断言同步更新。
+
 ### 执行建议（下一轮开始）
 
 1. 先跑一轮完整 GUI 回归把 V1/V2 的实测结果拿到（我可代跑，你按清单抽查）。
