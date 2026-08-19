@@ -157,8 +157,8 @@
 - 知识库页新增"总览"Tab：知识库技能池 / 项目（含注册工作区）/ 工作流（含模板库）/ 专家技能
   （preset.yml skills 与知识库统一）；条目 frontmatter 新增 `type: note|skill|project|workflow`。
 - 部署：备份 `backups\workbench-p5-overview-deploy-20260819-161129`；smoke + CDP GUI 回归通过。
-- Obsidian 1.13.7 安装包与 Dataview/Excalidraw 插件已下载，待安装配置（见工作台知识库页
-  "在 Obsidian 中打开"）。
+- Obsidian 1.13.7 已安装，知识库 vault 已注册并打开（工作台"在 Obsidian 中打开"按钮可用）；
+  Dataview 0.5.70 + Excalidraw 2.25.3 已配置启用；首次打开 vault 需点一次"信任作者并启用插件"。
 
 ## 三、未完成与下一步
 

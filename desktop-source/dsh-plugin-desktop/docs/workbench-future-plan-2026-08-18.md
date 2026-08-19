@@ -556,7 +556,9 @@
   专家技能（preset.yml 的 skills: 列表，与知识库技能池统一）；条目 frontmatter 新增 type。
 - 验证：smoke 新增标签检索/直接写入自动重建/总览分组断言；CDP GUI 回归新增新建条目全流程与
   总览 Tab 断言，全部通过；部署备份 `backups\workbench-p5-overview-deploy-20260819-161129`。
-- Obsidian：已下载 1.13.7 安装包 + Dataview 0.5.70 + Excalidraw 2.25.3，待安装并配置 vault。
+- Obsidian：已安装 1.13.7（静默安装到 `%LOCALAPPDATA%\Programs\Obsidian`），vault 已注册并打开
+  （`%APPDATA%\obsidian\obsidian.json` 写入 knowledge vault）；Dataview 0.5.70 + Excalidraw 2.25.3
+  已放入 `.obsidian\plugins` 并启用（首次打开 vault 需点一次"信任作者并启用插件"）。
 
 ### Phase 6：打磨与文档（P7）
 
