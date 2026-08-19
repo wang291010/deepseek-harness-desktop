@@ -1222,14 +1222,48 @@ function parsePresetYamlSimple(text) {
 async function knowledgeOverview() {
   const index = await scanKnowledgeVault();
   const entries = index.entries || [];
-  const byType = (type, tagHits) => entries.filter((entry) => entry.type === type || entry.tags.some((tag) => tagHits.includes(tag.toLowerCase())));
-  const pick = (entry) => ({ path: entry.path, title: entry.title, type: entry.type, tags: entry.tags, confidence: entry.confidence, summary: entry.summary, folder: entry.folder, updatedAt: entry.updatedAt });
-  const skills = byType('skill', ['技能', 'skill', 'skills']).map(pick);
-  const projects = byType('project', ['项目', 'project']).map(pick);
-  const workflows = byType('workflow', ['工作流', 'workflow']).map(pick);
+  const pick = (entry) => ({
+    path: entry.path,
+    name: entry.name,
+    title: entry.title,
+    type: entry.type,
+    tags: entry.tags,
+    confidence: entry.confidence,
+    computedConfidence: entry.computedConfidence || entry.confidence,
+    confidenceBasis: entry.confidenceBasis,
+    status: entry.status,
+    staleness: entry.staleness,
+    claimType: entry.claimType,
+    summary: entry.summary,
+    source: entry.source,
+    related: entry.related,
+    folder: entry.folder,
+    updatedAt: entry.updatedAt
+  });
+  const tagHit = (entry, tags) => entry.tags.some((tag) => tags.includes(String(tag).toLowerCase()));
+  const skills = [];
+  const projects = [];
+  const workflows = [];
+  const notes = [];
+  for (const entry of entries) {
+    if (entry.type === 'skill' || tagHit(entry, ['技能', 'skill', 'skills'])) skills.push(entry);
+    else if (entry.type === 'project' || entry.folder === 'projects' || tagHit(entry, ['项目', 'project'])) projects.push(entry);
+    else if (entry.type === 'workflow' || tagHit(entry, ['工作流', 'workflow'])) workflows.push(entry);
+    else if (entry.type === 'note' && !['raw', 'archive', 'templates', 'mocs'].includes(entry.folder)) notes.push(entry);
+  }
+  const grouped = {
+    skills: skills.map(pick),
+    projects: projects.map(pick),
+    workflows: workflows.map(pick),
+    notes: notes.map(pick)
+  };
   let workspaceProjects = [];
   try {
-    workspaceProjects = (workspaceRegistry ? workspaceRegistry.list() : []).map((workspace) => ({ path: String(workspace.path || ''), name: basename(String(workspace.path || '')) || String(workspace.path || '') }));
+    workspaceProjects = (workspaceRegistry ? workspaceRegistry.list() : []).map((workspace) => ({
+      path: String(workspace.path || ''),
+      name: basename(String(workspace.path || '')) || String(workspace.path || ''),
+      workspaceId: String(workspace.workspaceId || '')
+    }));
   } catch (e) { workspaceProjects = []; }
   let workflowTemplates = [];
   try {
@@ -1256,10 +1290,8 @@ async function knowledgeOverview() {
   } catch (e) { experts = []; }
   return {
     stats: index.stats,
-    skills,
-    projects,
+    ...grouped,
     workspaceProjects,
-    workflows,
     workflowTemplates,
     experts,
     folders: KNOWLEDGE_FOLDER_IDS

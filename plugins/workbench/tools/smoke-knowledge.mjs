@@ -347,6 +347,10 @@ try {
   assert.ok(overview.skills.some((item) => item.title === '技能-代码审查'));
   assert.ok(overview.projects.some((item) => item.title === '项目-工作台'));
   assert.ok(overview.workflows.some((item) => item.title === '工作流-发布'));
+  assert.ok(overview.notes.some((item) => item.title === '直接写入条目'), 'plain notes should be grouped separately');
+  assert.ok(overview.skills.every((item) => item.name), 'overview items should carry file name for preview/obsidian');
+  assert.ok(!overview.skills.some((item) => item.title === '项目-工作台'), 'groups should be mutually exclusive');
+  assert.ok(!overview.notes.some((item) => item.title === '技能-代码审查'), 'typed skill should not leak into notes');
   assert.ok(overview.workflowTemplates.length >= 4, 'default workflow templates should be listed');
   assert.ok(Array.isArray(overview.experts));
   assert.ok(Array.isArray(overview.workspaceProjects));

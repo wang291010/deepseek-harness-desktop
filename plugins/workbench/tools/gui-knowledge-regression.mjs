@@ -275,17 +275,26 @@ try {
     return true;
   })()`);
   await wait(2500);
-  const overviewState = await evaluate(`(() => {
-    const text = document.body.innerText;
-    return {
-      hasSkillPool: text.includes('知识库技能池'),
-      hasExpertSkills: text.includes('专家技能'),
-      hasProjects: text.includes('项目（知识库 + 工作区）'),
-      hasWorkflows: text.includes('工作流（知识库 + 模板库）'),
-      hasTyped: text.includes('技能-GUI示例') && text.includes('项目-GUI示例') && text.includes('工作流-GUI示例')
-    };
+  const overviewState = await evaluate(`(async () => {
+    const clickTab = (label) => { const b = [...document.querySelectorAll('button')].find((x) => x.innerText.trim().startsWith(label)); if (b) b.click(); return !!b; };
+    const text = () => document.body.innerText;
+    const hasTabs = ['技能（', '项目（', '知识点（', '工作流（'].every((label) => text().includes(label));
+    const skillsShown = text().includes('技能-GUI示例');
+    const expand = (() => { const b = [...document.querySelectorAll('button, strong')].find((x) => x.innerText.includes('技能-GUI示例')); if (!b) return false; b.click(); return true; })();
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 900));
+    const detailShown = text().includes('置信度依据：');
+    clickTab('项目');
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 300));
+    const projectsShown = text().includes('项目-GUI示例');
+    clickTab('知识点');
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 300));
+    const notesShown = text().includes('GUI 回归测试条目');
+    clickTab('工作流');
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 300));
+    const workflowsShown = text().includes('工作流-GUI示例') || text().includes('工作流模板库');
+    return { hasTabs, skillsShown, projectsShown, notesShown, workflowsShown, expand, detailShown, snippet: text().slice(0, 240) };
   })()`);
-  if (!overviewState.hasSkillPool || !overviewState.hasExpertSkills || !overviewState.hasTyped) {
+  if (!overviewState.hasTabs || !overviewState.skillsShown || !overviewState.projectsShown || !overviewState.notesShown || !overviewState.workflowsShown || !overviewState.expand) {
     throw new Error('overview regression failed: ' + JSON.stringify(overviewState));
   }
   await shot('knowledge-overview.png');

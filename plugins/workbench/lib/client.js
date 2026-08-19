@@ -3137,12 +3137,16 @@ window.__ModuleLoader__.load({
       ] });
     }
 
-    function KnowledgePage() {
+    function KnowledgePage({ onNavigate, useWorkspaces }) {
+      const wsItems = useWorkspaces ? useWorkspaces((s) => (s.items || [])) : [];
       const [vaultRoot, setVaultRoot] = React.useState("");
       const [stats, setStats] = React.useState(null);
       const [entries, setEntries] = React.useState([]);
       const [vectorMeta, setVectorMeta] = React.useState(null);
       const [overview, setOverview] = React.useState(null);
+      const [overviewCat, setOverviewCat] = React.useState("skills");
+      const [overviewExpanded, setOverviewExpanded] = React.useState({});
+      const [overviewDetail, setOverviewDetail] = React.useState({});
       const [busy, setBusy] = React.useState(false);
       const [error, setError] = React.useState("");
       const [tab, setTab] = React.useState("dash");
@@ -3299,6 +3303,32 @@ window.__ModuleLoader__.load({
         document.execCommand("copy");
         ta.remove();
       };
+      const dirNameMap = { raw: "00-Raw", inbox: "01-Inbox", atomic: "02-Atomic", mocs: "03-MOCs", projects: "04-Projects", archive: "05-Archive", templates: "99-Templates" };
+      const openEntryObsidian = (item) => {
+        if (!vaultRoot || !item) return;
+        const abs = vaultRoot + "\\" + (dirNameMap[item.folder] || item.folder) + "\\" + item.name;
+        const uri = "obsidian://open?path=" + encodeURIComponent(abs);
+        wbFetchJson("/api/dsh-workbench/open/external", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ uri }) })
+          .catch((e) => setError(String((e && e.message) || e) + "；可复制路径后在 Obsidian 打开"));
+      };
+      const toggleOverviewItem = (item) => {
+        setOverviewExpanded((cur) => ({ ...cur, [item.path]: !cur[item.path] }));
+        if (overviewDetail[item.path] === undefined) {
+          wbFetchJson("/api/dsh-workbench/knowledge/read?path=" + encodeURIComponent(item.path))
+            .then(({ data }) => setOverviewDetail((cur) => ({ ...cur, [item.path]: String(data.content || "") })))
+            .catch(() => setOverviewDetail((cur) => ({ ...cur, [item.path]: "" })));
+        }
+      };
+      const openWorkspace = (ws) => {
+        const matched = wsItems.find((item) => normPath(item.path) === normPath(ws.path)) || (ws.workspaceId ? { workspaceId: ws.workspaceId } : null);
+        if (!WB_SVC.workspaces || !WB_SVC.sessions || !matched || !matched.workspaceId) { setError("当前环境不支持直接打开工作区，路径：" + (ws.path || "")); return; }
+        setBusy(true);
+        setError("");
+        WB_SVC.workspaces.connectWorkspace(matched.workspaceId).then((sid) => {
+          if (!sid) throw new Error("创建会话失败");
+          if (WB_SVC.sessions) WB_SVC.sessions.open(sid);
+        }).catch((e) => setError("打开工作区失败：" + String((e && e.message) || e))).finally(() => setBusy(false));
+      };
       const runSearch = () => {
         if (!search.query.trim()) { setError("请输入检索问题"); return; }
         setBusy(true);
@@ -3416,6 +3446,45 @@ window.__ModuleLoader__.load({
         entry.related.length > 0 && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "关联：" + entry.related.slice(0, 4).map((r) => "[[" + r + "]]").join(" ") }),
         jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: entry.path + " · " + new Date(entry.updatedAt).toLocaleString() })
       ] }, entry.path);
+      const overviewBodyPreview = (item) => {
+        const detail = overviewDetail[item.path];
+        if (detail === undefined) return jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "加载正文…" });
+        if (detail === "") return null;
+        const bodyText = String(detail).replace(/^---[\s\S]*?---\r?\n?/, "").replace(/\s+/g, " ").trim().slice(0, 320);
+        return bodyText ? jsxRuntime.jsx("p", { className: "wb-knowledge-snippet", children: bodyText + (String(detail).length > 320 ? "…" : "") }) : null;
+      };
+      const overviewCard = (item) => {
+        const expanded = !!overviewExpanded[item.path];
+        return jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
+          jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [
+            jsxRuntime.jsx("strong", { style: { cursor: "pointer" }, title: "点击展开/收起详情", onClick: () => toggleOverviewItem(item), children: expanded ? "▾ " + item.title : "▸ " + item.title }),
+            jsxRuntime.jsxs("div", { className: "wb-collab-files", children: [
+              item.type && item.type !== "note" && jsxRuntime.jsx("span", { className: "wb-collab-file-chip", children: typeLabel[item.type] || item.type }, "type"),
+              item.status && jsxRuntime.jsx("span", { className: "wb-collab-file-chip", children: statusLabel[item.status] || item.status }, "status"),
+              jsxRuntime.jsx("small", {
+                className: confBadge(item.computedConfidence || item.confidence),
+                title: item.confidenceBasis && item.confidenceBasis.reasons ? "置信度依据：" + item.confidenceBasis.reasons.join("；") : "置信度依据：无",
+                children: "置信度 " + confidenceLabel[item.computedConfidence || item.confidence] + (item.computedConfidence && item.computedConfidence !== item.confidence ? "（声明 " + confidenceLabel[item.confidence] + "）" : "")
+              })
+            ] })
+          ] }),
+          item.summary && jsxRuntime.jsx("p", { className: "wb-collab-memory-finding", children: item.summary }),
+          expanded && jsxRuntime.jsxs("div", { className: "wb-collab-memory-list", children: [
+            item.tags.length > 0 && jsxRuntime.jsx("div", { className: "wb-collab-files", children: item.tags.map((tag) => jsxRuntime.jsx("span", { className: "wb-collab-file-chip", children: "#" + tag }, tag)) }),
+            jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "用途：" + (item.summary || "（未写摘要）") + (item.claimType ? " · 类型 " + claimLabel[item.claimType] : "") }),
+            item.source && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "来源：" + item.source }),
+            item.related.length > 0 && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "关联：" + item.related.map((r) => "[[" + r + "]]").join(" ") }),
+            item.confidenceBasis && item.confidenceBasis.reasons && item.confidenceBasis.reasons.length > 0 && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "置信度依据：" + item.confidenceBasis.reasons.join("；") }),
+            overviewBodyPreview(item),
+            jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: item.path + " · " + new Date(item.updatedAt).toLocaleString() }),
+            jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => openPreview(item), children: "查看/编辑" }),
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => openEntryObsidian(item), children: "在 Obsidian 打开" }),
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => wbCopyText(vaultRoot + "\\" + (dirNameMap[item.folder] || item.folder) + "\\" + item.name), children: "复制路径" })
+            ] })
+          ] })
+        ] }, item.path);
+      };
       return jsxRuntime.jsxs("div", { className: "wb-page wb-knowledge", children: [
         jsxRuntime.jsxs("div", { className: "wb-page-inner", children: [
           jsxRuntime.jsxs("div", { className: "wb-style-head", children: [
@@ -3433,42 +3502,38 @@ window.__ModuleLoader__.load({
           jsxRuntime.jsx("nav", { className: "wb-collab-panel-tabs", children: TABS.map((item) => jsxRuntime.jsx("button", { type: "button", className: "wb-collab-panel-tab" + (tab === item.id ? " wb-collab-panel-tab-active" : ""), onClick: () => setTab(item.id), children: item.label }, item.id)) }),
 
           tab === "overview" && jsxRuntime.jsxs("div", { className: "wb-knowledge-group", children: [
-            jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: [
-              jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "技能" }), jsxRuntime.jsx("div", { className: "wb-monitor-big", children: (overview && overview.skills && overview.skills.length) || 0 })] }),
-              jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "项目" }), jsxRuntime.jsx("div", { className: "wb-monitor-big", children: ((overview && overview.projects && overview.projects.length) || 0) + ((overview && overview.workspaceProjects && overview.workspaceProjects.length) || 0) })] }),
-              jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "工作流" }), jsxRuntime.jsx("div", { className: "wb-monitor-big", children: ((overview && overview.workflows && overview.workflows.length) || 0) + ((overview && overview.workflowTemplates && overview.workflowTemplates.length) || 0) })] }),
-              jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "专家" }), jsxRuntime.jsx("div", { className: "wb-monitor-big", children: (overview && overview.experts && overview.experts.length) || 0 })] })
+            jsxRuntime.jsx("div", { className: "wb-knowledge-filter", children: [
+              { id: "skills", label: "技能" }, { id: "projects", label: "项目" }, { id: "notes", label: "知识点" }, { id: "workflows", label: "工作流" }
+            ].map((item) => jsxRuntime.jsxs("button", { type: "button", className: overviewCat === item.id ? "wb-knowledge-filter-active" : "", onClick: () => setOverviewCat(item.id), children: [
+              item.label + "（" + (((overview && overview[item.id]) || []).length) + "）"
+            ] }, item.id)) }),
+            overviewCat === "skills" && jsxRuntime.jsxs("div", { className: "wb-collab-memory-list", children: [
+              jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "整体技能池：所有 type: skill 或标签「技能」的条目统一展示；专家之间重复的技能不再单列。点击条目可展开详情。" }),
+              overview && overview.skills && overview.skills.length ? jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: overview.skills.map(overviewCard) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "还没有技能条目。新建条目时类型选「技能」，或直接在 frontmatter 写 type: skill。" })
             ] }),
-            jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-monitor-wide", children: [
-              jsxRuntime.jsx("h3", { children: "知识库技能池（全部技能，type: skill 或标签 技能/skill）" }),
-              overview && overview.skills && overview.skills.length ? jsxRuntime.jsx("div", { className: "wb-collab-memory-list", children: overview.skills.map((item) => jsxRuntime.jsxs("div", { className: "wb-collab-memory-card", children: [
-                jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: item.title }), jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: item.path })] }),
-                item.summary && jsxRuntime.jsx("p", { className: "wb-collab-memory-finding", children: item.summary }),
-                item.tags.length > 0 && jsxRuntime.jsx("div", { className: "wb-collab-files", children: item.tags.map((tag) => jsxRuntime.jsx("span", { className: "wb-collab-file-chip", children: "#" + tag }, tag)) })
-              ] }, item.path)) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "还没有技能条目。新建条目时类型选「技能」，或直接在 frontmatter 写 type: skill。" })
+            overviewCat === "projects" && jsxRuntime.jsxs("div", { className: "wb-collab-memory-list", children: [
+              jsxRuntime.jsx("h3", { children: "知识库项目" }),
+              overview && overview.projects && overview.projects.length ? jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: overview.projects.map(overviewCard) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "还没有知识库项目条目（type: project 或放入 04-Projects）。" }),
+              jsxRuntime.jsx("h3", { children: "工作区项目（当前注册项目，可一键打开）" }),
+              overview && overview.workspaceProjects && overview.workspaceProjects.length ? jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: overview.workspaceProjects.map((ws) => jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
+                jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: ws.name }), jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: ws.path })] }),
+                jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "注册工作区，可与知识库项目互相引用。" }),
+                jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy || !ws.workspaceId, onClick: () => openWorkspace(ws), children: "打开工作区" })] })
+              ] }, ws.path)) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "暂无注册工作区（在会话栏创建/选择项目后这里会出现）。" })
             ] }),
-            jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-monitor-wide", children: [
-              jsxRuntime.jsx("h3", { children: "项目（知识库 + 工作区）" }),
-              jsxRuntime.jsx("div", { className: "wb-collab-memory-list", children: [
-                (overview && overview.projects || []).map((item) => jsxRuntime.jsx("div", { className: "wb-collab-memory-finding", children: "📁 " + item.title + "（" + item.path + "）" }, item.path)),
-                (overview && overview.workspaceProjects || []).map((item) => jsxRuntime.jsx("div", { className: "wb-collab-memory-finding", children: "🖥 工作区：" + item.name + "（" + item.path + "）" }, item.path))
-              ] }),
-              jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "知识库项目用 type: project 或放入 04-Projects；工作区项目来自当前注册的项目列表。" })
+            overviewCat === "notes" && jsxRuntime.jsxs("div", { className: "wb-collab-memory-list", children: [
+              jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "知识点：除技能/项目/工作流外的常规笔记（不含源材料/归档/模板/自动索引）。" }),
+              overview && overview.notes && overview.notes.length ? jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: overview.notes.map(overviewCard) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "还没有知识点条目。" })
             ] }),
-            jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-monitor-wide", children: [
-              jsxRuntime.jsx("h3", { children: "工作流（知识库 + 模板库）" }),
-              jsxRuntime.jsx("div", { className: "wb-collab-memory-list", children: [
-                (overview && overview.workflows || []).map((item) => jsxRuntime.jsx("div", { className: "wb-collab-memory-finding", children: "🔁 " + item.title + "（" + item.path + "）" }, item.path)),
-                (overview && overview.workflowTemplates || []).map((item) => jsxRuntime.jsx("div", { className: "wb-collab-memory-finding", children: "🧩 模板：" + item.title + "（工作流页）" }, item.id))
-              ] }),
-              jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "知识库工作流用 type: workflow 或标签 工作流；下方是工作流页现有的模板库，做过的流程建议蒸馏成工作流条目沉淀。" })
-            ] }),
-            jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-monitor-wide", children: [
-              jsxRuntime.jsx("h3", { children: "专家技能（每位专家独有的技能，与知识库技能池统一）" }),
-              overview && overview.experts && overview.experts.length ? jsxRuntime.jsx("div", { className: "wb-collab-memory-list", children: overview.experts.map((expert) => jsxRuntime.jsxs("div", { className: "wb-collab-memory-card", children: [
-                jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: expert.name }), jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: expert.id })] }),
-                expert.skills && expert.skills.length ? jsxRuntime.jsx("div", { className: "wb-collab-files", children: expert.skills.map((skill) => jsxRuntime.jsx("span", { className: "wb-collab-file-chip", children: skill }, skill)) }) : jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "未声明技能。在专家编辑里给 preset.yml 加 skills: [技能名]，技能名与知识库技能条目保持一致。" })
-              ] }, expert.id)) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "暂无专家预设" })
+            overviewCat === "workflows" && jsxRuntime.jsxs("div", { className: "wb-collab-memory-list", children: [
+              jsxRuntime.jsx("h3", { children: "知识库工作流" }),
+              overview && overview.workflows && overview.workflows.length ? jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: overview.workflows.map(overviewCard) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "还没有工作流条目（type: workflow 或标签「工作流」）。" }),
+              jsxRuntime.jsx("h3", { children: "工作流模板库" }),
+              overview && overview.workflowTemplates && overview.workflowTemplates.length ? jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: overview.workflowTemplates.map((template) => jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
+                jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: template.title }), jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "模板" })] }),
+                template.description && jsxRuntime.jsx("p", { className: "wb-collab-memory-finding", children: template.description }),
+                jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", onClick: () => { if (onNavigate) onNavigate("workflows"); }, children: "在工作流页打开" })] })
+              ] }, template.id)) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "暂无模板" })
             ] })
           ] }),
 
@@ -4080,7 +4145,7 @@ window.__ModuleLoader__.load({
             : page === "workflows"
               ? jsxRuntime.jsx(WorkflowPage, { useSessions, useWorkbenchTasks })
             : page === "kb"
-              ? jsxRuntime.jsx(KnowledgePage, {})
+              ? jsxRuntime.jsx(KnowledgePage, { onNavigate: onSelect, useWorkspaces })
             : jsxRuntime.jsx(WorkbenchPage, { id: page })
         })
       ] }) });
