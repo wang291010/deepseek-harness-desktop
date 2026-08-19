@@ -3072,18 +3072,51 @@ async function readTaskStore() {
     if (linkInfo.size > MAX_TASK_STORE_BYTES) throw new Error(`task store exceeds ${MAX_TASK_STORE_BYTES} bytes`);
     const parsed = JSON.parse(await readFile(TASK_STORE, 'utf8'));
     if (!parsed || ![1, 2, 3, 4].includes(parsed.version) || !Array.isArray(parsed.tasks)) throw new Error('unsupported task store format');
+    const modelHealth = cleanModelHealth(parsed.modelHealth);
     return {
       version: 4,
       revision: Number.isSafeInteger(parsed.revision) && parsed.revision >= 0 ? parsed.revision : 0,
       tasks: parsed.tasks.map(cleanTask),
       templates: Array.isArray(parsed.templates) ? parsed.templates.map(cleanTemplate) : [],
       ideas: Array.isArray(parsed.ideas) ? parsed.ideas.map(cleanIdea) : [],
-      orchestrations: Array.isArray(parsed.orchestrations) ? parsed.orchestrations.map(cleanOrchestration) : []
+      orchestrations: Array.isArray(parsed.orchestrations) ? parsed.orchestrations.map(cleanOrchestration) : [],
+      modelHealth
     };
   } catch (error) {
-    if (error && error.code === 'ENOENT') return { version: 4, revision: 0, tasks: [], templates: [], ideas: [], orchestrations: [] };
+    if (error && error.code === 'ENOENT') return { version: 4, revision: 0, tasks: [], templates: [], ideas: [], orchestrations: [], modelHealth: {} };
     throw error;
   }
+}
+
+function cleanModelHealth(value) {
+  const raw = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const out = {};
+  for (const [key, entry] of Object.entries(raw).slice(-200)) {
+    const item = entry && typeof entry === 'object' ? entry : {};
+    const failures = Number.isSafeInteger(item.failures) && item.failures > 0 ? Math.min(item.failures, 100) : 0;
+    const lastFailedAt = typeof item.lastFailedAt === 'string' ? item.lastFailedAt : '';
+    if (failures > 0 && lastFailedAt) out[String(key).slice(0, 300)] = { failures, lastFailedAt };
+  }
+  return out;
+}
+
+function recordModelFailure(provider, model, detail) {
+  const key = (String(provider || '') + '\u0000' + String(model || '')).slice(0, 300);
+  if (!key || key === '\u0000') return Promise.resolve();
+  const operation = taskMutationQueue.then(async () => {
+    const store = await readTaskStore();
+    const current = (store.modelHealth || {})[key] || { failures: 0, lastFailedAt: '' };
+    store.modelHealth = cleanModelHealth({
+      ...(store.modelHealth || {}),
+      [key]: { failures: current.failures + 1, lastFailedAt: new Date().toISOString() }
+    });
+    store.revision += 1;
+    await writeTaskStore(store);
+    broadcastTaskEvent({ type: 'tasks', revision: store.revision, action: 'model_health' });
+    return store;
+  });
+  taskMutationQueue = operation.catch(() => {});
+  return operation.catch(() => {});
 }
 
 async function writeTaskStore(store) {
@@ -3989,7 +4022,15 @@ async function refineProjectContext(projectPath) {
 }
 
 async function generateOrchestrationPlan(record, feedback, models, policy) {
-  const modelList = Array.isArray(models) ? models : [];
+  const healthStore = await readTaskStore();
+  const modelHealth = healthStore.modelHealth || {};
+  const unhealthy = (provider, model) => {
+    const entry = modelHealth[String(provider || '') + '\u0000' + String(model || '')];
+    if (!entry || entry.failures < 2) return false;
+    const age = Date.now() - Date.parse(entry.lastFailedAt || 0);
+    return Number.isFinite(age) && age < 7 * 86400000;
+  };
+  const modelList = (Array.isArray(models) ? models : []).slice().sort((a, b) => (unhealthy(a.provider, a.id) ? 1 : 0) - (unhealthy(b.provider, b.id) ? 1 : 0));
   const pool = await readAgentsStore();
   const agents = pool.mode === 'pool' ? pool.agents : [];
   const projectContext = await projectContextSummary(record.projectPath, record.sourceSessionId);
@@ -4042,6 +4083,7 @@ async function generateOrchestrationPlan(record, feedback, models, policy) {
     if (!agent) return agent;
     if (policy === 'manual') return { ...agent, provider: '', model: '', modelReason: '等待用户手动选择，当前继承主会话' };
     if (!agent.provider || !agent.model) return { ...agent, provider: '', model: '', modelReason: agent.modelReason || '继承主会话模型' };
+    if (unhealthy(agent.provider, agent.model)) return { ...agent, provider: '', model: '', modelReason: 'AI 建议的模型近期执行失败较多，已安全回退为继承主会话' };
     if (!allowed.has(agent.provider + '\u0000' + agent.model)) return { ...agent, provider: '', model: '', modelReason: 'AI 建议的模型当前不可用，已安全回退为继承主会话' };
     return agent;
   };
@@ -4171,6 +4213,7 @@ async function runOrchestrationWorker(orchestrationId, workerId, parent, control
       const output = contentBlocksText(result.output);
       const successful = result.stopReason === 'completed';
       const failureDetail = orchestrationFailureDetail(result);
+      if (!successful && effectiveProvider && effectiveModel) void recordModelFailure(effectiveProvider, effectiveModel, failureDetail);
       await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
         ...item,
         workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: successful ? 'completed' : 'failed', output, error: successful ? '' : failureDetail, completedAt, attempts: attempt } : entry),
@@ -4804,7 +4847,8 @@ function makeRoutes() {
             ideas: ideasForScope(store.ideas, projectPath, scope),
             orchestrations: orchestrationsForScope(store.orchestrations, projectPath, scope),
             orchestrationRuntime: orchestrationRuntimeInfo(),
-            modelCatalog
+            modelCatalog,
+            modelHealth: store.modelHealth || {}
           });
         } catch (error) { fail(res, error); }
       }

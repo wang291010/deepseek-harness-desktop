@@ -81,7 +81,11 @@ try {
   await send('Page.enable');
   await send('Runtime.enable');
   await send('Page.reload', { ignoreCache: true });
-  await wait(7000);
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    await wait(1000);
+    const ready = await evaluate(`(() => !!document.querySelector('.wb-root') && document.querySelectorAll('.wb-nav-btn').length > 0)`);
+    if (ready) break;
+  }
 
   console.log('step: session panel structural checks');
   const panel = await evaluate(`(() => ({
