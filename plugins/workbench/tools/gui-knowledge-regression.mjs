@@ -98,7 +98,8 @@ try {
 
   console.log('step: navigate to knowledge page');
   const nav = await evaluate(`(() => {
-    const button = [...document.querySelectorAll('button')].find((item) => item.textContent.trim() === '知识库');
+    const button = [...document.querySelectorAll('button')].find((item) => item.textContent.trim() === '知识库')
+      || [...document.querySelectorAll('.wb-nav-btn')].find((item) => item.title === '知识库');
     if (!button) return { ok: false, reason: 'knowledge nav button missing' };
     button.click();
     return { ok: true };

@@ -164,6 +164,10 @@ try {
   assert.equal(badName.status, 400, 'path traversal name should be rejected');
   const badRead = await callRaw('/api/dsh-workbench/knowledge/read?path=' + encodeURIComponent('../../evil.md'), 'GET', undefined);
   assert.equal(badRead.status, 400, 'path traversal read should be rejected');
+  const badExternal = await callRaw('/api/dsh-workbench/open/external', 'POST', { uri: 'file:///C:/Windows/System32' });
+  assert.equal(badExternal.status, 400, 'non-obsidian/http external uri should be rejected');
+  const missingExternal = await callRaw('/api/dsh-workbench/open/external', 'POST', { uri: 'obsidian://open?path=' + encodeURIComponent(vaultRoot) });
+  assert.ok(missingExternal.status === 200 || missingExternal.status === 400, 'obsidian uri should be accepted (200) or report unavailable (400), not 500');
 
   const synced = await call('/api/dsh-workbench/knowledge/sync', 'POST');
   assert.equal(synced.entries.length, 4, '3 written entries + template');

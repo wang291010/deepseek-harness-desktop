@@ -649,6 +649,19 @@ verifiedBy/At，可一键移入 02-Atomic）→ 入索引（文本 + 向量 + �
 - 部署：备份 `backups\workbench-p5-v4-deploy-20260819-170834`；运行端 lib + tools/knowledge_embed.py
   已替换并重启（本轮 API 端口 53875，CDP 9224）。
 
+补充修复（2026-08-19，已部署）：
+
+- 知识库页「在 Obsidian 中打开」失效：根因是 Electron 渲染层静默拦截 obsidian:// 外部协议跳转
+  （window.location.href 无效）。改为新增 Host 路由 `/api/dsh-workbench/open/external`
+  （Electron shell.openExternal，仅放行 obsidian:// 与 http(s)://），客户端按钮改走该接口；
+  实测点击后成功唤起 Obsidian。
+- 双存储同步补强：此前直接编辑 vault 文件只会自动刷新文本索引，向量索引需手动重建。
+  现在写入口写入后、以及检索发现外部改动（Obsidian 直接编辑）时，都会增量更新受影响条目的向量，
+  无需手动「重建向量索引」；实测编辑 02-Atomic 文件后文本检索即时命中且向量库 updatedAt 自动更新。
+- 回归脚本兼容折叠导航（按 title 找知识库按钮）；smoke 增加 open/external 校验。
+- 部署：备份 `backups\workbench-obsidian-open-fix-20260819-171514`；运行端已替换并重启
+  （本轮 API 端口 60347，CDP 9224）。
+
 验收标准：
 
 1. 新条目/蒸馏产物默认不污染检索（draft/review 不进默认检索；发布后才可召回）。

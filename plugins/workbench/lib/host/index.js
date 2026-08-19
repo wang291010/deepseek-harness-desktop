@@ -1746,12 +1746,28 @@ async function precheckKnowledgeEntry({ title, content, source, excludePath }) {
 async function runKnowledgeSearch(query, project, options = {}) {
   const q = cleanTaskText(query, KNOWLEDGE_MAX_QUERY_CHARS);
   if (!q) return { error: 'query required' };
+  const prevEntries = (knowledgeIndex.entries || []).slice();
+  const prevMap = new Map(prevEntries.map((entry) => [entry.path, entry]));
   let index = knowledgeIndex;
+  let scanned = false;
   if (!index.entries || !index.entries.length) {
     index = await readKnowledgeIndex();
-    if (!index.entries || !index.entries.length) index = await scanKnowledgeVault();
+    if (!index.entries || !index.entries.length) { index = await scanKnowledgeVault(); scanned = true; }
   } else if (await knowledgeIndexStale()) {
     index = await scanKnowledgeVault();
+    scanned = true;
+  }
+  if (scanned && prevEntries.length) {
+    const changed = (index.entries || []).filter((entry) => {
+      const old = prevMap.get(entry.path);
+      return !old || old.hash !== entry.hash || old.status !== entry.status;
+    });
+    if (changed.length) {
+      try {
+        const vectorConfig = await readVectorConfig();
+        if (vectorConfig.provider !== 'none') await updateKnowledgeVectorsFor(changed);
+      } catch (e) { /* vector sync best effort */ }
+    }
   }
   const profiles = await readKnowledgeProfiles();
   const profile = mergeKnowledgeProfile(profiles[project || ''], project);
@@ -3994,6 +4010,26 @@ function makeRoutes() {
         } catch (error) { fail(res, error); }
       }
     },
+    // ---- open: external protocol via Electron main process (obsidian:// etc.) ----
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/open/external',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        const uri = cleanTaskText(body.uri, 2000);
+        if (!/^(obsidian|https?):\/\//i.test(uri)) return bad(res, 'bad-uri', 'only obsidian:// or http(s):// allowed');
+        let shell = null;
+        try { shell = hostRequire('electron').shell; } catch (e) { shell = null; }
+        if (!shell || typeof shell.openExternal !== 'function') return bad(res, 'external-unavailable', '当前环境不支持打开外部应用，请复制路径后在 Obsidian 中手动打开');
+        try {
+          await shell.openExternal(uri);
+          writeJson(res, 200, { ok: true });
+        } catch (error) { fail(res, error); }
+      }
+    },
     // ---- fs: list ----
     {
       kind: 'exact',
@@ -4368,6 +4404,10 @@ function makeRoutes() {
           await writeFile(target.full, content, 'utf8');
           const index = await scanKnowledgeVault();
           const entry = index.entries.find((item) => item.path === target.relPath) || null;
+          try {
+            const vectorConfig = await readVectorConfig();
+            if (vectorConfig.provider !== 'none' && entry) await updateKnowledgeVectorsFor([entry]);
+          } catch (e) { /* vector sync best effort */ }
           let precheck = null;
           try {
             precheck = await precheckKnowledgeEntry({

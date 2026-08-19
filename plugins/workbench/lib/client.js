@@ -3283,11 +3283,10 @@ window.__ModuleLoader__.load({
       };
       const openInObsidian = () => {
         if (!vaultRoot) return;
-        try {
-          window.location.href = "obsidian://open?path=" + encodeURIComponent(vaultRoot);
-        } catch (e) {
-          setError("无法唤起 Obsidian，请手动打开目录：" + vaultRoot);
-        }
+        const uri = "obsidian://open?path=" + encodeURIComponent(vaultRoot);
+        wbFetchJson("/api/dsh-workbench/open/external", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ uri }) })
+          .then(() => {})
+          .catch((e) => setError(String((e && e.message) || e) + "；可复制路径后手动打开：" + vaultRoot));
       };
       const copyVaultPath = () => {
         try {
