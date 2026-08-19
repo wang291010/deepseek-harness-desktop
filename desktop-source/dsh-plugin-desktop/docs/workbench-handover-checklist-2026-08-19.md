@@ -134,11 +134,27 @@
 - 验证：`smoke-workflow.mjs` 通过；CDP GUI 回归通过（三 Tab、新建模板、运行、调度、运行记录），
   截图 `workflows-page.png`；测试数据已清理。
 
+### P5 知识库与蒸馏（本轮交付，v3.1，2026-08-19）
+
+- 方案：三层架构（Obsidian Vault 资产层 / BM25+图谱+可插拔向量 引擎层 / 工作台+MCP 接入层），
+  自生长四件套 + 评测集先行；向量路默认关闭、接口留好（none/bge-local/openai/custom）。
+- Host：`knowledge/list|sync|write|read|remove|search|profile|distill|maintain|feedback|eval|vector`
+  全套路由；索引 v2（增量 hash + 中文 bigram BM25 + 图谱 2 跳 + RRF + token 预算 + 溯源）；
+  维护器（去重/断链/MOC 更新）；评测集 recall@k 跑分；frontmatter 解析修复。
+- 客户端：知识库页六 Tab（增长仪表盘/浏览/检索/蒸馏/维护/评测/向量设置）+ 预览编辑 + 一键 Obsidian
+  + 复制路径 + 反馈闭环。
+- 工具：`knowledge_embed.py`（BGE 本地桥）、`knowledge-query.mjs`（MCP 风格 CLI）、
+  `run-knowledge-eval.mjs`（评测 CLI）、`gui-knowledge-regression.mjs`（CDP 回归）。
+- 验证：8 个 smoke 全过、eslint 0、tsc ×4；CDP GUI 回归通过（仪表盘/检索溯源/真实 AI 蒸馏），
+  截图 knowledge-dash.png / knowledge-search.png / knowledge-distill.png。
+- 部署：备份 `backups\workbench-p5-knowledge-deploy-20260819-154456`，运行端已替换并重启
+  （本轮 API 端口 62713，带 --remote-debugging-port=9224）。
+
 ## 三、未完成与下一步
 
 1. P1B 剩余 GUI 回归（需用户实测）：文件视图（盘符面包屑/保存/大文件/越界提示）、外壳（置顶/拖拽/重命名归档/默认收起）、专家页（调用/编辑/复制/删除/重启保留）、任务中心存量（看板/`/todo`/想法流转）。
-2. P2.5 多AI协作工作台、P3 监控页、P4 工作流页已完成（见上）；下一步 P5 知识库与蒸馏 →
-   P6 打磨文档。
+2. P2.5 多AI协作工作台、P3 监控页、P4 工作流页、P5 知识库与蒸馏已完成（见上）；
+   下一步 **P2.6 对话窗口多AI模式**（计划已写入 future-plan，含 D23–D25）→ P6 打磨文档。
    决策点 D14–D19 见 [未来计划](workbench-future-plan-2026-08-18.md)。
 3. P7 发布链路：数字签名（等证书）、覆盖安装怪癖、`version-baseline.md` 持续同步、发布 SOP。
 

@@ -34,7 +34,7 @@
 | P2.6 | 对话窗口多AI模式 | 普通对话窗口单/多AI开关 + 主代理编排 + 自动测模型分配 + 对话流卡片 + 引用浮层 + 项目上下文设置 | P2.5 | ⏳ 待执行（2026-08-19 已计划） |
 | P3 | 监控页 | 账户/用量/会话/实时/告警五板块 | P2 | ✅ 已完成并部署（P3） |
 | P4 | 工作流页 | 模板库 + 一键运行 + 定时调度 | P3 | ✅ 已完成并部署（P4） |
-| P5 | 知识库与蒸馏 | 本地 Markdown Vault（Obsidian）+ 蒸馏入库 + 多路检索 + 自生长维护 | P4 | 🔄 进行中（v3.1 已确认；引擎已开发，客户端 UI 待做） |
+| P5 | 知识库与蒸馏 | 本地 Markdown Vault（Obsidian）+ 蒸馏入库 + 多路检索 + 自生长维护 | P4 | ✅ 已完成并部署（v3.1，2026-08-19） |
 | P6 | 打磨与文档 | 视觉统一、性能、安全复查、全套文档 | P5 | 待执行 |
 | P7 | 发布链路完善 | 签名、安装怪癖、SOP、跨平台、迁移、便携版 | 可与 P2–P6 并行 | 部分待执行 |
 
@@ -526,6 +526,24 @@
 5. 维护器可去重、断链报告、MOC 自动更新；反馈可入候选池。
 6. MCP 预留接口文档 + CLI 脚本可用。
 7. 端到端 smoke + GUI 回归通过，部署运行端并提交。
+
+完成记录（2026-08-19，部署至运行端）：
+
+- 资产层：vault 五目录（01-Inbox/02-Atomic/03-MOCs/04-Projects/99-Templates）+ Dashboard/README/.obsidian
+  + 默认模板；frontmatter 解析修复（空字段不再跨行吞值）。
+- 引擎层：索引 v2（增量 hash、统计、中文 bigram BM25）、图谱（双向链接/标签 2 跳）、RRF 融合、
+  可选 LLM 重排/HyDE、证据块 token 预算与强制溯源；可插拔向量接口（none/bge-local/openai/custom），
+  默认关闭，配置留空保持已保存 key。
+- 蒸馏：AI 提炼 → 01-Inbox（DeepSeek 实测生效，失败兜底模板）。
+- 维护器：去重/断链/孤儿/过期报告 + 03-MOCs/Index.md 自动更新；反馈入评测候选池。
+- 评测集：eval 增删/运行 recall@k/token/耗时；CLI `run-knowledge-eval.mjs`。
+- 接入层：知识库页六 Tab（增长仪表盘/浏览/检索/蒸馏/维护/评测/向量设置）、预览编辑、一键 Obsidian、
+  复制路径；MCP 预留 CLI `knowledge-query.mjs` + 本地 BGE 桥 `knowledge_embed.py`。
+- 验证：`smoke-knowledge`（vault/写读删/检索/画像/蒸馏/维护/评测/向量 mock provider 端到端）+
+  8 个 smoke 全过、eslint 0、tsc ×4；CDP GUI 回归通过（仪表盘/检索溯源/真实 AI 蒸馏），
+  截图 knowledge-dash.png / knowledge-search.png / knowledge-distill.png。
+- 部署：备份 `backups\workbench-p5-knowledge-deploy-20260819-154456`，运行端已替换并重启
+  （本轮 API 端口 62713，带 --remote-debugging-port=9224）。
 
 ### Phase 6：打磨与文档（P7）
 

@@ -98,6 +98,7 @@ const mcpContent = [
   '预留检索接口与 CLI 脚本，未来可被其他 agent/IDE 调用。'
 ].join('\n');
 
+let smokePassed = false;
 try {
   const { apply } = await import('../lib/host/index.js?' + Date.now());
   apply(ctx);
@@ -110,7 +111,7 @@ try {
       try {
         const body = JSON.parse(raw || '{}');
         const texts = Array.isArray(body.texts) ? body.texts : [];
-        res.writeHead(200, { 'content-type': 'application/json' });
+        res.writeHead(200, { 'content-type': 'application/json', connection: 'close' });
         res.end(JSON.stringify({ data: texts.map((text, index) => [index + 1, 0.5, 0.25]) }));
       } catch (e) {
         res.writeHead(400, { 'content-type': 'application/json' });
@@ -236,10 +237,14 @@ try {
   const finalSync = await call('/api/dsh-workbench/knowledge/sync', 'POST');
   assert.equal(finalSync.entries.length, 5, 'distilled + atomic + MOC + projects + template after removing fastapi');
   console.log('knowledge smoke test passed');
+  smokePassed = true;
 } finally {
   try {
-    mockEmbed.closeAllConnections();
-    mockEmbed.close();
+    if (typeof mockEmbed.closeAllConnections === 'function') mockEmbed.closeAllConnections();
+  } catch (e) { /* ignore */ }
+  try {
+    await new Promise((resolvePromise) => mockEmbed.close(resolvePromise));
   } catch (e) { /* already closed */ }
   await rm(tempHome, { recursive: true, force: true });
+  if (smokePassed) process.exit(0);
 }

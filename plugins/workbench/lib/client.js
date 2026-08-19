@@ -590,6 +590,7 @@ window.__ModuleLoader__.load({
       ".wb-collab-order{margin:10px 0}.wb-collab-order>strong{display:block;margin-bottom:8px;font-size:11px;color:var(--dsw-alias-label-secondary)}.wb-collab-order-flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.wb-collab-order-group{display:flex;gap:6px;flex-wrap:wrap}.wb-collab-order-node{padding:4px 9px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);font-size:10px}.wb-collab-order-arrow{color:var(--dsw-alias-label-tertiary);font-size:11px}",
       ".wb-collab-log-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}.wb-collab-log-toolbar input{flex:1;min-width:120px;height:28px;padding:0 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:11px inherit}.wb-collab-log-filter{height:26px;padding:0 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);font:10px inherit;cursor:pointer}.wb-collab-log-filter-active{border-color:var(--dsw-alias-accent-fill);color:var(--dsw-alias-label-primary)}.wb-collab-log-list{display:grid;gap:4px;max-height:360px;overflow:auto}.wb-collab-log-row{display:grid;grid-template-columns:52px 1fr;gap:8px;padding:5px 7px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:var(--dsw-alias-bg-layer-2);font-size:10px;line-height:1.5}.wb-collab-log-row small{color:var(--dsw-alias-label-tertiary)}.wb-collab-log-info{border-left:2px solid #30b650}.wb-collab-log-warn{border-left:2px solid #ff9f0a}.wb-collab-log-error{border-left:2px solid #ff453a}.wb-orch-agents-editor{width:100%;box-sizing:border-box;min-height:120px;margin-top:8px;padding:8px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;resize:vertical;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:10px/1.5 monospace}.wb-orch-agent-ref{display:block;margin:2px 0;color:var(--dsw-alias-label-tertiary);font-size:10px}.wb-collab-memory-actions{margin-bottom:10px}.wb-collab-memory-card{padding:9px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-2);display:grid;gap:6px}.wb-collab-memory-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.wb-collab-memory-head strong{font-size:12px;color:var(--dsw-alias-label-primary)}.wb-collab-memory-head small{font-size:10px;color:var(--dsw-alias-label-tertiary)}.wb-collab-memory-card p{margin:0;font-size:11px;line-height:1.6;color:var(--dsw-alias-label-secondary)}.wb-collab-memory-list{display:grid;gap:3px}.wb-collab-memory-finding{font-size:10px;color:var(--dsw-alias-label-secondary);line-height:1.5}.wb-monitor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}.wb-monitor-card{padding:12px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-2);display:grid;gap:8px;align-content:start}.wb-monitor-card h3{margin:0;font-size:12px;color:var(--dsw-alias-label-secondary);font-weight:600}.wb-monitor-big{font-size:20px;color:var(--dsw-alias-label-primary)}.wb-monitor-card small{color:var(--dsw-alias-label-tertiary);font-size:10px}.wb-monitor-wide{grid-column:1/-1}.wb-monitor-bars{display:flex;align-items:flex-end;gap:8px;height:96px}.wb-monitor-bar-col{flex:1;display:grid;gap:4px;align-items:end;justify-items:center;min-width:0}.wb-monitor-bar{width:100%;max-width:42px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--dsw-alias-accent-fill),color-mix(in srgb,var(--dsw-alias-accent-fill) 45%,var(--dsw-alias-bg-layer-2)))}.wb-monitor-bar-col small{font-size:9px;color:var(--dsw-alias-label-tertiary)}.wb-monitor-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}.wb-monitor-rows{display:grid;gap:6px}.wb-monitor-table{display:grid;gap:4px}.wb-monitor-table-row{display:grid;grid-template-columns:minmax(120px,2fr) repeat(4,minmax(60px,1fr));gap:8px;padding:6px 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-1);font-size:10px;color:var(--dsw-alias-label-secondary)}.wb-monitor-sessions{display:grid;gap:10px}.wb-alert-banner{padding:8px 12px;border:1px solid #ff9f0a;border-radius:10px;background:color-mix(in srgb,#ff9f0a 12%,transparent);color:var(--dsw-alias-label-primary);font-size:12px}.wb-alert-banner-global{margin:8px 16px 0}.wb-nav-btn{position:relative}.wb-nav-alert-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#ff453a}.wb-workflow-editor{display:grid;gap:8px}.wb-workflow-editor input,.wb-workflow-editor select{height:32px;padding:0 10px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:12px inherit}.wb-workflow-editor .wb-orch-agents-editor{margin-top:0}.wb-knowledge-group{display:grid;gap:10px;margin-top:14px}.wb-knowledge-group .wb-collab-list-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.wb-knowledge-group .wb-collab-list-head strong{font-size:12px;color:var(--dsw-alias-label-secondary)}.wb-knowledge-group .wb-collab-list-head span{font-size:11px;color:var(--dsw-alias-label-tertiary)}",
       ".wb-orch-main p,.wb-orch-worker p{margin:8px 0 0;font-size:10px;line-height:1.55;color:var(--dsw-alias-label-secondary);white-space:pre-wrap}",
+      ".wb-knowledge-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}.wb-knowledge-search-row{display:grid;grid-template-columns:1fr 200px 80px auto;gap:8px}.wb-knowledge-result-card{padding:11px 12px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-2);display:grid;gap:6px}.wb-knowledge-result-card strong{font-size:12px;color:var(--dsw-alias-label-primary)}.wb-knowledge-snippet{font-size:10px;line-height:1.6;color:var(--dsw-alias-label-secondary)}.wb-knowledge-preview{position:fixed;inset:0;z-index:130;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:24px}.wb-knowledge-preview-box{width:min(720px,100%);max-height:88vh;overflow:auto;border:1px solid var(--dsw-alias-border-l2);border-radius:14px;background:var(--dsw-alias-bg-layer-1);padding:16px;display:grid;gap:10px}.wb-knowledge-preview-box textarea{min-height:320px}.wb-knowledge-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.wb-knowledge-filter button{height:26px;padding:0 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);font:10px inherit;cursor:pointer}.wb-knowledge-filter button.wb-knowledge-filter-active{border-color:var(--dsw-alias-accent-fill);color:var(--dsw-alias-label-primary)}",
       ".wb-orch-workers{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px;margin-top:8px}.wb-orch-deps,.wb-orch-acceptance{margin-top:7px;font-size:9px;line-height:1.5;color:var(--dsw-alias-label-tertiary)}.wb-orch-acceptance{padding-top:7px;border-top:1px dashed var(--dsw-alias-border-l1)}",
       ".wb-orch-criteria,.wb-orch-report{margin-top:10px;padding:11px 12px;border:1px solid var(--dsw-alias-border-l1);border-radius:11px;background:var(--dsw-alias-bg-base)}.wb-orch-criteria>strong,.wb-orch-report>strong{font-size:11px;color:var(--dsw-alias-label-primary)}.wb-orch-criteria ol{margin:7px 0 0;padding-left:20px;font-size:10px;line-height:1.7;color:var(--dsw-alias-label-secondary)}",
       ".wb-orch-report pre,.wb-orch-output pre{margin:8px 0 0;max-height:360px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font:10px/1.6 inherit;color:var(--dsw-alias-label-secondary)}.wb-orch-output{margin-top:8px}.wb-orch-output summary{cursor:pointer;font-size:9px;color:var(--dsw-alias-label-secondary)}",
@@ -3138,24 +3139,47 @@ window.__ModuleLoader__.load({
 
     function KnowledgePage() {
       const [vaultRoot, setVaultRoot] = React.useState("");
+      const [stats, setStats] = React.useState(null);
       const [entries, setEntries] = React.useState([]);
+      const [vectorMeta, setVectorMeta] = React.useState(null);
       const [busy, setBusy] = React.useState(false);
       const [error, setError] = React.useState("");
+      const [tab, setTab] = React.useState("dash");
       const [showForm, setShowForm] = React.useState(false);
       const [draft, setDraft] = React.useState({ folder: "inbox", name: "", content: "" });
+      const [folderFilter, setFolderFilter] = React.useState("all");
+      const [preview, setPreview] = React.useState(null);
+      const [search, setSearch] = React.useState({ query: "", project: "", topK: 5 });
+      const [results, setResults] = React.useState(null);
+      const [feedback, setFeedback] = React.useState({ question: "", note: "", sent: false });
+      const [distill, setDistill] = React.useState({ title: "", source: "text", project: "", content: "" });
+      const [distillResult, setDistillResult] = React.useState(null);
+      const [report, setReport] = React.useState(null);
+      const [evalStore, setEvalStore] = React.useState({ items: [], candidates: [], lastRun: null });
+      const [evalDraft, setEvalDraft] = React.useState({ question: "", expected: "", hints: "" });
+      const [evalTopK, setEvalTopK] = React.useState(5);
+      const [vectorDraft, setVectorDraft] = React.useState({ provider: "none", model: "", baseUrl: "", apiKey: "", python: "" });
+      const [vectorStatus, setVectorStatus] = React.useState(null);
       const load = React.useCallback(() => {
         setBusy(true);
         setError("");
         wbFetchJson("/api/dsh-workbench/knowledge/list").then(({ data }) => {
           setVaultRoot(data.vaultRoot || "");
+          setStats(data.stats || null);
           setEntries(data.entries || []);
+          setVectorMeta(data.vector || null);
+          if (data.vector) {
+            setVectorDraft((cur) => ({ ...cur, provider: data.vector.provider || "none", model: data.vector.model || "", baseUrl: data.vector.baseUrl || "", python: data.vector.python || "", apiKey: "" }));
+          }
         }).catch((e) => setError(String((e && e.message) || e))).finally(() => setBusy(false));
       }, []);
       React.useEffect(() => { load(); }, [load]);
+      React.useEffect(() => { wbFetchJson("/api/dsh-workbench/knowledge/eval").then(({ data }) => setEvalStore(data || { items: [], candidates: [], lastRun: null })).catch(() => {}); }, []);
       const sync = () => {
         setBusy(true);
         setError("");
         wbFetchJson("/api/dsh-workbench/knowledge/sync", { method: "POST" }).then(({ data }) => {
+          setStats(data.stats || null);
           setEntries(data.entries || []);
         }).catch((e) => setError(String((e && e.message) || e))).finally(() => setBusy(false));
       };
@@ -3166,44 +3190,298 @@ window.__ModuleLoader__.load({
           .then(() => { setShowForm(false); setDraft({ folder: "inbox", name: "", content: "" }); load(); })
           .catch((e) => setError(String((e && e.message) || e)));
       };
+      const openPreview = (entry) => {
+        setBusy(true);
+        setError("");
+        wbFetchJson("/api/dsh-workbench/knowledge/read?path=" + encodeURIComponent(entry.path)).then(({ data }) => {
+          setPreview({ path: entry.path, folder: entry.folder, name: String(entry.name || "").replace(/\.md$/i, ""), content: data.content || "" });
+        }).catch((e) => setError(String((e && e.message) || e))).finally(() => setBusy(false));
+      };
+      const savePreview = () => {
+        if (!preview) return;
+        wbFetchJson("/api/dsh-workbench/knowledge/write", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ folder: preview.folder, name: preview.name, content: preview.content }) })
+          .then(() => { setPreview(null); load(); })
+          .catch((e) => setError(String((e && e.message) || e)));
+      };
+      const removePreview = () => {
+        if (!preview) return;
+        wbFetchJson("/api/dsh-workbench/knowledge/remove", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path: preview.path }) })
+          .then(() => { setPreview(null); load(); })
+          .catch((e) => setError(String((e && e.message) || e)));
+      };
+      const openInObsidian = () => {
+        if (!vaultRoot) return;
+        try {
+          window.location.href = "obsidian://open?path=" + encodeURIComponent(vaultRoot);
+        } catch (e) {
+          setError("无法唤起 Obsidian，请手动打开目录：" + vaultRoot);
+        }
+      };
+      const copyVaultPath = () => {
+        try {
+          if (navigator.clipboard) { navigator.clipboard.writeText(vaultRoot).catch(() => {}); return; }
+        } catch (e) { /* fall through */ }
+        const ta = document.createElement("textarea");
+        ta.value = vaultRoot;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+      };
+      const runSearch = () => {
+        if (!search.query.trim()) { setError("请输入检索问题"); return; }
+        setBusy(true);
+        setError("");
+        wbFetchJson("/api/dsh-workbench/knowledge/search", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query: search.query, project: search.project, topK: Number(search.topK) || 5 }) })
+          .then(({ data }) => {
+            setResults(data);
+            setFeedback((cur) => ({ ...cur, question: data.query || "", sent: false, note: "" }));
+          }).catch((e) => setError(String((e && e.message) || e))).finally(() => setBusy(false));
+      };
+      const sendFeedback = () => {
+        if (!feedback.question.trim()) return;
+        wbFetchJson("/api/dsh-workbench/knowledge/feedback", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question: feedback.question, note: feedback.note, missed: true }) })
+          .then(() => setFeedback((cur) => ({ ...cur, sent: true })))
+          .catch((e) => setError(String((e && e.message) || e)));
+      };
+      const runDistill = () => {
+        if (!distill.content.trim()) { setError("请输入要蒸馏的内容"); return; }
+        setBusy(true);
+        setError("");
+        wbFetchJson("/api/dsh-workbench/knowledge/distill", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(distill) })
+          .then(({ data }) => { setDistillResult(data); load(); })
+          .catch((e) => setError(String((e && e.message) || e))).finally(() => setBusy(false));
+      };
+      const runMaintain = () => {
+        setBusy(true);
+        setError("");
+        wbFetchJson("/api/dsh-workbench/knowledge/maintain", { method: "POST" })
+          .then(({ data }) => { setReport(data); load(); })
+          .catch((e) => setError(String((e && e.message) || e))).finally(() => setBusy(false));
+      };
+      const reloadEval = () => {
+        wbFetchJson("/api/dsh-workbench/knowledge/eval").then(({ data }) => setEvalStore(data || { items: [], candidates: [], lastRun: null })).catch((e) => setError(String((e && e.message) || e)));
+      };
+      const addEval = () => {
+        if (!evalDraft.question.trim()) { setError("请输入评测问题"); return; }
+        const expected = evalDraft.expected.split(/[,，\n]/).map((item) => item.trim()).filter(Boolean);
+        wbFetchJson("/api/dsh-workbench/knowledge/eval/add", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question: evalDraft.question, expected, answerHints: evalDraft.hints }) })
+          .then(() => { setEvalDraft({ question: "", expected: "", hints: "" }); reloadEval(); })
+          .catch((e) => setError(String((e && e.message) || e)));
+      };
+      const removeEval = (id) => {
+        wbFetchJson("/api/dsh-workbench/knowledge/eval/remove", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) })
+          .then(() => reloadEval())
+          .catch((e) => setError(String((e && e.message) || e)));
+      };
+      const runEval = () => {
+        setBusy(true);
+        setError("");
+        wbFetchJson("/api/dsh-workbench/knowledge/eval/run", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ topK: Number(evalTopK) || 5 }) })
+          .then(({ data }) => setEvalStore((cur) => ({ ...cur, lastRun: data })))
+          .catch((e) => setError(String((e && e.message) || e))).finally(() => setBusy(false));
+      };
+      const saveVector = () => {
+        setBusy(true);
+        setError("");
+        wbFetchJson("/api/dsh-workbench/knowledge/vector", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ config: vectorDraft }) })
+          .then(({ data }) => {
+            setVectorStatus(data.status || null);
+            if (data.saved) setVectorMeta(data.config || null);
+          }).catch((e) => setError(String((e && e.message) || e))).finally(() => setBusy(false));
+      };
+      const rebuildVector = () => {
+        setBusy(true);
+        setError("");
+        wbFetchJson("/api/dsh-workbench/knowledge/vector/rebuild", { method: "POST" })
+          .then(({ data }) => setVectorStatus({ rebuilt: data.rebuilt, reason: data.reason || "", count: data.count || 0, dims: data.dims || 0 }))
+          .catch((e) => setError(String((e && e.message) || e))).finally(() => setBusy(false));
+      };
       const groups = [
         { id: "inbox", label: "01-Inbox · AI 写入区" },
         { id: "atomic", label: "02-Atomic · 人类审核区" },
-        { id: "mocs", label: "03-MOCs · 地图索引" }
+        { id: "mocs", label: "03-MOCs · 地图索引" },
+        { id: "projects", label: "04-Projects · 项目沉淀" },
+        { id: "templates", label: "99-Templates · 模板" }
       ];
       const confidenceLabel = { high: "高", medium: "中", low: "低" };
+      const TABS = [
+        { id: "dash", label: "增长与浏览" },
+        { id: "search", label: "检索" },
+        { id: "distill", label: "蒸馏" },
+        { id: "maintain", label: "维护" },
+        { id: "eval", label: "评测" },
+        { id: "vector", label: "向量设置" }
+      ];
+      const visibleEntries = folderFilter === "all" ? entries : entries.filter((entry) => entry.folder === folderFilter);
+      const maxTrend = Math.max(1, ...((stats && stats.trend) || []).map((item) => item.count));
+      const confBadge = (confidence) => "wb-orch-agent-status-" + (confidence === "high" ? "completed" : confidence === "low" ? "failed" : "running");
+      const entryCard = (entry) => jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
+        jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [
+          jsxRuntime.jsx("strong", { style: { cursor: "pointer" }, title: "点击预览/编辑", onClick: () => openPreview(entry), children: entry.title }),
+          jsxRuntime.jsx("small", { className: confBadge(entry.confidence), children: "置信度 " + confidenceLabel[entry.confidence] })
+        ] }),
+        entry.summary && jsxRuntime.jsx("p", { className: "wb-collab-memory-finding", children: entry.summary }),
+        entry.tags.length > 0 && jsxRuntime.jsx("div", { className: "wb-collab-files", children: entry.tags.map((tag) => jsxRuntime.jsx("span", { className: "wb-collab-file-chip", children: "#" + tag }, tag)) }),
+        entry.related.length > 0 && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "关联：" + entry.related.slice(0, 4).map((r) => "[[" + r + "]]").join(" ") }),
+        jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: entry.path + " · " + new Date(entry.updatedAt).toLocaleString() })
+      ] }, entry.path);
       return jsxRuntime.jsxs("div", { className: "wb-page wb-knowledge", children: [
         jsxRuntime.jsxs("div", { className: "wb-page-inner", children: [
           jsxRuntime.jsxs("div", { className: "wb-style-head", children: [
             jsxRuntime.jsx("h1", { className: "wb-page-title", children: "知识库" }),
             jsxRuntime.jsxs("div", { className: "wb-style-actions", children: [
-              jsxRuntime.jsx("span", { className: "wb-style-status", children: busy ? "同步中…" : (vaultRoot ? entries.length + " 条 · 已索引" : "初始化…") }),
+              jsxRuntime.jsx("span", { className: "wb-style-status", children: busy ? "处理中…" : (vaultRoot ? entries.length + " 条 · 已索引" : "初始化…") }),
               jsxRuntime.jsx("button", { type: "button", className: "wb-style-button", disabled: busy, onClick: sync, children: "同步索引" }),
+              jsxRuntime.jsx("button", { type: "button", className: "wb-style-button", disabled: !vaultRoot, onClick: openInObsidian, children: "在 Obsidian 中打开" }),
+              jsxRuntime.jsx("button", { type: "button", className: "wb-style-button", disabled: !vaultRoot, onClick: copyVaultPath, children: "复制路径" }),
               jsxRuntime.jsx("button", { type: "button", className: "wb-style-button wb-sp-btn-primary", disabled: busy, onClick: () => setShowForm((v) => !v), children: showForm ? "收起" : "新建条目" })
             ] })
           ] }),
           error && jsxRuntime.jsx(WbErrNote, { message: error }),
-          vaultRoot && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "Vault：" + vaultRoot + "（Obsidian 兼容，可用 Obsidian 直接打开编辑）" }),
-          showForm && jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-workflow-editor", children: [
-            jsxRuntime.jsx("h3", { children: "新建知识条目（Markdown + frontmatter）" }),
-            jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "目录" }), jsxRuntime.jsx("select", { value: draft.folder, onChange: (e) => setDraft((cur) => ({ ...cur, folder: e.target.value })), children: groups.map((g) => jsxRuntime.jsx("option", { value: g.id, children: g.label }, g.id)) })] }),
-            jsxRuntime.jsx("input", { value: draft.name, placeholder: "文件名（不含 .md）", onChange: (e) => setDraft((cur) => ({ ...cur, name: e.target.value })) }),
-            jsxRuntime.jsx("textarea", { className: "wb-orch-agents-editor", value: draft.content, rows: 9, placeholder: "---\ntitle: 主题\ntags: [标签]\nconfidence: medium\nrelated: \"[[相关条目]]\"\nsummary: 一句话核心\n---\n\n正文…", onChange: (e) => setDraft((cur) => ({ ...cur, content: e.target.value })) }),
-            jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => setShowForm(false), children: "取消" }), jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy, onClick: save, children: "写入知识库" })] })
+          vaultRoot && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "Vault：" + vaultRoot + "（Obsidian 兼容；也可复制路径手动打开）" }),
+          jsxRuntime.jsx("nav", { className: "wb-collab-panel-tabs", children: TABS.map((item) => jsxRuntime.jsx("button", { type: "button", className: "wb-collab-panel-tab" + (tab === item.id ? " wb-collab-panel-tab-active" : ""), onClick: () => setTab(item.id), children: item.label }, item.id)) }),
+
+          tab === "dash" && jsxRuntime.jsxs("div", { className: "wb-knowledge-group", children: [
+            jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: [
+              jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "文档总数" }), jsxRuntime.jsx("div", { className: "wb-monitor-big", children: (stats && stats.documents) || 0 })] }),
+              jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "本周新增" }), jsxRuntime.jsx("div", { className: "wb-monitor-big", children: (stats && stats.weekNew) || 0 })] }),
+              jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "双向链接" }), jsxRuntime.jsx("div", { className: "wb-monitor-big", children: (stats && stats.links) || 0 })] }),
+              jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "待审核（低置信度）" }), jsxRuntime.jsx("div", { className: "wb-monitor-big", children: (stats && stats.lowConfidence) || 0 })] }),
+              jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-monitor-wide", children: [
+                jsxRuntime.jsx("h3", { children: "近 7 天新增趋势" }),
+                jsxRuntime.jsx("div", { className: "wb-monitor-bars", children: ((stats && stats.trend) || []).map((item) => jsxRuntime.jsxs("div", { className: "wb-monitor-bar-col", children: [
+                  jsxRuntime.jsx("div", { className: "wb-monitor-bar", style: { height: Math.max(4, Math.round((item.count / maxTrend) * 80)) + "px" } }),
+                  jsxRuntime.jsx("small", { children: item.date.slice(5) })
+                ] }, item.date)) })
+              ] })
+            ] }),
+            showForm && jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-workflow-editor", children: [
+              jsxRuntime.jsx("h3", { children: "新建知识条目（Markdown + frontmatter）" }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "目录" }), jsxRuntime.jsx("select", { value: draft.folder, onChange: (e) => setDraft((cur) => ({ ...cur, folder: e.target.value })), children: groups.map((g) => jsxRuntime.jsx("option", { value: g.id, children: g.label }, g.id)) })] }),
+              jsxRuntime.jsx("input", { value: draft.name, placeholder: "文件名（不含 .md）", onChange: (e) => setDraft((cur) => ({ ...cur, name: e.target.value })) }),
+              jsxRuntime.jsx("textarea", { className: "wb-orch-agents-editor", value: draft.content, rows: 9, placeholder: "---\ntitle: 主题\ntags: [标签]\nconfidence: medium\nrelated: \"[[相关条目]]\"\nsummary: 一句话核心\n---\n\n正文…", onChange: (e) => setDraft((cur) => ({ ...cur, content: e.target.value })) }),
+              jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => setShowForm(false), children: "取消" }), jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy, onClick: save, children: "写入知识库" })] })
+            ] }),
+            jsxRuntime.jsx("div", { className: "wb-knowledge-filter", children: [{ id: "all", label: "全部" }, ...groups].map((item) => jsxRuntime.jsx("button", { type: "button", className: folderFilter === item.id ? "wb-knowledge-filter-active" : "", onClick: () => setFolderFilter(item.id), children: item.label }, item.id)) }),
+            visibleEntries.length ? jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: visibleEntries.map(entryCard) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "暂无条目" })
           ] }),
-          groups.map((group) => {
-            const items = entries.filter((entry) => entry.folder === group.id);
-            return jsxRuntime.jsxs("section", { className: "wb-knowledge-group", children: [
-              jsxRuntime.jsxs("div", { className: "wb-collab-list-head", children: [jsxRuntime.jsx("strong", { children: group.label }), jsxRuntime.jsx("span", { children: items.length })] }),
-              items.length ? jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: items.map((entry) => jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
-                jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: entry.title }), jsxRuntime.jsx("small", { className: "wb-orch-agent-status wb-orch-agent-status-" + (entry.confidence === "high" ? "completed" : entry.confidence === "low" ? "failed" : "running"), children: "置信度 " + confidenceLabel[entry.confidence] })] }),
-                entry.summary && jsxRuntime.jsx("p", { className: "wb-collab-memory-finding", children: entry.summary }),
-                entry.tags.length > 0 && jsxRuntime.jsx("div", { className: "wb-collab-files", children: entry.tags.map((tag) => jsxRuntime.jsx("span", { className: "wb-collab-file-chip", children: "#" + tag }, tag)) }),
-                entry.related.length > 0 && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "关联：" + entry.related.slice(0, 4).map((r) => "[[" + r + "]]").join(" ") }),
-                jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: entry.path + " · " + new Date(entry.updatedAt).toLocaleString() })
-              ] }, entry.path)) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "暂无条目" })
-            ] }, group.id);
-          })
+
+          tab === "search" && jsxRuntime.jsxs("div", { className: "wb-knowledge-group", children: [
+            jsxRuntime.jsxs("div", { className: "wb-knowledge-toolbar wb-knowledge-search-row", children: [
+              jsxRuntime.jsx("input", { value: search.query, placeholder: "用自然语言提问，例如：订单中台为什么用 FastAPI", onChange: (e) => setSearch((cur) => ({ ...cur, query: e.target.value })), onKeyDown: (e) => { if (e.key === "Enter" && !e.shiftKey) runSearch(); } }),
+              jsxRuntime.jsx("input", { value: search.project, placeholder: "项目路径（可选，绑定检索画像）", onChange: (e) => setSearch((cur) => ({ ...cur, project: e.target.value })) }),
+              jsxRuntime.jsx("input", { type: "number", min: 1, max: 20, value: search.topK, placeholder: "TopK", onChange: (e) => setSearch((cur) => ({ ...cur, topK: e.target.value })) }),
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy || !search.query.trim(), onClick: runSearch, children: "检索" })
+            ] }),
+            results && jsxRuntime.jsxs("div", { className: "wb-collab-memory-finding", children: [
+              "路由：" + (results.routes || []).join(" + ") + " · 向量：" + (results.vectorStatus || "n/a") + " · 估算 token：" + results.estimatedTokens + "（预算 " + results.tokenBudget + "）"
+            ] }),
+            results && results.results && results.results.length ? jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: results.results.map((item) => jsxRuntime.jsxs("section", { className: "wb-knowledge-result-card", children: [
+              jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: item.title }), jsxRuntime.jsx("small", { className: confBadge(item.confidence), children: "置信度 " + confidenceLabel[item.confidence] })] }),
+              item.heading && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "小节：" + item.heading }),
+              jsxRuntime.jsx("p", { className: "wb-knowledge-snippet", children: item.snippet || item.summary }),
+              item.tags.length > 0 && jsxRuntime.jsx("div", { className: "wb-collab-files", children: item.tags.map((tag) => jsxRuntime.jsx("span", { className: "wb-collab-file-chip", children: "#" + tag }, tag)) }),
+              jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "溯源：" + item.path + " · " + new Date(item.updatedAt).toLocaleString() })
+            ] }, item.path)) }) : results && jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "无匹配结果" }),
+            results && jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-workflow-editor", children: [
+              jsxRuntime.jsx("h3", { children: "反馈（没找到/不准 → 自动记入评测候选池）" }),
+              jsxRuntime.jsx("input", { value: feedback.note, placeholder: "说明哪里不准或缺失（可选）", onChange: (e) => setFeedback((cur) => ({ ...cur, note: e.target.value })) }),
+              jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: feedback.sent, onClick: sendFeedback, children: feedback.sent ? "已记录 ✓" : "记录：没找到/不准" })] })
+            ] })
+          ] }),
+
+          tab === "distill" && jsxRuntime.jsxs("div", { className: "wb-knowledge-group", children: [
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-workflow-editor", children: [
+              jsxRuntime.jsx("h3", { children: "蒸馏入库（AI 提炼 → 01-Inbox 待审核）" }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [
+                jsxRuntime.jsx("input", { value: distill.title, placeholder: "标题（可选，AI 会优化）", onChange: (e) => setDistill((cur) => ({ ...cur, title: e.target.value })) }),
+                jsxRuntime.jsx("select", { value: distill.source, onChange: (e) => setDistill((cur) => ({ ...cur, source: e.target.value })), children: [{ id: "text", label: "文本" }, { id: "session", label: "会话" }, { id: "docs", label: "文档" }].map((item) => jsxRuntime.jsx("option", { value: item.id, children: item.label }, item.id)) }),
+                jsxRuntime.jsx("input", { value: distill.project, placeholder: "关联项目路径（可选）", onChange: (e) => setDistill((cur) => ({ ...cur, project: e.target.value })) })
+              ] }),
+              jsxRuntime.jsx("textarea", { className: "wb-orch-agents-editor", value: distill.content, rows: 12, placeholder: "粘贴对话/文档/笔记原文，AI 会提炼结论、方法、决策、待办并自动生成 frontmatter…", onChange: (e) => setDistill((cur) => ({ ...cur, content: e.target.value })) }),
+              jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy || !distill.content.trim(), onClick: runDistill, children: "蒸馏入库" })] })
+            ] }),
+            distillResult && jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
+              jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: "已写入：" + distillResult.path }), distillResult.fallback ? jsxRuntime.jsx("small", { className: "wb-orch-agent-status wb-orch-agent-status-failed", children: "AI 不可用，已用兜底模板" }) : jsxRuntime.jsx("small", { className: "wb-orch-agent-status wb-orch-agent-status-completed", children: "AI 蒸馏完成" })] }),
+              jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "产物在 01-Inbox，请在 Obsidian 或上方浏览中审核后移动到 02-Atomic。" })
+            ] })
+          ] }),
+
+          tab === "maintain" && jsxRuntime.jsxs("div", { className: "wb-knowledge-group", children: [
+            jsxRuntime.jsxs("div", { className: "wb-knowledge-toolbar", children: [
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy, onClick: runMaintain, children: "运行维护（去重/断链/MOC 更新）" })
+            ] }),
+            report && jsxRuntime.jsxs("div", { className: "wb-monitor-grid", children: [
+              jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "疑似重复" }), report.duplicates.length ? jsxRuntime.jsx("div", { className: "wb-collab-memory-list", children: report.duplicates.map((item) => jsxRuntime.jsx("div", { className: "wb-collab-memory-finding", children: item.similarity + " · " + item.a + " ↔ " + item.b }, item.a + item.b)) }) : jsxRuntime.jsx("small", { children: "无" })] }),
+              jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "断链（" + report.brokenLinks.length + "）" }), report.brokenLinks.length ? jsxRuntime.jsx("div", { className: "wb-collab-memory-list", children: report.brokenLinks.slice(0, 10).map((item) => jsxRuntime.jsx("div", { className: "wb-collab-memory-finding", children: item.from + " → [[" + item.link + "]]" }, item.from + item.link)) }) : jsxRuntime.jsx("small", { children: "无" })] }),
+              jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "孤儿条目（" + report.orphans.length + "）" }), jsxRuntime.jsx("small", { children: report.orphans.slice(0, 10).join("；") || "无" })] }),
+              jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "180 天未更新且高置信度（" + report.stale.length + "）" }), jsxRuntime.jsx("small", { children: report.stale.slice(0, 10).join("；") || "无" })] }),
+              jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-monitor-wide", children: [jsxRuntime.jsx("h3", { children: "MOC" }), jsxRuntime.jsx("small", { children: report.mocsUpdated ? "03-MOCs/Index.md 已重新生成" : "未变更" })] })
+            ] })
+          ] }),
+
+          tab === "eval" && jsxRuntime.jsxs("div", { className: "wb-knowledge-group", children: [
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-workflow-editor", children: [
+              jsxRuntime.jsx("h3", { children: "添加评测题（问题 + 期望召回的路径/标题）" }),
+              jsxRuntime.jsx("input", { value: evalDraft.question, placeholder: "问题，例如：订单中台为什么用 FastAPI", onChange: (e) => setEvalDraft((cur) => ({ ...cur, question: e.target.value })) }),
+              jsxRuntime.jsx("input", { value: evalDraft.expected, placeholder: "期望召回（逗号分隔）：inbox/xxx.md, 另一标题", onChange: (e) => setEvalDraft((cur) => ({ ...cur, expected: e.target.value })) }),
+              jsxRuntime.jsx("textarea", { className: "wb-orch-agents-editor", value: evalDraft.hints, rows: 3, placeholder: "答案要点（可选）", onChange: (e) => setEvalDraft((cur) => ({ ...cur, hints: e.target.value })) }),
+              jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: !evalDraft.question.trim(), onClick: addEval, children: "添加评测题" })] })
+            ] }),
+            jsxRuntime.jsxs("div", { className: "wb-collab-list-head", children: [
+              jsxRuntime.jsx("strong", { children: "评测题（" + evalStore.items.length + "）· 候选（" + (evalStore.candidates || []).length + "）" }),
+              jsxRuntime.jsxs("div", { className: "wb-knowledge-toolbar", children: [
+                jsxRuntime.jsx("input", { type: "number", min: 1, max: 10, value: evalTopK, style: { width: 70 }, onChange: (e) => setEvalTopK(e.target.value) }),
+                jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy || !evalStore.items.length, onClick: runEval, children: "运行评测" })
+              ] })
+            ] }),
+            evalStore.lastRun && jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
+              jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: "上次跑分" }), jsxRuntime.jsx("small", { children: new Date(evalStore.lastRun.ranAt).toLocaleString() })] }),
+              jsxRuntime.jsx("p", { className: "wb-collab-memory-finding", children: "recall@" + evalStore.lastRun.topK + " = " + evalStore.lastRun.recallAtK + " · 平均 token " + evalStore.lastRun.avgTokens + " · 平均 " + evalStore.lastRun.avgLatencyMs + "ms" }),
+              evalStore.lastRun.results && jsxRuntime.jsx("div", { className: "wb-collab-memory-list", children: evalStore.lastRun.results.map((item) => jsxRuntime.jsx("div", { className: "wb-collab-memory-finding", children: (item.hits === item.expected ? "✅" : "❌") + " [" + item.hits + "/" + item.expected + "] " + item.question.slice(0, 80) }, item.id)) })
+            ] }),
+            evalStore.items.length ? jsxRuntime.jsx("div", { className: "wb-collab-memory-list", children: evalStore.items.map((item) => jsxRuntime.jsxs("div", { className: "wb-collab-memory-card", children: [
+              jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: item.question }), jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => removeEval(item.id), children: "删除" })] }),
+              jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "期望：" + (item.expected || []).join("；") })
+            ] }, item.id)) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "还没有评测题" })
+          ] }),
+
+          tab === "vector" && jsxRuntime.jsxs("div", { className: "wb-knowledge-group", children: [
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-workflow-editor", children: [
+              jsxRuntime.jsx("h3", { children: "向量检索配置（可插拔，默认关闭）" }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [
+                jsxRuntime.jsx("span", { children: "Provider" }),
+                jsxRuntime.jsx("select", { value: vectorDraft.provider, onChange: (e) => setVectorDraft((cur) => ({ ...cur, provider: e.target.value })), children: [{ id: "none", label: "关闭（BM25 + 图谱）" }, { id: "bge-local", label: "BGE 本地（免费离线）" }, { id: "openai", label: "OpenAI Embedding（付费）" }, { id: "custom", label: "自定义接口" }].map((item) => jsxRuntime.jsx("option", { value: item.id, children: item.label }, item.id)) })
+              ] }),
+              jsxRuntime.jsx("input", { value: vectorDraft.model, placeholder: "模型：bge-small-zh-v1.5 / text-embedding-3-small / 自定义名", onChange: (e) => setVectorDraft((cur) => ({ ...cur, model: e.target.value })) }),
+              jsxRuntime.jsx("input", { value: vectorDraft.baseUrl, placeholder: "Base URL（openai 默认 https://api.openai.com/v1；custom 填完整接口）", onChange: (e) => setVectorDraft((cur) => ({ ...cur, baseUrl: e.target.value })) }),
+              jsxRuntime.jsx("input", { type: "password", value: vectorDraft.apiKey, placeholder: "API Key（留空保持已保存的 key）", onChange: (e) => setVectorDraft((cur) => ({ ...cur, apiKey: e.target.value })) }),
+              jsxRuntime.jsx("input", { value: vectorDraft.python, placeholder: "Python 路径（bge-local 用，默认 python）", onChange: (e) => setVectorDraft((cur) => ({ ...cur, python: e.target.value })) }),
+              jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [
+                jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy, onClick: saveVector, children: "测试并保存" }),
+                jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: busy || vectorDraft.provider === "none", onClick: rebuildVector, children: "重建向量索引" })
+              ] })
+            ] }),
+            vectorStatus && jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
+              jsxRuntime.jsx("h3", { children: "状态" }),
+              jsxRuntime.jsx("p", { className: "wb-collab-memory-finding", children: JSON.stringify(vectorStatus) })
+            ] }),
+            vectorMeta && jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
+              jsxRuntime.jsx("h3", { children: "当前配置" }),
+              jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "Provider: " + vectorMeta.provider + " · 模型: " + (vectorMeta.model || "-") + (vectorMeta.apiKey ? " · Key: " + vectorMeta.apiKey : "") })
+            ] }),
+            jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "提示：本地 BGE 首次使用会自动下载模型（约 100MB）并需要 Python + onnxruntime/tokenizers；付费模型填 key 即可。是否启用由评测集跑分决定。" })
+          ] }),
+
+          preview && jsxRuntime.jsx("div", { className: "wb-knowledge-preview", children: jsxRuntime.jsxs("div", { className: "wb-knowledge-preview-box", children: [
+            jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: preview.path }), jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => setPreview(null), children: "关闭" })] }),
+            jsxRuntime.jsx("textarea", { className: "wb-orch-agents-editor", value: preview.content, rows: 16, onChange: (e) => setPreview((cur) => ({ ...cur, content: e.target.value })) }),
+            jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", onClick: savePreview, children: "保存" }),
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: removePreview, children: "删除条目" })
+            ] })
+          ] }) })
         ] })
       ] });
     }

@@ -733,7 +733,7 @@ function parseFrontmatter(text) {
   }
   entry.body = entry.body.slice(match[0].length);
   const meta = match[1];
-  const line = (key) => { const hit = new RegExp('^' + key + ':\\s*(.+)$', 'm').exec(meta); return hit ? hit[1].trim() : ''; };
+  const line = (key) => { const hit = new RegExp('^' + key + ':[ \\t]*(.+)$', 'm').exec(meta); return hit ? hit[1].trim() : ''; };
   entry.title = line('title') || entry.body.split(/\r?\n/)[0].replace(/^#\s*/, '').slice(0, 300);
   entry.confidence = KNOWLEDGE_CONFIDENCES.includes(line('confidence')) ? line('confidence') : 'medium';
   entry.tags = line('tags').replace(/^\[|\]$/g, '').split(/[,\s]+/).map((item) => item.trim()).filter(Boolean).slice(0, 20);
@@ -891,17 +891,17 @@ async function ensureKnowledgeVault() {
   try { await stat(template); } catch (e) {
     await writeFile(template, [
       '---',
-      'title: ',
+      'title: 默认条目模板',
       'tags: []',
       'confidence: medium',
       'related: ""',
-      'summary: ',
+      'summary: 新知识条目的默认骨架。',
       'source: ',
       'project: ',
       'created: ' + new Date().toISOString(),
       '---',
       '',
-      '# ',
+      '# 默认条目模板',
       '',
       '## 结论',
       '',
@@ -3934,6 +3934,8 @@ function makeRoutes() {
             let body;
             try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
             const config = cleanVectorConfig(body.config);
+            const current = await readVectorConfig();
+            if (!config.apiKey && current.apiKey) config.apiKey = current.apiKey;
             let status = { tested: false, reason: 'provider none' };
             if (config.provider !== 'none') {
               try {
@@ -3947,7 +3949,6 @@ function makeRoutes() {
               await writeVectorConfig(config);
               writeJson(res, 200, { saved: true, config: maskVectorConfig(config), status });
             } else {
-              const current = await readVectorConfig();
               writeJson(res, 200, { saved: false, config: maskVectorConfig(current), status });
             }
           } else {
