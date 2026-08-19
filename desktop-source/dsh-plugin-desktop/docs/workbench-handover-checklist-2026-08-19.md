@@ -102,6 +102,16 @@
 - 验证：新增 `smoke-memory.mjs`；smoke ×6、eslint、`node --check` 通过；CDP GUI 回归通过
   （含真实生成"简历生成器"快照并加载到新任务），截图 `collab-memory.png`；测试任务已清理。
 
+### 项目文件夹选择修复（原生对话框）
+
+- 根因：Electron 32+ 移除了 `File.path`，运行端页面也没有 `window.webUtils`；旧"浏览…"在这类
+  环境报"无法从当前环境读取文件夹绝对路径"（朋友实测触发）。
+- 修复：Host 新增 `POST /api/dsh-workbench/fs/pick-folder`（Electron `dialog.showOpenDialog`
+  主进程实现）；客户端"浏览…"优先走原生对话框，不可用时回退 HTML 文件夹输入；非桌面环境优雅
+  降级（`400 native-dialog-unavailable`）。
+- 验证：`smoke-collab` 新增降级断言；smoke ×6、eslint、`node --check` 通过；运行端已部署并重启
+  （备份 `backups\workbench-fs-pick-folder-20260819-112558`），路由注册确认、接口正常。
+
 ## 三、未完成与下一步
 
 1. P1B 剩余 GUI 回归（需用户实测）：文件视图（盘符面包屑/保存/大文件/越界提示）、外壳（置顶/拖拽/重命名归档/默认收起）、专家页（调用/编辑/复制/删除/重启保留）、任务中心存量（看板/`/todo`/想法流转）。
