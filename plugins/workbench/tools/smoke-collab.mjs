@@ -12,13 +12,14 @@ process.env.DSH_WORKBENCH_WORKER_TIMEOUT_MS = '3000';
 const routes = new Map();
 const llmCalls = [];
 const agentPrompts = [];
+const spawnOptions = [];
 const plan = {
   title: '附件协作测试',
   summary: '一个子代理读取附件并输出结论。',
   strategy: '单子代理执行。',
   maxParallel: 1,
   mainAgent: { name: '汇总代理', role: '主代理', mission: '汇总结果' },
-  workers: [{ name: '文档阅读员', role: '执行者', task: '读取附件并总结', dependsOn: [], acceptance: '给出结论' }],
+  workers: [{ name: '文档阅读员', role: '执行者', task: '读取附件并总结', dependsOn: [], acceptance: '给出结论', agentRef: 'alpha' }],
   acceptanceCriteria: ['结论完整']
 };
 
@@ -46,6 +47,7 @@ const ctx = {
           start: async (kind, options) => {
             const text = Array.isArray(options.prompt) ? options.prompt.map((entry) => entry.text || '').join('\n') : String(options.prompt || '');
             agentPrompts.push(text);
+            spawnOptions.push(options);
             return {
               id: 'run-' + options.label,
               localAgent: { options: {} },
@@ -116,15 +118,18 @@ try {
 
   // --- agents pool: defaults + validation + write ---
   const defaults = await call('/api/dsh-workbench/agents/list', 'GET');
+  assert.equal(defaults.mode, 'free', 'default pool mode should be free-form');
   assert.ok(defaults.agents.length >= 5, 'default agent pool should have at least 5 agents');
   assert.ok(defaults.agents.some((agent) => agent.id === 'code-reviewer'), 'default pool should include code-reviewer');
   const written = await call('/api/dsh-workbench/agents/write', 'POST', {
+    mode: 'pool',
     agents: [
-      { id: 'alpha', name: 'Alpha', role: '验证', capabilities: ['test'], prompt: '验证一切' },
+      { id: 'alpha', name: 'Alpha', role: '验证', capabilities: ['test'], prompt: '验证一切', provider: 'test-provider', model: 'pool-model' },
       { id: 'beta', name: 'Beta', role: '写作', capabilities: ['docs'], prompt: '写好文档' },
       { id: 'alpha', name: '重复', role: '', capabilities: [], prompt: '' }
     ]
   });
+  assert.equal(written.mode, 'pool', 'written pool should keep pool mode');
   assert.equal(written.agents.length, 2, 'duplicate agent ids should be dropped');
   const invalidWrite = await callRaw('/api/dsh-workbench/agents/write', 'POST', { agents: 'not-an-array' });
   assert.equal(invalidWrite.status, 400, 'non-array agents should be rejected');
@@ -153,7 +158,7 @@ try {
   assert.equal(planned.phase, 'planned');
   assert.ok(llmCalls.length >= 1);
   assert.ok(llmCalls[0].prompt.includes('说明.txt'), 'plan prompt should include attachment name');
-  assert.ok(llmCalls[0].prompt.includes('可用子代理池'), 'plan prompt should include agent pool');
+  assert.ok(llmCalls[0].prompt.includes('候选专家参考'), 'plan prompt should include agent pool in pool mode');
   assert.ok(llmCalls[0].prompt.includes('alpha'), 'plan prompt should include written pool agent ids');
 
   // --- execute: worker prompt carries attachment; logs are recorded ---
@@ -163,6 +168,8 @@ try {
   const terminal = (await listAll()).orchestrations.find((item) => item.id === id);
   assert.equal(terminal.phase, 'review');
   assert.ok(agentPrompts.some((text) => text.includes('说明.txt')), 'worker prompt should include attachment');
+  assert.ok(agentPrompts.some((text) => text.includes('验证一切')), 'worker prompt should include matched pool prompt');
+  assert.ok(spawnOptions.some((options) => options.agentOptions && options.agentOptions.model === 'pool-model'), 'pool model should be used as fallback when worker model is empty');
   assert.ok(Array.isArray(terminal.log) && terminal.log.length >= 3, 'orchestration should record execution logs');
   assert.ok(terminal.log.some((entry) => entry.level === 'info' && entry.text.includes('主代理完成汇总')), 'log should include main agent completion');
   assert.ok(terminal.log.every((entry) => ['info', 'warn', 'error'].includes(entry.level)), 'log levels should be valid');
@@ -175,6 +182,22 @@ try {
   let removed = true;
   try { await stat(attachmentPath); removed = false; } catch (e) { /* expected */ }
   assert.ok(removed, 'attachment file should be removed with the orchestration');
+
+  // --- reset restores defaults in free mode; free mode omits the pool reference ---
+  const reset = await call('/api/dsh-workbench/agents/reset', 'POST');
+  assert.equal(reset.mode, 'free');
+  assert.equal(reset.agents.length, 7, 'reset should restore the default 7 agents');
+  const llmCallsBeforeFree = llmCalls.length;
+  await call('/api/dsh-workbench/tasks/mutate', 'POST', {
+    action: 'orchestration_create', scope: 'all', projectPath: 'D:\\demo', sourceSessionId: 'session-1', idea: '自由编排测试'
+  });
+  const freeId = (await listAll()).orchestrations.find((item) => item.idea === '自由编排测试').id;
+  await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_plan', scope: 'all', projectPath: 'D:\\demo', id: freeId });
+  await waitPhase(freeId, ['planned', 'failed']);
+  assert.ok(llmCalls.length > llmCallsBeforeFree);
+  const freePrompt = llmCalls[llmCalls.length - 1].prompt;
+  assert.ok(!freePrompt.includes('候选专家参考'), 'free mode should omit the pool reference from the plan prompt');
+  await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_remove', scope: 'all', projectPath: 'D:\\demo', id: freeId });
   console.log('collab smoke test passed');
 } finally {
   await rm(tempHome, { recursive: true, force: true });

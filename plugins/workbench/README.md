@@ -119,8 +119,11 @@ powershell -ExecutionPolicy Bypass -File .\tools\enable-workbench.ps1    # 恢�
   方案与子代理提示词自动携带附件名与摘录；删除编排时清理附件文件。
 - 快捷命令：`/new <任务>`、`/plan <反馈>`、`/memory`（2.5-C 提供记忆，当前提示）。
 - @ 引用：输入 `@` 弹出下拉，可引用想法库条目与当前项目文件（复用受限 `fs/list`）。
-- 子代理池：`GET/POST /api/dsh-workbench/agents/list|write`，默认 7 类专家，JSON 编辑器
-  在"决策"Tab 内保存；拆解提示词携带代理池能力用于匹配。
+- 候选专家（可选）：默认"自由生成"模式——拆解任务时不参考固定名单，主代理按任务自动创建
+  最适配的专家并自动分配模型；可切换"参考候选池"模式，让池内角色/能力参与拆解匹配。
+  `GET/POST /api/dsh-workbench/agents/list|write`、`POST /api/dsh-workbench/agents/reset`；
+  池条目支持 `provider/model`，命中池角色的子代理会注入池提示词，并以池模型作为未手动
+  指定时的回退（`agentRef` 用于标记命中）。
 - 依赖可视化：方案 Tab 新增"执行顺序"条，按 `dependsOn` 拓扑分组展示并行/串行关系。
 - Host 冒烟测试：`node tools/smoke-collab.mjs`（代理池/附件/日志/提示词注入）。
 

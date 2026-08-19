@@ -209,7 +209,7 @@ async function writeStyleStore(store) {
   throw lastError;
 }
 
-let agentsState = null;
+let agentsState = { mode: 'free', agents: AGENT_POOL_DEFAULTS };
 
 function cleanAgentPoolEntry(raw, index) {
   const value = raw && typeof raw === 'object' ? raw : {};
@@ -218,6 +218,7 @@ function cleanAgentPoolEntry(raw, index) {
     id: id || ('agent-' + (index + 1)),
     name: cleanTaskText(value.name, 120) || id || ('代理 ' + (index + 1)),
     role: cleanTaskText(value.role, 300),
+    provider: cleanTaskText(value.provider, 160),
     model: cleanTaskText(value.model, 240),
     capabilities: Array.isArray(value.capabilities) ? [...new Set(value.capabilities.map((item) => cleanTaskText(item, 80)).filter(Boolean))].slice(0, 12) : [],
     prompt: cleanTaskText(value.prompt, 3000)
@@ -242,24 +243,28 @@ async function readAgentsStore() {
     if (info.isSymbolicLink() || !info.isFile()) throw new Error('agents store must be a regular non-symbolic file');
     if (info.size > 400 * 1024) throw new Error('agents store exceeds 400KB');
     const parsed = JSON.parse(await readFile(AGENTS_STORE, 'utf8'));
-    agentsState = cleanAgentPool(parsed && parsed.agents);
+    agentsState = {
+      mode: (parsed && parsed.mode) === 'pool' ? 'pool' : 'free',
+      agents: cleanAgentPool(parsed && parsed.agents)
+    };
   } catch (error) {
-    if (error && error.code === 'ENOENT') agentsState = cleanAgentPool(AGENT_POOL_DEFAULTS);
+    if (error && error.code === 'ENOENT') agentsState = { mode: 'free', agents: cleanAgentPool(AGENT_POOL_DEFAULTS) };
     else throw error;
   }
   return agentsState;
 }
 
-async function writeAgentsStore(pool) {
+async function writeAgentsStore(pool, mode) {
   await mkdir(DSH_ROOT, { recursive: true });
   const cleaned = cleanAgentPool(pool);
   const temp = AGENTS_STORE + '.tmp-' + process.pid + '-' + randomUUID();
-  await writeFile(temp, JSON.stringify({ version: 1, agents: cleaned }, null, 2) + '\n', 'utf8');
+  const next = { version: 1, mode: mode === 'pool' ? 'pool' : 'free', agents: cleaned };
+  await writeFile(temp, JSON.stringify(next, null, 2) + '\n', 'utf8');
   let lastError = null;
   for (let attempt = 0; attempt < 5; attempt += 1) {
     try {
       await rename(temp, AGENTS_STORE);
-      agentsState = cleaned;
+      agentsState = next;
       return agentsState;
     } catch (error) {
       lastError = error;
@@ -617,6 +622,7 @@ function cleanOrchestrationAgent(raw, fallbackName, fallbackRole) {
     mission: cleanTaskText(value.mission || value.task, 6000),
     rationale: cleanTaskText(value.rationale, 2000),
     acceptance: cleanTaskText(value.acceptance, 3000),
+    agentRef: cleanTaskText(value.agentRef, 80),
     provider: cleanTaskText(value.provider, 160),
     model: cleanTaskText(value.model, 240),
     modelReason: cleanTaskText(value.modelReason, 1000),
@@ -1228,7 +1234,8 @@ async function analyzeIdea(record) {
 
 async function generateOrchestrationPlan(record, feedback, models, policy) {
   const modelList = Array.isArray(models) ? models : [];
-  const agents = await readAgentsStore();
+  const pool = await readAgentsStore();
+  const agents = pool.mode === 'pool' ? pool.agents : [];
   const modelChoices = modelList.map((item) => item.provider + ' :: ' + item.id + ' (' + item.name + ')').join('\n');
   const system = [
     '你是一个谨慎的多代理任务编排器。把用户的粗略想法转成可审查、可执行、可验收的方案。',
@@ -1242,7 +1249,7 @@ async function generateOrchestrationPlan(record, feedback, models, policy) {
     '项目路径：' + (record.projectPath || '全局任务'),
     '用户想法：\n' + record.idea,
     record.attachments && record.attachments.length ? '已附加文件：\n' + record.attachments.map((entry) => '- ' + entry.name + '（' + entry.size + ' B，' + entry.mime + '）' + (entry.summary ? '\n  内容摘录：' + entry.summary.slice(0, 400) : '')).join('\n') : '',
-    agents.length ? '可用子代理池（请优先匹配能力与角色）：\n' + agents.map((agent) => '- ' + agent.id + '：' + agent.name + '（' + (agent.capabilities || []).join('/') + '）').join('\n') : '',
+    agents.length ? '候选专家参考（可按需创建更合适的角色；若使用候选，请在 workers/mainAgent 里带上 agentRef）：\n' + agents.map((agent) => '- ' + agent.id + '：' + agent.name + '（' + (agent.capabilities || []).join('/') + '）' + (agent.model ? '；模型 ' + agent.model : '')).join('\n') : '',
     feedback ? '用户修改意见：\n' + feedback : '',
     '模型策略：' + (policy || 'balanced') + '（quality=质量优先，balanced=平衡，economy=节省，manual=不自动分配）',
     modelChoices ? '当前已配置模型目录：\n' + modelChoices : '当前没有可用模型目录，所有代理继承父代理模型。',
@@ -1294,15 +1301,22 @@ async function orchestrationSnapshot(id) {
   return store.orchestrations.find((item) => item.id === id) || null;
 }
 
-function workerPrompt(orchestration, worker) {
+async function workerPrompt(orchestration, worker) {
   const byId = new Map(orchestration.workers.map((item) => [item.id, item]));
   const dependencyContext = worker.dependsOn.map((id) => {
     const dependency = byId.get(id);
     if (!dependency) return '';
     return '### ' + dependency.name + '\n状态：' + dependency.status + '\n结果：\n' + (dependency.output || dependency.error || '无结果');
   }).filter(Boolean).join('\n\n');
+  let poolPrompt = '';
+  try {
+    const pool = await readAgentsStore();
+    const entry = (pool.agents || []).find((agent) => worker.agentRef ? agent.id === worker.agentRef : agent.name === worker.name);
+    if (entry && entry.prompt) poolPrompt = '角色设定（来自候选专家池 ' + entry.id + '）：\n' + entry.prompt;
+  } catch (e) { /* pool is optional */ }
   return [
     '你是“' + worker.name + '”，角色：' + worker.role + '。',
+    poolPrompt,
     '这是工作台中已经由用户确认执行的一项多代理任务。只完成分配给你的工作包，不要擅自扩大范围。',
     '项目路径：' + (orchestration.projectPath || '全局任务'),
     (orchestration.attachments || []).length ? '已附加文件（需要时读取内容）：\n' + (orchestration.attachments || []).map((entry) => '- ' + entry.name + '（' + entry.size + ' B）' + (entry.summary ? '\n  ' + entry.summary.slice(0, 1200) : '')).join('\n') : '',
@@ -1337,6 +1351,13 @@ async function runOrchestrationWorker(orchestrationId, workerId, parent, control
       if (!current || current.phase !== 'running') return;
       const worker = current.workers.find((item) => item.id === workerId);
       if (!worker) throw new Error('worker not found');
+      let poolEntry = null;
+      try {
+        const pool = await readAgentsStore();
+        poolEntry = (pool.agents || []).find((agent) => worker.agentRef ? agent.id === worker.agentRef : agent.name === worker.name) || null;
+      } catch (e) { /* pool is optional */ }
+      const effectiveProvider = worker.provider || (poolEntry && poolEntry.provider) || '';
+      const effectiveModel = worker.model || (poolEntry && poolEntry.model) || '';
       await queueOrchestrationPatch(orchestrationId, (item) => ({
         ...item,
         workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: 'running', startedAt, error: '', attempts: attempt } : entry),
@@ -1345,16 +1366,16 @@ async function runOrchestrationWorker(orchestrationId, workerId, parent, control
       await appendOrchestrationLog(orchestrationId, 'info', '子代理「' + worker.name + '」第 ' + attempt + ' 次执行开始', worker.id);
       const spawned = await orchestrationSubagents.start('spawn', {
         label: worker.name,
-        prompt: [{ type: 'text', text: workerPrompt(current, worker) }],
+        prompt: [{ type: 'text', text: await workerPrompt(current, worker) }],
         parent,
         signal: controller.signal,
         persona: '你是' + worker.role + '。保持专业、独立验证，并以可交接的证据为准。',
-        ...(worker.provider && worker.model ? { agentOptions: { provider: worker.provider, model: worker.model } } : {}),
+        ...(effectiveProvider && effectiveModel ? { agentOptions: { provider: effectiveProvider, model: effectiveModel } } : {}),
         maxDepth: 2
       });
       run = spawned;
-      const usedProvider = run.localAgent && run.localAgent.options ? String(run.localAgent.options.provider || worker.provider || '') : worker.provider;
-      const usedModel = run.localAgent && run.localAgent.options ? String(run.localAgent.options.model || worker.model || '') : worker.model;
+      const usedProvider = run.localAgent && run.localAgent.options ? String(run.localAgent.options.provider || effectiveProvider || '') : effectiveProvider;
+      const usedModel = run.localAgent && run.localAgent.options ? String(run.localAgent.options.model || effectiveModel || '') : effectiveModel;
       await queueOrchestrationPatch(orchestrationId, (item) => ({
         ...item,
         workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, sessionId: String(run.id), usedProvider, usedModel } : entry),
@@ -2108,7 +2129,7 @@ function makeRoutes() {
       path: '/api/dsh-workbench/agents/list',
       handler: async (req, res) => {
         if (!fence(req, res)) return;
-        try { writeJson(res, 200, { agents: await readAgentsStore() }); } catch (error) { fail(res, error); }
+        try { writeJson(res, 200, await readAgentsStore()); } catch (error) { fail(res, error); }
       }
     },
     {
@@ -2120,7 +2141,17 @@ function makeRoutes() {
         let body;
         try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
         if (!Array.isArray(body.agents)) return bad(res, 'bad-agents', 'agents must be an array');
-        try { writeJson(res, 200, { agents: await writeAgentsStore(body.agents) }); } catch (error) { fail(res, error); }
+        const mode = body.mode === 'pool' ? 'pool' : 'free';
+        try { writeJson(res, 200, await writeAgentsStore(body.agents, mode)); } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/agents/reset',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        try { writeJson(res, 200, await writeAgentsStore(AGENT_POOL_DEFAULTS, 'free')); } catch (error) { fail(res, error); }
       }
     },
     // ---- attachments: loopback-only upload for orchestration inputs ----
