@@ -124,6 +124,10 @@ try {
   assert.equal(firstProbe.probe.availableCount, 12);
   assert.equal(firstProbe.probe.catalogCount, 14);
   assert.equal(firstProbe.probe.skippedCount, 2);
+  const allProbe = await call('/api/dsh-workbench/models/probe', 'POST', { force: true, all: true });
+  assert.equal(allProbe.models.length, 14, 'full probe should test the whole catalog');
+  assert.equal(allProbe.probe.catalogCount, 14);
+  assert.equal(allProbe.probe.skippedCount, 0);
   assert.equal(firstProbe.probe.results[0].cached, false, 'first probe should hit the model');
   const callsAfterFirstProbe = llmCalls.length;
   const cachedProbe = await call('/api/dsh-workbench/models/probe', 'POST', {});

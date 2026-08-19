@@ -1033,6 +1033,13 @@ verifiedBy/At，可一键移入 02-Atomic）→ 入索引（文本 + 向量 + �
 - `projectContextSummary` 增加会话维度：多 AI 规划提示词现在会注入当前会话的专属内容
   （`dsh-workbench-session.md`，截断 3000 字），与项目规则/备注并列；smoke 断言已补充。
 
+**队列三 F2 模型实测面板与全部实测（2026-08-20，完成）**：
+
+- 多 AI 输入条新增“模型”按钮，打开模型实测面板：默认探测摘要（可用/总数/跳过/缓存）、结果列表，
+  以及“全部实测”按钮（`models/probe { all:true }` 跳过 12 个抽样上限，实测整个目录）。
+- Host `probeOrchestrationModels(force, all)` 支持全量模式；smoke 断言全部目录 14 个全测、跳过 0；
+  GUI 实测摘要与列表正常。
+
 ### 执行建议（下一轮开始）
 
 1. 先跑一轮完整 GUI 回归把 V1/V2 的实测结果拿到（我可代跑，你按清单抽查）。

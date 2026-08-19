@@ -3613,10 +3613,10 @@ function modelProbeCandidates(catalog) {
   return selected;
 }
 
-async function probeOrchestrationModels(force = false) {
+async function probeOrchestrationModels(force = false, all = false) {
   const catalog = await listOrchestrationModels();
   if (chatLlm === null || catalog.length === 0) return { models: [], probe: cleanModelProbe({ status: 'fallback', checkedAt: new Date().toISOString(), catalogCount: catalog.length, results: [] }) };
-  const candidates = modelProbeCandidates(catalog);
+  const candidates = all ? catalog : modelProbeCandidates(catalog);
   const results = [];
   let cursor = 0;
   const worker = async () => {
@@ -4594,7 +4594,7 @@ function makeRoutes() {
         if (req.method !== 'POST') return bad(res, 'method', 'POST required');
         let body = {};
         try { body = JSON.parse(await readBody(req) || '{}'); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
-        try { writeJson(res, 200, await probeOrchestrationModels(Boolean(body.force))); } catch (error) { fail(res, error); }
+        try { writeJson(res, 200, await probeOrchestrationModels(Boolean(body.force), Boolean(body.all))); } catch (error) { fail(res, error); }
       }
     },
     {
