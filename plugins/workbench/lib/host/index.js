@@ -100,9 +100,10 @@ const KNOWLEDGE_MAX_ENTRY_BYTES = 512 * 1024;
 const KNOWLEDGE_MAX_QUERY_CHARS = 1000;
 const KNOWLEDGE_MAX_TOPK = 20;
 const KNOWLEDGE_MAX_TOKEN_BUDGET = 8000;
-const KNOWLEDGE_VECTOR_PROVIDERS = ['none', 'bge-local', 'openai', 'custom'];
+const KNOWLEDGE_VECTOR_PROVIDERS = ['none', 'bge-local', 'bge-node', 'openai', 'custom'];
 const KNOWLEDGE_DEFAULT_VECTOR_CONFIG = { provider: 'bge-local', model: 'bge-small-zh-v1.5', apiKey: '', baseUrl: '', python: '' };
 const KNOWLEDGE_EMBED_SCRIPT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'tools', 'knowledge_embed.py');
+const KNOWLEDGE_EMBED_NODE_SCRIPT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'tools', 'knowledge_embed.mjs');
 const KNOWLEDGE_DEFAULT_PROFILE = {
   mode: 'auto',
   routes: { bm25: true, graph: true, vector: true, hyde: false },
@@ -1589,6 +1590,30 @@ function bgeLocalEmbed(config, texts) {
   });
 }
 
+function bgeNodeEmbed(config, texts) {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const child = execFile(process.execPath, [KNOWLEDGE_EMBED_NODE_SCRIPT, '--model', config.model || 'bge-small-zh-v1.5'], {
+      cwd: DSH_ROOT,
+      timeout: 180000,
+      maxBuffer: 64 * 1024 * 1024,
+      windowsHide: true
+    }, (error, stdout, stderr) => {
+      if (error) {
+        rejectPromise(new Error('bge-node embedding failed: ' + String(stderr || error.message).slice(0, 500)));
+        return;
+      }
+      try {
+        const parsed = JSON.parse(stdout);
+        resolvePromise({ dims: Number(parsed.dims) || 0, vectors: Array.isArray(parsed.vectors) ? parsed.vectors : [] });
+      } catch (parseError) {
+        rejectPromise(new Error('bge-node invalid output: ' + String(stderr || '').slice(0, 300)));
+      }
+    });
+    child.stdin.on('error', () => {});
+    child.stdin.end(JSON.stringify({ texts }));
+  });
+}
+
 async function embedKnowledgeTexts(config, texts) {
   if (!config || config.provider === 'none' || !texts || !texts.length) return null;
   const clean = texts.map((text) => String(text || '').slice(0, 4000));
@@ -1621,6 +1646,7 @@ async function embedKnowledgeTexts(config, texts) {
     };
   }
   if (config.provider === 'bge-local') return bgeLocalEmbed(config, clean);
+  if (config.provider === 'bge-node') return bgeNodeEmbed(config, clean);
   throw new Error('unsupported embedding provider');
 }
 

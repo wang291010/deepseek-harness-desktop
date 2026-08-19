@@ -4224,7 +4224,7 @@ window.__ModuleLoader__.load({
               jsxRuntime.jsx("h3", { children: "向量检索配置（可插拔，v4 默认本地 BGE）" }),
               jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [
                 jsxRuntime.jsx("span", { children: "Provider" }),
-                jsxRuntime.jsx("select", { value: vectorDraft.provider, onChange: (e) => setVectorDraft((cur) => ({ ...cur, provider: e.target.value })), children: [{ id: "none", label: "关闭（BM25 + 图谱）" }, { id: "bge-local", label: "BGE 本地（免费离线）" }, { id: "openai", label: "OpenAI Embedding（付费）" }, { id: "custom", label: "自定义接口" }].map((item) => jsxRuntime.jsx("option", { value: item.id, children: item.label }, item.id)) })
+                jsxRuntime.jsx("select", { value: vectorDraft.provider, onChange: (e) => setVectorDraft((cur) => ({ ...cur, provider: e.target.value })), children: [{ id: "none", label: "关闭（BM25 + 图谱）" }, { id: "bge-local", label: "BGE 本地 Python（免费离线）" }, { id: "bge-node", label: "BGE 本地 Node（免 Python）" }, { id: "openai", label: "OpenAI Embedding（付费）" }, { id: "custom", label: "自定义接口" }].map((item) => jsxRuntime.jsx("option", { value: item.id, children: item.label }, item.id)) })
               ] }),
               jsxRuntime.jsx("input", { value: vectorDraft.model, placeholder: "模型：bge-small-zh-v1.5 / text-embedding-3-small / 自定义名", onChange: (e) => setVectorDraft((cur) => ({ ...cur, model: e.target.value })) }),
               jsxRuntime.jsx("input", { value: vectorDraft.baseUrl, placeholder: "Base URL（openai 默认 https://api.openai.com/v1；custom 填完整接口）", onChange: (e) => setVectorDraft((cur) => ({ ...cur, baseUrl: e.target.value })) }),
@@ -4245,7 +4245,7 @@ window.__ModuleLoader__.load({
               jsxRuntime.jsx("h3", { children: "当前配置" }),
               jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "Provider: " + vectorMeta.provider + " · 模型: " + (vectorMeta.model || "-") + (vectorMeta.apiKey ? " · Key: " + vectorMeta.apiKey : "") })
             ] }),
-            jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "提示：本地 BGE 默认启用（bge-small-zh-v1.5，免费离线），首次使用会自动下载模型（约 100MB）并需要 Python + onnxruntime/tokenizers/numpy；失败时检索自动降级为 BM25+图谱并在结果标注。付费模型填 key 即可切换。" })
+            jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "提示：本地 BGE 默认启用（bge-small-zh-v1.5，免费离线）；「BGE 本地 Node」无需 Python（WASM 推理），「BGE 本地 Python」需要 pip install onnxruntime tokenizers numpy；失败时检索自动降级为 BM25+图谱。付费模型填 key 即可切换。" })
           ] }),
 
           preview && jsxRuntime.jsx("div", { className: "wb-knowledge-preview", children: jsxRuntime.jsxs("div", { className: "wb-knowledge-preview-box", children: [

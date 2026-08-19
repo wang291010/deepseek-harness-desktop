@@ -1,6 +1,11 @@
 packages:
   - .
 
+allowBuilds:
+  onnxruntime-node: set this to true or false
+  protobufjs: true
+  sharp: true
+
 # DeepSeek Harness provides the peer dependencies at runtime. Installing a
 # second copy inside this plugin can create incompatible Cordis/React graphs.
 autoInstallPeers: false

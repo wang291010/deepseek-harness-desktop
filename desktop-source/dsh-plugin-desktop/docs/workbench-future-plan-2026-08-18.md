@@ -1112,6 +1112,18 @@ verifiedBy/At，可一键移入 02-Atomic）→ 入索引（文本 + 向量 + �
 - C 已落地：向量设置页未就绪时显示友好文案与 `pip install onnxruntime tokenizers numpy huggingface_hub`
   指引，检索自动回退 BM25+图谱；已部署。
 
+**队列五 R5-B Node 嵌入桥（2026-08-20，代码完成 + 一致性验证，待打包部署）**：
+
+- 新增 `tools/knowledge_embed.mjs`：基于 `@huggingface/transformers`（onnxruntime-web WASM，
+  无 sharp/Python/native 依赖），与 Python 桥同 stdin/stdout 契约（mean pooling + L2 归一化）。
+- 依赖：`@huggingface/transformers@4.2.0`（替换 @xenova，绕开 sharp 的 libvips/VS 工具链问题）；
+  pnpm-workspace.yaml 的 allowBuilds 已配置。
+- 一致性验证：Node 桥与 Python 桥对 4 段中文文本向量余弦全部 = 1.000000（512 维，归一化）。
+- Host 新增 `provider: bge-node`（`bgeNodeEmbed` 走 process.execPath 子进程，契约与 bge-local 相同）；
+  向量设置页新增「BGE 本地 Node（免 Python）」选项。
+- 运行端未部署：bge-node 依赖需随“朋友安装包”打包内置（运行端无 node_modules）；打包环节再做
+  运行端验证，运行端当前继续使用 bge-local。
+
 ### 执行建议（下一轮开始）
 
 1. 先跑一轮完整 GUI 回归把 V1/V2 的实测结果拿到（我可代跑，你按清单抽查）。
