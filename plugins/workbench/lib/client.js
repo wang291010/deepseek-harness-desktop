@@ -522,7 +522,7 @@ window.__ModuleLoader__.load({
       ".wb-task-center-card-title{font-size:12px;font-weight:540;line-height:1.5;color:var(--dsw-alias-label-primary)}",
       ".wb-task-center-card-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:10px;color:var(--dsw-alias-label-tertiary)}",
       ".wb-task-card-group{display:inline-flex;max-width:100%;padding:2px 7px;border-radius:7px;background:rgba(90,120,255,.09);color:var(--dsw-alias-label-secondary);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
-      ".wb-task-owner{display:inline-flex;padding:1px 6px;border-radius:999px;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}",
+      ".wb-task-owner{display:inline-flex;padding:1px 6px;border-radius:999px;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}.wb-task-lock{border:0;padding:0 2px;background:transparent;font-size:11px;cursor:pointer;line-height:1}.wb-task-lock-on{opacity:1}.wb-task-lock:not(.wb-task-lock-on){opacity:.55}",
       ".wb-task-card-status{width:100%;height:26px;border:1px solid var(--dsw-alias-border-l1);border-radius:7px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-secondary);font:10px inherit}",
       ".wb-task-today-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr);gap:14px}",
       ".wb-task-panel{padding:13px;border:1px solid var(--dsw-alias-border-l1);border-radius:14px;background:var(--dsw-alias-bg-layer-1)}",
@@ -1606,6 +1606,7 @@ window.__ModuleLoader__.load({
         jsxRuntime.jsx("span", { children: WB_PRIORITY_LABEL[task.priority] + "优先级" }),
         jsxRuntime.jsx("span", { className: "wb-task-owner", children: WB_OWNER_LABEL[task.owner] || "我" }),
         task.orchestrationId && jsxRuntime.jsx("span", { className: "wb-task-owner", children: "AI 协作" }),
+        jsxRuntime.jsx("button", { type: "button", className: "wb-task-lock" + (task.locked ? " wb-task-lock-on" : ""), title: task.locked ? "已锁定，防止被覆盖（点击解锁）" : "锁定任务，防止被覆盖", onClick: (e) => { e.stopPropagation(); store.update(task.id, { locked: !task.locked }).catch(() => {}); }, children: task.locked ? "🔒" : "🔓" }),
         jsxRuntime.jsx("span", { children: wbProjectLabel(task.projectPath) }),
           (task.dueAt || task.plannedFor) && jsxRuntime.jsx("span", { children: wbDateLabel(task.dueAt || task.plannedFor) })
         ] }),
@@ -1623,7 +1624,8 @@ window.__ModuleLoader__.load({
         notes: draft.notes, plannedFor: draft.plannedFor, startAt: draft.startAt, dueAt: draft.dueAt,
         durationMinutes: Number(draft.durationMinutes) || 0,
         labels: String(draft.labelsText === undefined ? (draft.labels || []).join(",") : draft.labelsText).split(/[,，]/).map((item) => item.trim()).filter(Boolean),
-        blockedReason: draft.blockedReason
+        blockedReason: draft.blockedReason,
+        locked: Boolean(draft.locked)
       }).catch(() => {});
       const handoff = () => {
         const session = wbSessionOf(store.sessionId);
@@ -1660,6 +1662,7 @@ window.__ModuleLoader__.load({
             jsxRuntime.jsxs("div", { className: "wb-task-field", children: [jsxRuntime.jsx("label", { children: "截止日期" }), jsxRuntime.jsx("input", { type: "date", value: String(draft.dueAt || "").slice(0, 10), onChange: (e) => field("dueAt", e.target.value) })] })
           ] }),
           jsxRuntime.jsxs("div", { className: "wb-task-field", children: [jsxRuntime.jsx("label", { children: "标签（逗号分隔）" }), jsxRuntime.jsx("input", { value: draft.labelsText === undefined ? (draft.labels || []).join(", ") : draft.labelsText, onChange: (e) => field("labelsText", e.target.value) })] }),
+          jsxRuntime.jsxs("div", { className: "wb-task-field", children: [jsxRuntime.jsx("label", { children: "锁定（防止被覆盖）" }), jsxRuntime.jsx("input", { type: "checkbox", checked: Boolean(draft.locked), onChange: (e) => field("locked", e.target.checked) })] }),
           jsxRuntime.jsxs("div", { className: "wb-task-field", children: [jsxRuntime.jsx("label", { children: "说明与验收标准" }), jsxRuntime.jsx("textarea", { value: draft.notes || "", onChange: (e) => field("notes", e.target.value), placeholder: "补充背景、完成标准或 Agent 执行要求…" })] }),
           (draft.status === "blocked" || draft.blockedReason) && jsxRuntime.jsxs("div", { className: "wb-task-field", children: [jsxRuntime.jsx("label", { children: "阻塞原因" }), jsxRuntime.jsx("textarea", { style: { minHeight: 72 }, value: draft.blockedReason || "", onChange: (e) => field("blockedReason", e.target.value), placeholder: "正在等待什么？" })] }),
           task.groupId && jsxRuntime.jsx("div", { className: "wb-task-group", children: [jsxRuntime.jsx("div", { className: "wb-task-group-title", children: task.groupTitle }), jsxRuntime.jsx("div", { className: "wb-task-group-meta", children: "流程步骤 " + (task.groupOrder + 1) })] }),

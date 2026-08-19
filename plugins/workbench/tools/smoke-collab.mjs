@@ -266,6 +266,9 @@ try {
   const ctxTask = (await listAll()).tasks.find((task) => task.orchestrationId === ctxId);
   assert.ok(ctxTask, 'orchestration should create a board task');
   assert.equal(ctxTask.status, 'pending', 'planned orchestration task should be pending');
+  await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'update', scope: 'all', projectPath: projectDir, id: ctxTask.id, patch: { locked: true } });
+  const lockedTask = (await listAll()).tasks.find((task) => task.id === ctxTask.id);
+  assert.equal(lockedTask.locked, true, 'task lock flag should persist');
   await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_start', scope: 'all', projectPath: projectDir, id: ctxId });
   await waitPhase(ctxId, ['review', 'failed']);
   const runningTask = (await listAll()).tasks.find((task) => task.orchestrationId === ctxId);
