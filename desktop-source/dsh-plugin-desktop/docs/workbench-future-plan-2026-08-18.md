@@ -1061,6 +1061,15 @@ verifiedBy/At，可一键移入 02-Atomic）→ 入索引（文本 + 向量 + �
 
 **队列三已完成（F1–F5）**。
 
+**队列四 M4 安全边界复查（2026-08-20，完成）**：
+
+- 文件接口（fs/list、fs/read、fs/write）全部经 `authorizeWorkspacePath`：realpath + 工作区根校验 +
+  文件/目录类型校验 + 512KB 大小限制，越界统一 403；pick-folder 仅返回所选路径；open/external
+  白名单 obsidian:/http(s)。所有 Host 路由均有回环 fence。
+- 凭据面：向量配置 API Key 回显已脱敏（`maskVectorConfig`）、保存时保留旧值；DSH 凭据文件位于
+  harness-home，不属于任何注册工作区，fs 接口不可达。
+- 新增安全回归断言（smoke-collab）：工作区外 fs/read、fs/write 返回 403 且不落盘；工作区内可正常读写。
+
 ### 执行建议（下一轮开始）
 
 1. 先跑一轮完整 GUI 回归把 V1/V2 的实测结果拿到（我可代跑，你按清单抽查）。

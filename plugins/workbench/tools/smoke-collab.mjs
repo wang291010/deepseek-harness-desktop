@@ -77,13 +77,13 @@ function request(method, url, body) {
   return req;
 }
 
-async function callRaw(path, method, body) {
+async function callRaw(path, method, body, query = '') {
   const route = routes.get(path);
   assert(route, `route missing: ${path}`);
   let status = 0;
   let text = '';
   const res = { writeHead(code) { status = code; }, end(value) { text += value || ''; } };
-  await route.handler(request(method, path, body), res);
+  await route.handler(request(method, path + query, body), res);
   return { status, data: text ? JSON.parse(text) : {} };
 }
 
@@ -246,6 +246,20 @@ try {
   assert.equal(loadedContext.note, '只处理桌面端，不改服务端');
   const escapedContext = await callRaw('/api/dsh-workbench/project-context', 'POST', { projectPath: projectDir, injectionPaths: ['../'] });
   assert.notEqual(escapedContext.status, 200, 'project context must reject injection paths outside the project');
+
+  // --- P6 M4 security boundary: fs outside workspace must be rejected ---
+  const outsideFile = join(tempHome, 'outside-secret.txt');
+  await writeFile(outsideFile, 'secret', 'utf8');
+  const outRead = await callRaw('/api/dsh-workbench/fs/read', 'GET', undefined, '?path=' + encodeURIComponent(outsideFile));
+  assert.equal(outRead.status, 403, 'fs read outside workspace should be forbidden');
+  const inRead = await callRaw('/api/dsh-workbench/fs/read', 'GET', undefined, '?path=' + encodeURIComponent(join(projectDir, 'package.json')));
+  assert.equal(inRead.status, 200, 'fs read inside workspace should work');
+  const outWrite = await callRaw('/api/dsh-workbench/fs/write', 'POST', { path: join(tempHome, 'outside-write.txt'), content: 'x' });
+  assert.equal(outWrite.status, 403, 'fs write outside workspace should be forbidden');
+  let forbiddenCreated = true;
+  try { await stat(join(tempHome, 'outside-write.txt')); } catch (e) { forbiddenCreated = false; }
+  assert.equal(forbiddenCreated, false, 'forbidden write should not create the file');
+
   await call('/api/dsh-workbench/tasks/mutate', 'POST', {
     action: 'orchestration_create', scope: 'all', projectPath: projectDir, sourceSessionId: 'session-1', idea: '项目上下文测试'
   });
