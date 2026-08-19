@@ -1820,7 +1820,12 @@ window.__ModuleLoader__.load({
       const scoped = wbTasksForScope(store.orchestrations, projectPath, scope);
       const q = String(query || "").trim().toLocaleLowerCase();
       const items = scoped.filter((item) => !q || (item.title + " " + item.idea + " " + (item.finalReport || "")).toLocaleLowerCase().includes(q)).sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
-      const selected = items.find((item) => item.id === selectedId) || items[0] || store.orchestrations.find((item) => item.id === selectedId) || null;
+      const sessionOwned = store.orchestrations.some((item) => String(item.sourceSessionId || "") !== "" && String(item.sourceSessionId || "") === String(store.sessionId || ""));
+      const allowAutoPick = !!initialId || sessionOwned || scope === "all" || scope === "global";
+      const selected = items.find((item) => item.id === selectedId)
+        || (allowAutoPick ? items[0] : null)
+        || store.orchestrations.find((item) => item.id === selectedId)
+        || null;
       React.useEffect(() => { if (initialId) setSelectedId(initialId); }, [initialId]);
       React.useEffect(() => { if (selected && selected.id !== selectedId) setSelectedId(selected.id); }, [selected && selected.id]);
       React.useEffect(() => { setFeedback(""); }, [selected && selected.id]);
@@ -1948,7 +1953,7 @@ window.__ModuleLoader__.load({
               jsxRuntime.jsxs("section", { children: [jsxRuntime.jsx("h4", { children: "方案版本" }), (selected.planVersions || []).slice().reverse().map((version) => jsxRuntime.jsxs("div", { className: "wb-collab-history-row", children: [jsxRuntime.jsx("strong", { children: "V" + version.version }), jsxRuntime.jsxs("span", { children: [jsxRuntime.jsx("small", { children: new Date(version.createdAt).toLocaleString() }), version.feedback && jsxRuntime.jsx("p", { children: "修改依据：" + version.feedback })] })] }, version.version))] }),
               jsxRuntime.jsxs("section", { children: [jsxRuntime.jsx("h4", { children: "执行记录" }), (selected.runs || []).length ? selected.runs.slice().reverse().map((run, index) => jsxRuntime.jsxs("div", { className: "wb-collab-history-row", children: [jsxRuntime.jsx("strong", { children: "#" + run.attempt }), jsxRuntime.jsxs("span", { children: [jsxRuntime.jsx("small", { children: run.status + " · " + new Date(run.completedAt || run.startedAt).toLocaleString() }), run.reviewNote && jsxRuntime.jsx("p", { children: run.reviewNote })] })] }, index)) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "尚未执行" })] })
             ] })
-          ] }) : jsxRuntime.jsx("main", { className: "wb-collab-main wb-collab-empty", children: "在上方直接发布任务，或从想法库提升一个事项；随后在这里审方案、执行和验收。" }),
+          ] }) : jsxRuntime.jsx("main", { className: "wb-collab-main wb-collab-empty", children: "此会话还没有 AI 协作任务（不会显示其他会话的子代理）。左侧是本项目的历史编排，点击可查看；也可以在上方直接发布任务，或从想法库提升一个事项，随后在这里审方案、执行和验收。" }),
           selected && jsxRuntime.jsxs("aside", { className: "wb-collab-decision", children: [
             jsxRuntime.jsx("nav", { className: "wb-collab-panel-tabs", children: [{ id: "overview", label: "概览" }, { id: "agents", label: "代理状态" }, { id: "log", label: "日志" }, { id: "memory", label: "记忆" }, { id: "decision", label: "决策" }].map((item) => jsxRuntime.jsx("button", { type: "button", className: "wb-collab-panel-tab" + (panelTab === item.id ? " wb-collab-panel-tab-active" : ""), onClick: () => setPanelTab(item.id), children: item.label }, item.id)) }),
             panelTab === "overview" && jsxRuntime.jsxs("div", { className: "wb-collab-overview", children: [
@@ -3151,7 +3156,7 @@ window.__ModuleLoader__.load({
       const [error, setError] = React.useState("");
       const [tab, setTab] = React.useState("dash");
       const [showForm, setShowForm] = React.useState(false);
-      const [draft, setDraft] = React.useState({ folder: "inbox", name: "", type: "note", tags: "", confidence: "medium", status: "review", claimType: "fact", staleness: "CHECK", source: "", assumptions: "", related: "", summary: "", content: "" });
+      const [draft, setDraft] = React.useState({ folder: "inbox", name: "", type: "note", context: "", result: "", reusable: "", tags: "", confidence: "medium", status: "review", claimType: "fact", staleness: "CHECK", source: "", assumptions: "", related: "", summary: "", content: "" });
       const [lastPrecheck, setLastPrecheck] = React.useState(null);
       const [folderFilter, setFolderFilter] = React.useState("all");
       const [preview, setPreview] = React.useState(null);
@@ -3163,6 +3168,7 @@ window.__ModuleLoader__.load({
       const [rawDraft, setRawDraft] = React.useState({ name: "", source: "会话", content: "" });
       const [rawResult, setRawResult] = React.useState(null);
       const [report, setReport] = React.useState(null);
+      const [consolidations, setConsolidations] = React.useState({ suggestions: [], added: 0, total: 0 });
       const [qualityCfg, setQualityCfg] = React.useState(null);
       const [evalStore, setEvalStore] = React.useState({ items: [], candidates: [], lastRun: null });
       const [evalDraft, setEvalDraft] = React.useState({ question: "", expected: "", hints: "" });
@@ -3189,6 +3195,7 @@ window.__ModuleLoader__.load({
       React.useEffect(() => { if (tab === "overview") loadOverview(); }, [tab, loadOverview]);
       React.useEffect(() => { wbFetchJson("/api/dsh-workbench/knowledge/eval").then(({ data }) => setEvalStore(data || { items: [], candidates: [], lastRun: null })).catch(() => {}); }, []);
       React.useEffect(() => { wbFetchJson("/api/dsh-workbench/knowledge/quality").then(({ data }) => setQualityCfg(data || null)).catch(() => {}); }, []);
+      React.useEffect(() => { wbFetchJson("/api/dsh-workbench/knowledge/consolidations").then(({ data }) => setConsolidations(data || { suggestions: [], added: 0, total: 0 })).catch(() => {}); }, []);
       const sync = () => {
         setBusy(true);
         setError("");
@@ -3203,10 +3210,16 @@ window.__ModuleLoader__.load({
         const tags = draft.tags.split(/[,，]/).map((item) => item.trim()).filter(Boolean);
         const related = draft.related.split(/[,，]/).map((item) => item.trim()).filter(Boolean).map((item) => "[[" + item + "]]").join(" ");
         const assumptions = draft.assumptions.split(/[,，]/).map((item) => item.trim()).filter(Boolean);
+        const experienceFields = draft.type === "experience" ? [
+          "context: " + draft.context.trim(),
+          "result: " + draft.result.trim(),
+          "reusable: " + draft.reusable.trim()
+        ] : [];
         const markdown = [
           "---",
           "title: " + name,
           "type: " + draft.type,
+          ...experienceFields,
           "tags: [" + tags.join(", ") + "]",
           "confidence: " + draft.confidence,
           "status: " + draft.status,
@@ -3227,7 +3240,7 @@ window.__ModuleLoader__.load({
           .then(({ data }) => {
             setLastPrecheck(data.precheck || null);
             setShowForm(false);
-            setDraft({ folder: "inbox", name: "", type: "note", tags: "", confidence: "medium", status: "review", claimType: "fact", staleness: "CHECK", source: "", assumptions: "", related: "", summary: "", content: "" });
+            setDraft({ folder: "inbox", name: "", type: "note", context: "", result: "", reusable: "", tags: "", confidence: "medium", status: "review", claimType: "fact", staleness: "CHECK", source: "", assumptions: "", related: "", summary: "", content: "" });
             load();
             loadOverview();
           })
@@ -3357,7 +3370,23 @@ window.__ModuleLoader__.load({
         setBusy(true);
         setError("");
         wbFetchJson("/api/dsh-workbench/knowledge/maintain", { method: "POST" })
-          .then(({ data }) => { setReport(data); load(); })
+          .then(({ data }) => {
+            setReport(data);
+            if (data && data.consolidations) setConsolidations(data.consolidations);
+            load();
+          })
+          .catch((e) => setError(String((e && e.message) || e))).finally(() => setBusy(false));
+      };
+      const consolidateAction = (id, action) => {
+        setBusy(true);
+        setError("");
+        wbFetchJson("/api/dsh-workbench/knowledge/consolidations", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action, id }) })
+          .then(({ data }) => {
+            if (data && data.ok === false) { setError(data.reason || "提炼失败"); return; }
+            load();
+            loadOverview();
+            return wbFetchJson("/api/dsh-workbench/knowledge/consolidations").then(({ data: next }) => setConsolidations(next || { suggestions: [], added: 0, total: 0 }));
+          })
           .catch((e) => setError(String((e && e.message) || e))).finally(() => setBusy(false));
       };
       const reloadEval = () => {
@@ -3409,7 +3438,7 @@ window.__ModuleLoader__.load({
       ];
       const formGroups = groups.filter((item) => ["inbox", "atomic", "projects"].includes(item.id));
       const confidenceLabel = { high: "高", medium: "中", low: "低" };
-      const typeLabel = { note: "笔记", skill: "技能", project: "项目", workflow: "工作流" };
+      const typeLabel = { note: "知识点", skill: "技能", project: "项目", workflow: "工作流", experience: "项目经验" };
       const statusLabel = { draft: "草稿", review: "待审核", published: "已发布", deprecated: "已归档" };
       const stalenessLabel = { STABLE: "稳定", CHECK: "需复查", VOLATILE: "易变" };
       const claimLabel = { fact: "事实", hypothesis: "假设" };
@@ -3472,6 +3501,11 @@ window.__ModuleLoader__.load({
           expanded && jsxRuntime.jsxs("div", { className: "wb-collab-memory-list", children: [
             item.tags.length > 0 && jsxRuntime.jsx("div", { className: "wb-collab-files", children: item.tags.map((tag) => jsxRuntime.jsx("span", { className: "wb-collab-file-chip", children: "#" + tag }, tag)) }),
             jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "用途：" + (item.summary || "（未写摘要）") + (item.claimType ? " · 类型 " + claimLabel[item.claimType] : "") }),
+            (item.context || item.result || item.reusable) && jsxRuntime.jsxs("div", { className: "wb-collab-memory-list", children: [
+              item.context && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "情境：" + item.context }),
+              item.result && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "验证结果：" + item.result }),
+              item.reusable && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "可复用结论：" + item.reusable })
+            ] }),
             item.source && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "来源：" + item.source }),
             item.related.length > 0 && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "关联：" + item.related.map((r) => "[[" + r + "]]").join(" ") }),
             item.confidenceBasis && item.confidenceBasis.reasons && item.confidenceBasis.reasons.length > 0 && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "置信度依据：" + item.confidenceBasis.reasons.join("；") }),
@@ -3503,13 +3537,17 @@ window.__ModuleLoader__.load({
 
           tab === "overview" && jsxRuntime.jsxs("div", { className: "wb-knowledge-group", children: [
             jsxRuntime.jsx("div", { className: "wb-knowledge-filter", children: [
-              { id: "skills", label: "技能" }, { id: "projects", label: "项目" }, { id: "notes", label: "知识点" }, { id: "workflows", label: "工作流" }
+              { id: "skills", label: "技能" }, { id: "experiences", label: "项目经验" }, { id: "projects", label: "项目" }, { id: "notes", label: "知识点" }, { id: "workflows", label: "工作流" }
             ].map((item) => jsxRuntime.jsxs("button", { type: "button", className: overviewCat === item.id ? "wb-knowledge-filter-active" : "", onClick: () => setOverviewCat(item.id), children: [
               item.label + "（" + (((overview && overview[item.id]) || []).length) + "）"
             ] }, item.id)) }),
             overviewCat === "skills" && jsxRuntime.jsxs("div", { className: "wb-collab-memory-list", children: [
               jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "整体技能池：所有 type: skill 或标签「技能」的条目统一展示；专家之间重复的技能不再单列。点击条目可展开详情。" }),
               overview && overview.skills && overview.skills.length ? jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: overview.skills.map(overviewCard) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "还没有技能条目。新建条目时类型选「技能」，或直接在 frontmatter 写 type: skill。" })
+            ] }),
+            overviewCat === "experiences" && jsxRuntime.jsxs("div", { className: "wb-collab-memory-list", children: [
+              jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "项目经验：完成项目时验证过的决策/踩坑/复盘，默认沉淀在核心资产（02-Atomic）。维护器会自动生成「经验 → 知识点」提炼草稿，确认后才落盘。" }),
+              overview && overview.experiences && overview.experiences.length ? jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: overview.experiences.map(overviewCard) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "还没有项目经验条目（type: experience 或标签「项目经验」）。" })
             ] }),
             overviewCat === "projects" && jsxRuntime.jsxs("div", { className: "wb-collab-memory-list", children: [
               jsxRuntime.jsx("h3", { children: "知识库项目" }),
@@ -3543,7 +3581,12 @@ window.__ModuleLoader__.load({
             jsxRuntime.jsx("input", { value: draft.name, placeholder: "标题（同时作为文件名）", onChange: (e) => setDraft((cur) => ({ ...cur, name: e.target.value })) }),
             jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [
               jsxRuntime.jsx("span", { children: "类型" }),
-              jsxRuntime.jsx("select", { value: draft.type, onChange: (e) => setDraft((cur) => ({ ...cur, type: e.target.value })), children: [{ id: "note", label: "笔记" }, { id: "skill", label: "技能" }, { id: "project", label: "项目" }, { id: "workflow", label: "工作流" }].map((item) => jsxRuntime.jsx("option", { value: item.id, children: item.label }, item.id)) })
+              jsxRuntime.jsx("select", { value: draft.type, onChange: (e) => setDraft((cur) => ({ ...cur, type: e.target.value })), children: [{ id: "note", label: "知识点" }, { id: "experience", label: "项目经验" }, { id: "skill", label: "技能" }, { id: "project", label: "项目" }, { id: "workflow", label: "工作流" }].map((item) => jsxRuntime.jsx("option", { value: item.id, children: item.label }, item.id)) })
+            ] }),
+            draft.type === "experience" && jsxRuntime.jsxs("div", { className: "wb-collab-memory-list", children: [
+              jsxRuntime.jsx("input", { value: draft.context, placeholder: "情境（项目 / 技术栈 / 约束 / 目标）", onChange: (e) => setDraft((cur) => ({ ...cur, context: e.target.value })) }),
+              jsxRuntime.jsx("input", { value: draft.result, placeholder: "验证结果（做了什么、结果如何）", onChange: (e) => setDraft((cur) => ({ ...cur, result: e.target.value })) }),
+              jsxRuntime.jsx("input", { value: draft.reusable, placeholder: "可复用结论（什么条件下哪个方案更优）", onChange: (e) => setDraft((cur) => ({ ...cur, reusable: e.target.value })) })
             ] }),
             jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [
               jsxRuntime.jsx("span", { children: "状态" }),
@@ -3687,7 +3730,7 @@ window.__ModuleLoader__.load({
 
           tab === "maintain" && jsxRuntime.jsxs("div", { className: "wb-knowledge-group", children: [
             jsxRuntime.jsxs("div", { className: "wb-knowledge-toolbar", children: [
-              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy, onClick: runMaintain, children: "运行维护（去重/断链/MOC 更新）" })
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy, onClick: runMaintain, children: "运行维护（去重/断链/MOC/提炼建议）" })
             ] }),
             report && jsxRuntime.jsxs("div", { className: "wb-monitor-grid", children: [
               jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "同主题冲突/疑似重复（影响置信度一致性）" }), report.duplicates.length ? jsxRuntime.jsx("div", { className: "wb-collab-memory-list", children: report.duplicates.map((item) => jsxRuntime.jsx("div", { className: "wb-collab-memory-finding", children: item.similarity + " · " + item.a + " ↔ " + item.b }, item.a + item.b)) }) : jsxRuntime.jsx("small", { children: "无" })] }),
@@ -3699,6 +3742,18 @@ window.__ModuleLoader__.load({
               ] }, item.path)) }) : jsxRuntime.jsx("small", { children: "无" })] }),
               jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "本轮自动归档（" + (report.archived || []).length + "）" }), jsxRuntime.jsx("small", { children: (report.archived || []).slice(0, 10).join("；") || "未启用自动归档（需在质量门授权）" })] }),
               jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-monitor-wide", children: [jsxRuntime.jsx("h3", { children: "MOC" }), jsxRuntime.jsx("small", { children: report.mocsUpdated ? "03-MOCs/Index.md 已重新生成" : "未变更" })] })
+            ] }),
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-monitor-wide", children: [
+              jsxRuntime.jsx("h3", { children: "经验 → 知识点 提炼建议（半自动：系统生成草稿，确认后才落盘；已确认 " + consolidations.total + " 条）" }),
+              consolidations.suggestions && consolidations.suggestions.length ? jsxRuntime.jsx("div", { className: "wb-collab-memory-list", children: consolidations.suggestions.map((item) => jsxRuntime.jsxs("div", { className: "wb-collab-memory-card", children: [
+                jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: item.title }), jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "来源：" + item.fromTitle })] }),
+                jsxRuntime.jsx("p", { className: "wb-collab-memory-finding", children: item.summary }),
+                jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: (item.reasons || []).join("；") }),
+                jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [
+                  jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy, onClick: () => consolidateAction(item.id, "apply"), children: "确认提炼" }),
+                  jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: busy, onClick: () => consolidateAction(item.id, "ignore"), children: "忽略" })
+                ] })
+              ] }, item.id)) }) : jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "暂无待确认的提炼建议。维护器会扫描已发布且有使用/新近的项目经验自动生成草稿；全自动模式启用时还会经过 precheck + 置信度门槛 + 命中次数门槛并记录审计日志。" })
             ] })
           ] }),
 

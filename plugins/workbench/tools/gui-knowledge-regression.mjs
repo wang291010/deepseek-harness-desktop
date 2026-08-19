@@ -257,6 +257,7 @@ try {
   console.log('step: overview tab');
   const typedSeed = [
     { folder: 'atomic', name: '技能-GUI示例', content: '---\ntitle: 技能-GUI示例\ntype: skill\ntags: [技能]\nconfidence: high\nrelated: ""\nsummary: 示例技能条目。\n---\n# 技能-GUI示例\n示例技能正文。' },
+    { folder: 'atomic', name: '经验-GUI示例', content: '---\ntitle: 经验-GUI示例\ntype: experience\ntags: [项目经验]\nconfidence: high\nstatus: published\nsource: 项目复盘\nrelated: ""\nsummary: 示例项目经验。\ncontext: 示例项目\nresult: 验证通过\nreusable: 示例可复用结论\n---\n# 经验-GUI示例\n示例经验正文。' },
     { folder: 'projects', name: '项目-GUI示例', content: '---\ntitle: 项目-GUI示例\ntype: project\ntags: [项目]\nconfidence: medium\nrelated: ""\nsummary: 示例项目条目。\n---\n# 项目-GUI示例\n示例项目正文。' },
     { folder: 'inbox', name: '工作流-GUI示例', content: '---\ntitle: 工作流-GUI示例\ntype: workflow\ntags: [工作流]\nconfidence: high\nrelated: ""\nsummary: 示例工作流条目。\n---\n# 工作流-GUI示例\n示例工作流正文。' }
   ];
@@ -278,23 +279,26 @@ try {
   const overviewState = await evaluate(`(async () => {
     const clickTab = (label) => { const b = [...document.querySelectorAll('button')].find((x) => x.innerText.trim().startsWith(label)); if (b) b.click(); return !!b; };
     const text = () => document.body.innerText;
-    const hasTabs = ['技能（', '项目（', '知识点（', '工作流（'].every((label) => text().includes(label));
+    const hasTabs = ['技能（', '项目经验（', '项目（', '知识点（', '工作流（'].every((label) => text().includes(label));
     const skillsShown = text().includes('技能-GUI示例');
     const expand = (() => { const b = [...document.querySelectorAll('button, strong')].find((x) => x.innerText.includes('技能-GUI示例')); if (!b) return false; b.click(); return true; })();
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 900));
     const detailShown = text().includes('置信度依据：');
-    clickTab('项目');
+    clickTab('项目（');
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 300));
     const projectsShown = text().includes('项目-GUI示例');
-    clickTab('知识点');
+    clickTab('知识点（');
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 300));
     const notesShown = text().includes('GUI 回归测试条目');
-    clickTab('工作流');
+    clickTab('工作流（');
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 300));
     const workflowsShown = text().includes('工作流-GUI示例') || text().includes('工作流模板库');
-    return { hasTabs, skillsShown, projectsShown, notesShown, workflowsShown, expand, detailShown, snippet: text().slice(0, 240) };
+    clickTab('项目经验（');
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 300));
+    const experiencesShown = text().includes('经验-GUI示例');
+    return { hasTabs, skillsShown, projectsShown, notesShown, workflowsShown, experiencesShown, expand, detailShown, snippet: text().slice(0, 240) };
   })()`);
-  if (!overviewState.hasTabs || !overviewState.skillsShown || !overviewState.projectsShown || !overviewState.notesShown || !overviewState.workflowsShown || !overviewState.expand) {
+  if (!overviewState.hasTabs || !overviewState.skillsShown || !overviewState.projectsShown || !overviewState.notesShown || !overviewState.workflowsShown || !overviewState.experiencesShown || !overviewState.expand) {
     throw new Error('overview regression failed: ' + JSON.stringify(overviewState));
   }
   await shot('knowledge-overview.png');

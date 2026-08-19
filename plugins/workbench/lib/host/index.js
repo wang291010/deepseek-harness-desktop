@@ -85,7 +85,7 @@ const KNOWLEDGE_FOLDER_DIRS = {
 };
 const KNOWLEDGE_FOLDER_IDS = Object.keys(KNOWLEDGE_FOLDER_DIRS);
 const KNOWLEDGE_CONFIDENCES = ['high', 'medium', 'low'];
-const KNOWLEDGE_TYPES = ['note', 'skill', 'project', 'workflow'];
+const KNOWLEDGE_TYPES = ['note', 'skill', 'project', 'workflow', 'experience'];
 const KNOWLEDGE_STATUSES = ['draft', 'review', 'published', 'deprecated'];
 const KNOWLEDGE_CLAIM_TYPES = ['fact', 'hypothesis'];
 const KNOWLEDGE_STALENESS = ['STABLE', 'CHECK', 'VOLATILE'];
@@ -717,11 +717,12 @@ async function readKnowledgeQuality() {
       forgetMode: parsed.forgetMode === 'auto' ? 'auto' : 'prompt',
       forgetAutoArchive: parsed.forgetAutoArchive === true,
       conflicts: parsed.conflicts && typeof parsed.conflicts === 'object' ? parsed.conflicts : {},
-      usage: parsed.usage && typeof parsed.usage === 'object' ? parsed.usage : {}
+      usage: parsed.usage && typeof parsed.usage === 'object' ? parsed.usage : {},
+      consolidations: Array.isArray(parsed.consolidations) ? parsed.consolidations : []
     };
   } catch (error) {
     if (error && error.code === 'ENOENT') {
-      knowledgeQualityCache = { reviewMode: 'manual', autoPublishLowRisk: true, forgetMode: 'prompt', forgetAutoArchive: false, conflicts: {}, usage: {} };
+      knowledgeQualityCache = { reviewMode: 'manual', autoPublishLowRisk: true, forgetMode: 'prompt', forgetAutoArchive: false, conflicts: {}, usage: {}, consolidations: [] };
     } else throw error;
   }
   return knowledgeQualityCache;
@@ -853,6 +854,9 @@ function cleanKnowledgeEntry(raw) {
     name: cleanTaskText(value.name, 200),
     title: cleanTaskText(value.title, 300),
     type: KNOWLEDGE_TYPES.includes(value.type) ? value.type : 'note',
+    context: cleanTaskText(value.context, 2000),
+    result: cleanTaskText(value.result, 2000),
+    reusable: cleanTaskText(value.reusable, 2000),
     tags: Array.isArray(value.tags) ? value.tags.map((item) => cleanTaskText(item, 80)).filter(Boolean).slice(0, 20) : [],
     confidence: KNOWLEDGE_CONFIDENCES.includes(value.confidence) ? value.confidence : 'medium',
     status: KNOWLEDGE_STATUSES.includes(value.status) ? value.status : defaultKnowledgeStatus(folder),
@@ -892,7 +896,7 @@ function cleanKnowledgeEntry(raw) {
 
 function parseFrontmatter(text) {
   const entry = {
-    title: '', type: 'note', tags: [], confidence: 'medium', status: '', claimType: '', assumptions: [],
+    title: '', type: 'note', context: '', result: '', reusable: '', tags: [], confidence: 'medium', status: '', claimType: '', assumptions: [],
     verifiedBy: '', verifiedAt: '', staleness: '', related: [], summary: '', source: '', project: '', created: '', body: String(text || '')
   };
   const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(entry.body);
@@ -905,6 +909,9 @@ function parseFrontmatter(text) {
   const line = (key) => { const hit = new RegExp('^' + key + ':[ \\t]*(.+)$', 'm').exec(meta); return hit ? hit[1].trim() : ''; };
   entry.title = line('title') || entry.body.split(/\r?\n/)[0].replace(/^#\s*/, '').slice(0, 300);
   entry.type = KNOWLEDGE_TYPES.includes(line('type')) ? line('type') : 'note';
+  entry.context = line('context');
+  entry.result = line('result');
+  entry.reusable = line('reusable');
   entry.confidence = KNOWLEDGE_CONFIDENCES.includes(line('confidence')) ? line('confidence') : 'medium';
   entry.status = KNOWLEDGE_STATUSES.includes(line('status')) ? line('status') : '';
   entry.claimType = KNOWLEDGE_CLAIM_TYPES.includes(line('claimType')) ? line('claimType') : '';
@@ -1110,6 +1117,41 @@ async function ensureKnowledgeVault() {
       ''
     ].join('\n'), 'utf8');
   }
+  const experienceTemplate = join(KNOWLEDGE_TEMPLATES, '项目经验模板.md');
+  try { await stat(experienceTemplate); } catch (e) {
+    await writeFile(experienceTemplate, [
+      '---',
+      'title: 项目经验模板',
+      'type: experience',
+      'tags: [项目经验]',
+      'confidence: medium',
+      'status: published',
+      'claimType: fact',
+      'staleness: CHECK',
+      'source: 项目复盘',
+      'project: ',
+      'related: ""',
+      'summary: 一句话：在什么项目/条件下，什么方案更优，验证结果是什么。',
+      'context: 情境（项目 / 技术栈 / 约束 / 目标）',
+      'result: 验证结果（做了什么、结果如何）',
+      'reusable: 可复用结论（什么条件下选什么方案更优）',
+      'created: ' + new Date().toISOString(),
+      '---',
+      '',
+      '# 项目经验标题',
+      '',
+      '## 情境',
+      '',
+      '## 决策',
+      '',
+      '## 验证',
+      '',
+      '## 可复用结论',
+      '',
+      '## 待办',
+      ''
+    ].join('\n'), 'utf8');
+  }
   return KNOWLEDGE_ROOT;
 }
 
@@ -1137,6 +1179,9 @@ async function scanKnowledgeVault() {
           path, folder, name,
           title: parsed.title,
           type: parsed.type,
+          context: parsed.context,
+          result: parsed.result,
+          reusable: parsed.reusable,
           tags: parsed.tags,
           confidence: parsed.confidence,
           status: parsed.status,
@@ -1227,6 +1272,9 @@ async function knowledgeOverview() {
     name: entry.name,
     title: entry.title,
     type: entry.type,
+    context: entry.context,
+    result: entry.result,
+    reusable: entry.reusable,
     tags: entry.tags,
     confidence: entry.confidence,
     computedConfidence: entry.computedConfidence || entry.confidence,
@@ -1242,17 +1290,21 @@ async function knowledgeOverview() {
   });
   const tagHit = (entry, tags) => entry.tags.some((tag) => tags.includes(String(tag).toLowerCase()));
   const skills = [];
+  const experiences = [];
   const projects = [];
   const workflows = [];
   const notes = [];
   for (const entry of entries) {
+    if (['raw', 'archive', 'templates'].includes(entry.folder)) continue;
     if (entry.type === 'skill' || tagHit(entry, ['技能', 'skill', 'skills'])) skills.push(entry);
+    else if (entry.type === 'experience' || tagHit(entry, ['项目经验', 'experience'])) experiences.push(entry);
     else if (entry.type === 'project' || entry.folder === 'projects' || tagHit(entry, ['项目', 'project'])) projects.push(entry);
     else if (entry.type === 'workflow' || tagHit(entry, ['工作流', 'workflow'])) workflows.push(entry);
     else if (entry.type === 'note' && !['raw', 'archive', 'templates', 'mocs'].includes(entry.folder)) notes.push(entry);
   }
   const grouped = {
     skills: skills.map(pick),
+    experiences: experiences.map(pick),
     projects: projects.map(pick),
     workflows: workflows.map(pick),
     notes: notes.map(pick)
@@ -1942,6 +1994,11 @@ function knowledgeFrontmatter(meta) {
     'source: ' + cleanTaskText(meta.source, 80),
     'project: ' + cleanTaskText(meta.project, 300)
   ];
+  if (meta.type === 'experience' || (meta.context || meta.result || meta.reusable)) {
+    if (meta.context) lines.push('context: ' + cleanTaskText(meta.context, 2000));
+    if (meta.result) lines.push('result: ' + cleanTaskText(meta.result, 2000));
+    if (meta.reusable) lines.push('reusable: ' + cleanTaskText(meta.reusable, 2000));
+  }
   if (meta.verifiedBy) lines.push('verifiedBy: ' + cleanTaskText(meta.verifiedBy, 80));
   if (meta.verifiedAt) lines.push('verifiedAt: ' + String(meta.verifiedAt));
   if (Array.isArray(meta.assumptions) && meta.assumptions.length) {
@@ -1965,8 +2022,8 @@ async function distillKnowledge({ title, source, content, project }) {
   if (chatLlm !== null) {
     try {
       const system = [
-        '你是一个知识蒸馏器。把输入内容提炼为一条结构化 Markdown 知识条目，只输出 JSON：',
-        '{"title":"简短标题","tags":["标签"],"confidence":"high|medium|low","claimType":"fact|hypothesis","staleness":"STABLE|CHECK|VOLATILE","assumptions":["关键假设，没有则空数组"],"related":["建议关联的已有条目标题（没有则空数组）"],"summary":"一句话核心","body":"完整 Markdown 正文（含 ## 结论 / ## 方法 / ## 决策 / ## 待办 等小节，压缩至 800 字内）"}'
+        '你是一个知识蒸馏器。先判断内容来源：若来自解决具体项目问题/技术选型/踩坑/复盘/项目决策 → type=experience；若只是概念问答/资料学习/通用知识 → type=note。只输出 JSON：',
+        '{"type":"note|experience","title":"简短标题","tags":["标签"],"confidence":"high|medium|low","claimType":"fact|hypothesis","staleness":"STABLE|CHECK|VOLATILE","assumptions":["关键假设，没有则空数组"],"related":["建议关联的已有条目标题（没有则空数组）"],"summary":"一句话核心","context":"type=experience 时的情境（项目/技术栈/约束/目标），否则空字符串","result":"type=experience 时验证了什么/结果，否则空字符串","reusable":"type=experience 时可复用结论（什么条件下哪个方案更优），否则空字符串","body":"完整 Markdown 正文（含 ## 结论 / ## 方法 / ## 决策 / ## 待办 等小节，压缩至 800 字内）"}'
       ].join('\n');
       const prompt = ['来源：' + rawSource, '关联项目：' + rawProject, '原始内容：\n' + String(content || '').slice(0, 50000)].join('\n\n');
       const text = await streamLlmText(system, prompt, { maxTokens: 2500, temperature: 0.3 });
@@ -1976,7 +2033,10 @@ async function distillKnowledge({ title, source, content, project }) {
         const tags = Array.isArray(parsed.tags) ? parsed.tags.map((item) => cleanTaskText(item, 60)).filter(Boolean).slice(0, 10) : [];
         const meta = {
           title: titleText,
-          type: 'note',
+          type: KNOWLEDGE_TYPES.includes(parsed.type) ? parsed.type : 'note',
+          context: cleanTaskText(parsed.context, 2000),
+          result: cleanTaskText(parsed.result, 2000),
+          reusable: cleanTaskText(parsed.reusable, 2000),
           tags,
           confidence: KNOWLEDGE_CONFIDENCES.includes(parsed.confidence) ? parsed.confidence : 'medium',
           status: 'review',
@@ -2118,6 +2178,154 @@ async function captureKnowledgeRaw({ name, source, content }) {
   return { entry, path: 'raw/' + fileName + '.md' };
 }
 
+async function buildConsolidationDraft(entry) {
+  const baseTitle = String(entry.title || '').replace(/^经验-|^项目经验-/, '');
+  const fallbackTitle = ('知识-' + baseTitle).slice(0, 60);
+  const fallback = {
+    title: fallbackTitle,
+    summary: String(entry.reusable || entry.summary || '').slice(0, 300),
+    body: [
+      '# ' + fallbackTitle,
+      '',
+      '## 结论',
+      '',
+      String(entry.reusable || entry.summary || ''),
+      '',
+      '## 适用条件',
+      '',
+      String(entry.context || ''),
+      '',
+      '## 验证',
+      '',
+      String(entry.result || '')
+    ].join('\n'),
+    reasons: ['AI 提炼自项目经验：' + entry.path]
+  };
+  if (chatLlm === null) return fallback;
+  try {
+    const text = await streamLlmText(
+      '你是知识提炼器。把一条项目经验提炼成一条可复用的知识点（去掉项目特例，保留普适结论 + 适用条件），只输出 JSON：{"title":"简短标题","summary":"一句话核心","body":"Markdown 正文（含 ## 结论 / ## 适用条件 / ## 验证 / ## 待办 等小节）"}',
+      '项目经验标题：' + entry.title + '\n摘要：' + entry.summary + '\n情境：' + entry.context + '\n验证结果：' + entry.result + '\n可复用结论：' + entry.reusable,
+      { maxTokens: 1500, temperature: 0.3 }
+    );
+    const parsed = parseJsonObject(text);
+    if (parsed && (parsed.title || parsed.body)) {
+      return {
+        title: cleanTaskText(parsed.title || fallback.title, 120).replace(/[\r\n:]+/g, ' '),
+        summary: cleanTaskText(parsed.summary || fallback.summary, 2000),
+        body: String(parsed.body || fallback.body).trim(),
+        reasons: ['AI 提炼自项目经验：' + entry.path]
+      };
+    }
+  } catch (e) { /* fallback */ }
+  return fallback;
+}
+
+async function suggestKnowledgeConsolidations() {
+  const index = await scanKnowledgeVault();
+  const quality = await readKnowledgeQuality();
+  quality.consolidations = Array.isArray(quality.consolidations) ? quality.consolidations : [];
+  const experiences = (index.entries || []).filter((entry) => entry.type === 'experience' && entry.status === 'published' && entry.folder !== 'templates');
+  const validFrom = new Set(experiences.map((entry) => entry.path));
+  const beforePrune = quality.consolidations.length;
+  quality.consolidations = quality.consolidations.filter((item) => item.status !== 'pending' || validFrom.has(item.from));
+  if (quality.consolidations.length !== beforePrune) await writeKnowledgeQuality(quality);
+  const existing = new Set(quality.consolidations.map((item) => item.from));
+  const now = Date.now();
+  const candidates = experiences.filter((entry) => {
+    const usage = (quality.usage || {})[entry.path];
+    const hits = usage ? Number(usage.hits) || 0 : 0;
+    const ageDays = Math.max(0, (now - new Date(entry.updatedAt || entry.createdAt || now).getTime()) / 86400000);
+    return hits >= 1 || ageDays <= 30;
+  });
+  let added = 0;
+  for (const entry of candidates) {
+    if (existing.has(entry.path)) continue;
+    const draft = await buildConsolidationDraft(entry);
+    quality.consolidations.push({
+      id: randomUUID(),
+      from: entry.path,
+      fromTitle: entry.title,
+      title: draft.title,
+      summary: draft.summary,
+      body: draft.body,
+      reasons: draft.reasons,
+      createdAt: new Date().toISOString(),
+      status: 'pending'
+    });
+    existing.add(entry.path);
+    added += 1;
+    if (quality.consolidations.length >= 20) break;
+  }
+  if (added) await writeKnowledgeQuality(quality);
+  return {
+    suggestions: quality.consolidations.filter((item) => item.status === 'pending').slice(-20),
+    added,
+    total: quality.consolidations.filter((item) => item.status === 'applied').length
+  };
+}
+
+async function applyKnowledgeConsolidation({ id }) {
+  const quality = await readKnowledgeQuality();
+  const item = (quality.consolidations || []).find((entry) => entry.id === id && entry.status === 'pending');
+  if (!item) return { ok: false, reason: 'suggestion not found or already handled' };
+  const precheck = await precheckKnowledgeEntry({ title: item.title, content: item.body, source: '项目经验提炼', excludePath: item.from });
+  if (!precheck.ok && precheck.blocks.length) {
+    return { ok: false, reason: 'precheck 未通过：' + precheck.blocks.join('；'), precheck };
+  }
+  await ensureKnowledgeVault();
+  const fileName = safeKnowledgeName(item.title);
+  const markdown = knowledgeFrontmatter({
+    title: item.title,
+    type: 'note',
+    tags: ['知识点', '项目经验'],
+    confidence: 'medium',
+    status: 'published',
+    claimType: 'fact',
+    staleness: 'CHECK',
+    source: '项目经验提炼',
+    project: '',
+    related: [item.fromTitle],
+    summary: item.summary,
+    assumptions: [],
+    created: new Date().toISOString(),
+    verifiedBy: 'human-consolidation',
+    verifiedAt: new Date().toISOString()
+  }) + '\n' + item.body;
+  const file = join(KNOWLEDGE_ATOMIC, fileName + '.md');
+  await writeFile(file, markdown, 'utf8');
+  try {
+    const source = knowledgeResolve(item.from);
+    if (source) {
+      const content = await readFile(source.full, 'utf8');
+      const parsed = parseFrontmatter(content);
+      const related = parsed.related.includes(item.title) ? parsed.related : [...parsed.related, item.title].slice(0, 30);
+      const next = knowledgeFrontmatter({ ...parsed, related }) + '\n' + parsed.body;
+      if (next !== content) await writeFile(source.full, next, 'utf8');
+    }
+  } catch (e) { /* backlink best effort */ }
+  item.status = 'applied';
+  item.appliedAt = new Date().toISOString();
+  await writeKnowledgeQuality(quality);
+  const index = await scanKnowledgeVault();
+  const entry = index.entries.find((entryItem) => entryItem.path === 'atomic/' + fileName + '.md') || null;
+  try {
+    const vectorConfig = await readVectorConfig();
+    if (vectorConfig.provider !== 'none') await updateKnowledgeVectorsFor([entry].filter(Boolean));
+  } catch (e) { /* vector best effort */ }
+  return { ok: true, entry, path: 'atomic/' + fileName + '.md', precheck };
+}
+
+async function ignoreKnowledgeConsolidation({ id }) {
+  const quality = await readKnowledgeQuality();
+  const item = (quality.consolidations || []).find((entry) => entry.id === id);
+  if (!item) return { ok: false, reason: 'suggestion not found' };
+  item.status = 'ignored';
+  item.ignoredAt = new Date().toISOString();
+  await writeKnowledgeQuality(quality);
+  return { ok: true };
+}
+
 async function maintainKnowledgeVault() {
   const index = await scanKnowledgeVault();
   const entries = index.entries || [];
@@ -2221,12 +2429,15 @@ async function maintainKnowledgeVault() {
   }
   await writeFile(join(KNOWLEDGE_MOCS, 'Index.md'), mocs.join('\n') + '\n', 'utf8');
   indexAfter = await scanKnowledgeVault();
+  let consolidationResult = { suggestions: [], added: 0, total: 0 };
+  try { consolidationResult = await suggestKnowledgeConsolidations(); } catch (e) { consolidationResult = { suggestions: [], added: 0, total: 0, error: String((e && e.message) || e) }; }
   return {
     duplicates: duplicates.slice(0, 20),
     brokenLinks: brokenLinks.slice(0, 50),
     orphans: orphans.slice(0, 50),
     stale: stale.slice(0, 50),
     archived: archived.slice(0, 50),
+    consolidations: consolidationResult,
     mocsUpdated: true,
     stats: indexAfter.stats
   };
@@ -4541,6 +4752,28 @@ function makeRoutes() {
             writeJson(res, 200, next);
           } else {
             writeJson(res, 200, await readKnowledgeQuality());
+          }
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/consolidations',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        try {
+          if (req.method === 'POST') {
+            let body;
+            try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+            if (body.action === 'apply') {
+              writeJson(res, 200, await applyKnowledgeConsolidation({ id: body.id }));
+            } else if (body.action === 'ignore') {
+              writeJson(res, 200, await ignoreKnowledgeConsolidation({ id: body.id }));
+            } else {
+              return bad(res, 'bad-action', 'action must be apply or ignore');
+            }
+          } else {
+            writeJson(res, 200, await suggestKnowledgeConsolidations());
           }
         } catch (error) { fail(res, error); }
       }

@@ -127,8 +127,8 @@ try {
 
   const initial = await call('/api/dsh-workbench/knowledge/list', 'GET');
   assert.ok(initial.vaultRoot, 'vault root should be created');
-  assert.equal(initial.entries.length, 1, 'template is scanned on first list');
-  assert.equal(initial.stats.documents, 1);
+  assert.equal(initial.entries.length, 2, 'default + experience templates are scanned on first list');
+  assert.equal(initial.stats.documents, 2);
   assert.equal(initial.stats.trend.length, 7);
   assert.equal(initial.vector.provider, 'bge-local', 'v4 default vector provider is local BGE');
   assert.equal(initial.vector.model, 'bge-small-zh-v1.5');
@@ -137,6 +137,7 @@ try {
   await stat(join(vaultRoot, 'README.md'));
   await stat(join(vaultRoot, '.obsidian', 'app.json'));
   await stat(join(vaultRoot, '99-Templates', '默认条目模板.md'));
+  await stat(join(vaultRoot, '99-Templates', '项目经验模板.md'));
   await stat(join(vaultRoot, '00-Raw'));
   await stat(join(vaultRoot, '05-Archive'));
 
@@ -170,8 +171,8 @@ try {
   assert.ok(missingExternal.status === 200 || missingExternal.status === 400, 'obsidian uri should be accepted (200) or report unavailable (400), not 500');
 
   const synced = await call('/api/dsh-workbench/knowledge/sync', 'POST');
-  assert.equal(synced.entries.length, 4, '3 written entries + template');
-  assert.ok(synced.stats.documents >= 4);
+  assert.equal(synced.entries.length, 5, '3 written entries + 2 templates');
+  assert.ok(synced.stats.documents >= 5);
   assert.ok(synced.stats.links >= 1);
   assert.ok(synced.stats.weekNew >= 3);
   const onDisk = await readFile(join(vaultRoot, '01-Inbox', '订单中台-FastAPI.md'), 'utf8');
@@ -359,7 +360,7 @@ try {
   assert.equal(badVector.saved, false);
   assert.ok(badVector.status.error);
   const finalSync = await call('/api/dsh-workbench/knowledge/sync', 'POST');
-  assert.equal(finalSync.entries.length, 10, 'existing 5 + skill/project/workflow/tag-only/direct-write after removing fastapi');
+  assert.equal(finalSync.entries.length, 11, 'existing 6 + skill/project/workflow/tag-only/direct-write after removing fastapi');
 
   // ---- v4 quality gate: precheck / publish / quality / raw / archive / routing ----
   const precheckDup = await call('/api/dsh-workbench/knowledge/precheck', 'POST', {
@@ -440,6 +441,44 @@ try {
   const maintainReport = await call('/api/dsh-workbench/knowledge/maintain', 'POST');
   assert.ok(Array.isArray(maintainReport.archived), 'maintain should report archived list');
   assert.ok(maintainReport.stale.every((item) => item && typeof item === 'object'), 'stale items should carry suggestion metadata');
+
+  // ---- v6: experience type + semi-auto consolidation ----
+  const experienceContent = [
+    '---',
+    'title: 经验-订单中台选型',
+    'type: experience',
+    'tags: [项目经验]',
+    'confidence: high',
+    'status: published',
+    'source: 项目复盘',
+    'project: D:\\order',
+    'related: ""',
+    'summary: 订单中台选 FastAPI 优于同步框架。',
+    'context: 订单中台，高并发长流程',
+    'result: 压测通过，性能达标',
+    'reusable: 高并发长流程场景优先异步框架',
+    'created: 2026-08-19T00:00:00.000Z',
+    '---',
+    '# 经验-订单中台选型',
+    '在订单中台项目中验证了异步框架的优势。'
+  ].join('\n');
+  const expWritten = await call('/api/dsh-workbench/knowledge/write', 'POST', { folder: 'atomic', name: '经验-订单中台选型', content: experienceContent });
+  assert.equal(expWritten.entry.type, 'experience');
+  assert.equal(expWritten.entry.context, '订单中台，高并发长流程');
+  assert.equal(expWritten.entry.reusable, '高并发长流程场景优先异步框架');
+  const overviewWithExp = await call('/api/dsh-workbench/knowledge/overview', 'GET');
+  assert.ok(overviewWithExp.experiences.some((item) => item.title === '经验-订单中台选型'), 'experience should be grouped separately');
+  assert.ok(!overviewWithExp.experiences.some((item) => item.title === '项目经验模板'), 'experience template should not leak into experiences group');
+  assert.ok(!overviewWithExp.projects.some((item) => item.title === '经验-订单中台选型'), 'experience should not leak into projects');
+  assert.ok(!overviewWithExp.notes.some((item) => item.title === '经验-订单中台选型'), 'experience should not leak into notes');
+  const cons = await call('/api/dsh-workbench/knowledge/consolidations', 'GET');
+  const pendingItem = cons.suggestions.find((item) => item.from === 'atomic/经验-订单中台选型.md');
+  assert.ok(pendingItem, 'consolidation draft should be generated for a fresh published experience');
+  const applied = await call('/api/dsh-workbench/knowledge/consolidations', 'POST', { action: 'apply', id: pendingItem.id });
+  assert.equal(applied.ok, true, JSON.stringify(applied));
+  assert.ok(applied.entry && applied.entry.type === 'note', 'consolidated output should be a knowledge note');
+  const sourceRead = await call('/api/dsh-workbench/knowledge/read?path=' + encodeURIComponent('atomic/经验-订单中台选型.md'), 'GET');
+  assert.ok(sourceRead.content.includes(pendingItem.title), 'source experience should gain a backlink to the consolidated knowledge');
 
   console.log('knowledge smoke test passed');
   smokePassed = true;
