@@ -155,6 +155,20 @@ try {
   if (!multiState.shellMulti || !multiState.nativeHidden || !multiState.textareas.length) {
     throw new Error('multi-AI shell regression failed: ' + JSON.stringify(multiState));
   }
+  const layoutState = await evaluate(`(() => {
+    const rect = (el) => { if (!el) return null; const r = el.getBoundingClientRect(); return { y: r.y, bottom: r.bottom, right: r.right, left: r.left }; };
+    const modebar = document.querySelector('.wb-chat-modebar');
+    const usage = [...document.querySelectorAll('button')].find((b) => (b.textContent || '').includes('用量:'));
+    const header = document.querySelector('.wSkVaW_header, [class*="header"]');
+    const a = rect(modebar); const b = rect(usage);
+    const overlap = a && b ? !(a.right <= b.left || b.right <= a.left || a.bottom <= b.y || b.bottom <= a.y) : false;
+    const belowHeader = a && header ? a.y >= header.getBoundingClientRect().bottom - 1 : false;
+    return { modebar: a, usage: b, overlap, belowHeader, headerBottom: header ? Math.round(header.getBoundingClientRect().bottom) : null };
+  })()`);
+  console.log('layout state: ' + JSON.stringify(layoutState, null, 2));
+  if (layoutState.usage && (layoutState.overlap || !layoutState.belowHeader)) {
+    throw new Error('modebar overlaps the session usage control: ' + JSON.stringify(layoutState));
+  }
   await shot('p26-agent-multi.png');
 
   console.log('step: open @ reference overlay');
@@ -247,27 +261,26 @@ try {
   for (let attempt = 0; attempt < 60; attempt += 1) {
     await wait(3000);
     finalState = await evaluate(`(() => {
-      const card = document.querySelector('.wb-chat-progress');
-      const probeText = card ? (card.querySelector('.wb-chat-probe') || {}).textContent || '' : '';
-      const report = card ? (card.querySelector('.wb-chat-report') || {}).textContent || '' : '';
-      const err = card ? (card.querySelector('.wb-err-note, .wb-chat-error, [class*="err"]') || {}).textContent || '' : '';
-      const phaseText = card ? (card.querySelector('.wb-chat-progress-head') || {}).textContent || '' : '';
+      const agentsPanel = document.querySelector('.wb-chat-agents');
+      const agentRows = agentsPanel ? agentsPanel.querySelectorAll('.wb-chat-agent-row').length : 0;
+      const headText = agentsPanel ? (agentsPanel.querySelector('.wb-chat-agents-head') || {}).textContent || '' : '';
       const flow = document.querySelector('.wb-chat-flow');
-      const done = (flow && !!flow.querySelector('.wb-chat-msg-assistant')) || err.length > 0 || phaseText.includes('失败') || phaseText.includes('已拒绝') || phaseText.includes('已完成') || phaseText.includes('等待验收');
-      return { card: !!card, probeText, report: report.slice(0, 200), err: err.slice(0, 200), phaseText: phaseText.slice(0, 120), done, flowUser: !!document.querySelector('.wb-chat-flow .wb-chat-msg-user'), flowAssistant: !!document.querySelector('.wb-chat-flow .wb-chat-msg-assistant'), flowText: flow ? flow.textContent.slice(0, 240) : '', busyRow: !!document.querySelector('.wb-chat-agent-busy') };
+      const flowErr = flow ? (flow.querySelector('.wb-err-note') || {}).textContent || '' : '';
+      const done = !!flow && !!flow.querySelector('.wb-chat-msg-assistant');
+      return { agentsPanel: !!agentsPanel, agentRows, headText, hasProgress: !!document.querySelector('.wb-chat-progress'), hasReport: !!document.querySelector('.wb-chat-report'), flowUser: !!document.querySelector('.wb-chat-flow .wb-chat-msg-user'), flowAssistant: !!document.querySelector('.wb-chat-flow .wb-chat-msg-assistant'), flowText: flow ? flow.textContent.slice(0, 240) : '', flowErr: flowErr.slice(0, 200), busyRow: !!document.querySelector('.wb-chat-agent-busy'), done };
     })()`);
     if (finalState.done) break;
     if (attempt === 20) await shot('p26-agent-running.png');
   }
   console.log('final chat state: ' + JSON.stringify(finalState, null, 2));
-  if (!finalState.card) throw new Error('progress card never appeared');
+  if (!finalState.agentsPanel || finalState.hasProgress || finalState.hasReport) throw new Error('agent-status panel regression failed: ' + JSON.stringify(finalState));
   if (!finalState.done) throw new Error('orchestration did not finish in time: ' + JSON.stringify(finalState));
   if (!finalState.flowUser || !finalState.flowAssistant) throw new Error('main-agent result did not appear in the conversation flow: ' + JSON.stringify(finalState));
   await shot('p26-agent-final.png');
 
   console.log('step: open task center from chat card');
   const jump = await evaluate(`(() => {
-    const btn = [...document.querySelectorAll('.wb-chat-progress button')].find((b) => b.textContent.includes('在任务中心查看完整记录'));
+    const btn = [...document.querySelectorAll('.wb-chat-flow .wb-chat-msg-actions button')].find((b) => b.textContent.includes('在任务中心查看完整记录'));
     if (!btn) return false;
     btn.click();
     return true;
