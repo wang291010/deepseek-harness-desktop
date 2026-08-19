@@ -165,6 +165,15 @@ const WORKFLOW_DEFAULT_TEMPLATES = [
 let taskMutationQueue = Promise.resolve();
 let styleMutationQueue = Promise.resolve();
 let projectContextMutationQueue = Promise.resolve();
+const sseClients = new Set();
+
+function broadcastTaskEvent(payload) {
+  if (sseClients.size === 0) return;
+  const data = 'data: ' + JSON.stringify(payload) + '\n\n';
+  for (const client of sseClients) {
+    try { client.write(data); } catch (e) { sseClients.delete(client); }
+  }
+}
 
 const STYLE_DEFAULTS = Object.freeze({
   theme: 'system',
@@ -3490,6 +3499,7 @@ async function mutateTasks(body) {
   }
   store.revision += 1;
   await writeTaskStore(store);
+  broadcastTaskEvent({ type: 'tasks', revision: store.revision, action });
   return store;
 }
 
@@ -4019,6 +4029,7 @@ function queueOrchestrationPatch(id, update) {
     syncOrchestrationTask(store, store.orchestrations[index]);
     store.revision += 1;
     await writeTaskStore(store);
+    broadcastTaskEvent({ type: 'orchestration', orchestrationId: id, revision: store.revision });
     return store.orchestrations[index];
   });
   taskMutationQueue = operation.catch(() => {});
@@ -4731,6 +4742,19 @@ function makeRoutes() {
       }
     },
     // ---- persistent workbench tasks (separate from per-turn agent todos) ----
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/events',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'GET') return bad(res, 'method', 'GET required');
+        res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
+        res.write('retry: 3000\n\n');
+        sseClients.add(res);
+        req.on('close', () => sseClients.delete(res));
+        req.on('error', () => sseClients.delete(res));
+      }
+    },
     {
       kind: 'exact',
       path: '/api/dsh-workbench/tasks/list',

@@ -1462,6 +1462,32 @@ window.__ModuleLoader__.load({
       ] });
     }
 
+    // Shared task-change event stream: all task consumers (chat shell, task
+    // center, sidebar) subscribe to one EventSource and refresh silently.
+    let wbTaskEventSource = null;
+    const wbTaskEventListeners = new Set();
+    function wbEnsureTaskEventSource() {
+      if (wbTaskEventSource) return;
+      try {
+        const source = new EventSource("/api/dsh-workbench/events");
+        source.onmessage = (event) => {
+          let payload = null;
+          try { payload = JSON.parse(event.data || "{}"); } catch (e) { return; }
+          for (const listener of wbTaskEventListeners) { try { listener(payload); } catch (e) { /* ignore */ } }
+        };
+        source.onerror = () => {
+          try { source.close(); } catch (e) { /* ignore */ }
+          if (wbTaskEventSource === source) wbTaskEventSource = null;
+        };
+        wbTaskEventSource = source;
+      } catch (e) { wbTaskEventSource = null; }
+    }
+    function wbSubscribeTaskEvents(listener) {
+      wbTaskEventListeners.add(listener);
+      wbEnsureTaskEventSource();
+      return () => wbTaskEventListeners.delete(listener);
+    }
+
     function useWorkbenchTasks(sessionId, projectPath) {
       const [tasks, setTasks] = React.useState([]);
       const [templates, setTemplates] = React.useState([]);
@@ -1494,6 +1520,10 @@ window.__ModuleLoader__.load({
       };
       const reload = React.useCallback(() => loadTasks(false), [loadTasks]);
       const refresh = React.useCallback(() => loadTasks(true), [loadTasks]);
+      React.useEffect(() => {
+        const unsubscribe = wbSubscribeTaskEvents(() => { refresh(); });
+        return unsubscribe;
+      }, [refresh]);
       return {
         tasks, templates, ideas, orchestrations, orchestrationRuntime, modelCatalog, loading, busy, err, setErr, projectPath, sessionId,
         reload,
