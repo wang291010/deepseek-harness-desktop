@@ -588,7 +588,7 @@ window.__ModuleLoader__.load({
       ".wb-collab-files{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.wb-collab-file-chip{display:inline-flex;align-items:center;gap:6px;max-width:220px;padding:3px 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);font-size:10px}.wb-collab-file-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wb-collab-file-chip button{border:0;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer;font-size:11px}.wb-collab-file-hint{color:var(--dsw-alias-label-tertiary);font-size:10px}.wb-collab-command-hint{color:var(--dsw-alias-accent-fill);font-size:10px}",
       ".wb-collab-attachments{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:4px 0 8px}",
       ".wb-collab-order{margin:10px 0}.wb-collab-order>strong{display:block;margin-bottom:8px;font-size:11px;color:var(--dsw-alias-label-secondary)}.wb-collab-order-flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.wb-collab-order-group{display:flex;gap:6px;flex-wrap:wrap}.wb-collab-order-node{padding:4px 9px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);font-size:10px}.wb-collab-order-arrow{color:var(--dsw-alias-label-tertiary);font-size:11px}",
-      ".wb-collab-log-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}.wb-collab-log-toolbar input{flex:1;min-width:120px;height:28px;padding:0 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:11px inherit}.wb-collab-log-filter{height:26px;padding:0 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);font:10px inherit;cursor:pointer}.wb-collab-log-filter-active{border-color:var(--dsw-alias-accent-fill);color:var(--dsw-alias-label-primary)}.wb-collab-log-list{display:grid;gap:4px;max-height:360px;overflow:auto}.wb-collab-log-row{display:grid;grid-template-columns:52px 1fr;gap:8px;padding:5px 7px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:var(--dsw-alias-bg-layer-2);font-size:10px;line-height:1.5}.wb-collab-log-row small{color:var(--dsw-alias-label-tertiary)}.wb-collab-log-info{border-left:2px solid #30b650}.wb-collab-log-warn{border-left:2px solid #ff9f0a}.wb-collab-log-error{border-left:2px solid #ff453a}.wb-orch-agents-editor{width:100%;box-sizing:border-box;min-height:120px;margin-top:8px;padding:8px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;resize:vertical;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:10px/1.5 monospace}.wb-orch-agent-ref{display:block;margin:2px 0;color:var(--dsw-alias-label-tertiary);font-size:10px}.wb-collab-memory-actions{margin-bottom:10px}.wb-collab-memory-card{padding:9px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-2);display:grid;gap:6px}.wb-collab-memory-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.wb-collab-memory-head strong{font-size:12px;color:var(--dsw-alias-label-primary)}.wb-collab-memory-head small{font-size:10px;color:var(--dsw-alias-label-tertiary)}.wb-collab-memory-card p{margin:0;font-size:11px;line-height:1.6;color:var(--dsw-alias-label-secondary)}.wb-collab-memory-list{display:grid;gap:3px}.wb-collab-memory-finding{font-size:10px;color:var(--dsw-alias-label-secondary);line-height:1.5}",
+      ".wb-collab-log-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}.wb-collab-log-toolbar input{flex:1;min-width:120px;height:28px;padding:0 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:11px inherit}.wb-collab-log-filter{height:26px;padding:0 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);font:10px inherit;cursor:pointer}.wb-collab-log-filter-active{border-color:var(--dsw-alias-accent-fill);color:var(--dsw-alias-label-primary)}.wb-collab-log-list{display:grid;gap:4px;max-height:360px;overflow:auto}.wb-collab-log-row{display:grid;grid-template-columns:52px 1fr;gap:8px;padding:5px 7px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:var(--dsw-alias-bg-layer-2);font-size:10px;line-height:1.5}.wb-collab-log-row small{color:var(--dsw-alias-label-tertiary)}.wb-collab-log-info{border-left:2px solid #30b650}.wb-collab-log-warn{border-left:2px solid #ff9f0a}.wb-collab-log-error{border-left:2px solid #ff453a}.wb-orch-agents-editor{width:100%;box-sizing:border-box;min-height:120px;margin-top:8px;padding:8px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;resize:vertical;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:10px/1.5 monospace}.wb-orch-agent-ref{display:block;margin:2px 0;color:var(--dsw-alias-label-tertiary);font-size:10px}.wb-collab-memory-actions{margin-bottom:10px}.wb-collab-memory-card{padding:9px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-2);display:grid;gap:6px}.wb-collab-memory-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.wb-collab-memory-head strong{font-size:12px;color:var(--dsw-alias-label-primary)}.wb-collab-memory-head small{font-size:10px;color:var(--dsw-alias-label-tertiary)}.wb-collab-memory-card p{margin:0;font-size:11px;line-height:1.6;color:var(--dsw-alias-label-secondary)}.wb-collab-memory-list{display:grid;gap:3px}.wb-collab-memory-finding{font-size:10px;color:var(--dsw-alias-label-secondary);line-height:1.5}.wb-monitor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}.wb-monitor-card{padding:12px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-2);display:grid;gap:8px;align-content:start}.wb-monitor-card h3{margin:0;font-size:12px;color:var(--dsw-alias-label-secondary);font-weight:600}.wb-monitor-big{font-size:20px;color:var(--dsw-alias-label-primary)}.wb-monitor-card small{color:var(--dsw-alias-label-tertiary);font-size:10px}.wb-monitor-wide{grid-column:1/-1}.wb-monitor-bars{display:flex;align-items:flex-end;gap:8px;height:96px}.wb-monitor-bar-col{flex:1;display:grid;gap:4px;align-items:end;justify-items:center;min-width:0}.wb-monitor-bar{width:100%;max-width:42px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--dsw-alias-accent-fill),color-mix(in srgb,var(--dsw-alias-accent-fill) 45%,var(--dsw-alias-bg-layer-2)))}.wb-monitor-bar-col small{font-size:9px;color:var(--dsw-alias-label-tertiary)}.wb-monitor-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}.wb-monitor-rows{display:grid;gap:6px}.wb-monitor-table{display:grid;gap:4px}.wb-monitor-table-row{display:grid;grid-template-columns:minmax(120px,2fr) repeat(4,minmax(60px,1fr));gap:8px;padding:6px 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-1);font-size:10px;color:var(--dsw-alias-label-secondary)}.wb-monitor-sessions{display:grid;gap:10px}.wb-alert-banner{padding:8px 12px;border:1px solid #ff9f0a;border-radius:10px;background:color-mix(in srgb,#ff9f0a 12%,transparent);color:var(--dsw-alias-label-primary);font-size:12px}.wb-alert-banner-global{margin:8px 16px 0}.wb-nav-btn{position:relative}.wb-nav-alert-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#ff453a}",
       ".wb-orch-main p,.wb-orch-worker p{margin:8px 0 0;font-size:10px;line-height:1.55;color:var(--dsw-alias-label-secondary);white-space:pre-wrap}",
       ".wb-orch-workers{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px;margin-top:8px}.wb-orch-deps,.wb-orch-acceptance{margin-top:7px;font-size:9px;line-height:1.5;color:var(--dsw-alias-label-tertiary)}.wb-orch-acceptance{padding-top:7px;border-top:1px dashed var(--dsw-alias-border-l1)}",
       ".wb-orch-criteria,.wb-orch-report{margin-top:10px;padding:11px 12px;border:1px solid var(--dsw-alias-border-l1);border-radius:11px;background:var(--dsw-alias-bg-base)}.wb-orch-criteria>strong,.wb-orch-report>strong{font-size:11px;color:var(--dsw-alias-label-primary)}.wb-orch-criteria ol{margin:7px 0 0;padding-left:20px;font-size:10px;line-height:1.7;color:var(--dsw-alias-label-secondary)}",
@@ -722,7 +722,7 @@ window.__ModuleLoader__.load({
       kb: { title: "知识库（第二大脑）", desc: "自生长的本地知识库：项目对话、学习笔记自动沉淀，规模起来后反哺工作。方案待与用户深入讨论（P6）。" },
       experts: { title: "专家", desc: "切换 Agent 的对话风格与专长。每位专家 = 一套预设（人格 + 工具 + 专属技能）。首批：健身专家、AI 产品架构师（P2）。" },
       style: { title: "风格", desc: "工作台外貌：主题模式、强调色、壁纸透明度、字体密度、风格预设，以及可叠加在专家上的「对话风格」层（P3）。" },
-      monitor: { title: "监控", desc: "账户总览、用量统计、会话洞察、实时面板与页面内告警（P4）。" },
+      monitor: { title: "监控", desc: "账户总览、用量统计、会话洞察、实时面板与页面内告警（P3）。" },
       workflows: { title: "工作流", desc: "把重复性多步骤任务固化成模板：日报汇总、会议纪要、调研写作流水线……一键运行 + 定时调度（P5）。" }
     };
 
@@ -1246,6 +1246,31 @@ window.__ModuleLoader__.load({
       }
       return groups;
     }
+
+    function wbMonitorSummary(from, to, sessionId) {
+      const params = new URLSearchParams();
+      if (from) params.set("from", from);
+      if (to) params.set("to", to);
+      if (sessionId) params.set("sessionId", sessionId);
+      const q = params.toString();
+      return wbFetchJson("/api/dsh-usage-stats/summary" + (q ? "?" + q : "")).then(({ data }) => data || {}).catch(() => ({}));
+    }
+
+    function wbMonitorBalance() {
+      return wbFetchJson("/api/dsh-usage-stats/balance").then(({ data }) => (data && data.providers) || {}).catch(() => ({}));
+    }
+
+    function wbDaysAgo(n) {
+      const d = new Date();
+      d.setDate(d.getDate() - n);
+      const pad = (v) => String(v).padStart(2, "0");
+      return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+    }
+
+    var wbAlertListeners = [];
+    var wbAlertCurrent = null;
+    function wbPublishAlert(alert) { wbAlertCurrent = alert; wbAlertListeners.forEach((fn) => { try { fn(alert); } catch (e) {} }); }
+    function wbSubscribeAlert(fn) { wbAlertListeners.push(fn); return () => { wbAlertListeners = wbAlertListeners.filter((item) => item !== fn); }; }
 
     function wbStyleNumber(value, fallback, min, max) {
       const number = Number(value);
@@ -2701,6 +2726,8 @@ window.__ModuleLoader__.load({
       const currentId = useSessions((s) => (s.current === void 0 ? void 0 : s.byId[s.current] ? s.current : void 0));
       const sessionsState = useSessions((s) => s);
       const workspacesState = useWorkspaces((s) => s);
+      const [navAlert, setNavAlert] = React.useState(Boolean(wbAlertCurrent));
+      React.useEffect(() => wbSubscribeAlert((a) => setNavAlert(Boolean(a && a.text))), []);
       const summary = currentId === void 0 ? void 0 : sessionsState.byId[currentId];
       const projectPath = summary && summary.cwd ? summary.cwd : "";
       const store = useWorkbenchTasks(currentId, projectPath);
@@ -2739,7 +2766,8 @@ window.__ModuleLoader__.load({
         onClick: () => onSelect(p.id),
         children: [
           jsxRuntime.jsx("span", { className: "wb-nav-btn-icon", children: jsxRuntime.jsx(p.icon, { size: 16 }) }),
-          jsxRuntime.jsx("span", { className: "wb-nav-label", children: p.label })
+          jsxRuntime.jsx("span", { className: "wb-nav-label", children: p.label }),
+          p.id === "monitor" && navAlert && jsxRuntime.jsx("span", { className: "wb-nav-alert-dot" })
         ]
       }, p.id);
       const taskCenter = taskCenterOpen && jsxRuntime.jsx(WorkbenchTaskCenter, { store, workspaceItems: workspacesState.items || [], selectedId: selectedTaskId, onSelectedId: setSelectedTaskId, initialView: taskCenterView, onClose: () => { setTaskCenterOpen(false); setSelectedTaskId(null); } });
@@ -2971,6 +2999,143 @@ window.__ModuleLoader__.load({
       ] }) });
     }
 
+    function MonitorPage({ useSessions, useWorkbenchTasks }) {
+      const sessionsState = useSessions((s) => s);
+      const currentId = sessionsState.current;
+      const currentSession = currentId && sessionsState.byId[currentId] ? sessionsState.byId[currentId] : null;
+      const projectPath = currentSession && currentSession.cwd ? currentSession.cwd : "";
+      const store = useWorkbenchTasks(currentId, projectPath);
+      const [tab, setTab] = React.useState("account");
+      const [rangeDays, setRangeDays] = React.useState(30);
+      const [summary, setSummary] = React.useState(null);
+      const [balance, setBalance] = React.useState({});
+      const [sessionRows, setSessionRows] = React.useState([]);
+      const [live, setLive] = React.useState(null);
+      const [busy, setBusy] = React.useState(false);
+      const [error, setError] = React.useState("");
+      const [alertNow, setAlertNow] = React.useState(wbAlertCurrent);
+      const [thresholds, setThresholds] = React.useState(() => { try { return JSON.parse(localStorage.getItem("wb.monitorAlerts") || "{}"); } catch (e) { return {}; } });
+      const runningCount = store.orchestrations.filter((item) => ["running", "planning", "refining"].includes(item.phase)).length;
+      const load = React.useCallback(() => {
+        const from = wbDaysAgo(rangeDays);
+        const to = wbTodayKey();
+        setBusy(true);
+        setError("");
+        wbMonitorSummary(from, to).then((sum) => {
+          setSummary(sum);
+          return wbMonitorBalance();
+        }).then((bal) => {
+          setBalance(bal);
+          const ids = Array.isArray(sessionsState.ids) ? sessionsState.ids.slice(0, 12) : [];
+          return Promise.all(ids.map((id) => wbMonitorSummary(from, to, id).then((s) => ({ id, s }))));
+        }).then((rows) => {
+          const meaningful = rows.filter((r) => r.s && (r.s.tokens || {}).total > 0)
+            .sort((a, b) => (b.s.cost || 0) - (a.s.cost || 0) || ((b.s.tokens || {}).total || 0) - ((a.s.tokens || {}).total || 0))
+            .slice(0, 8);
+          setSessionRows(meaningful);
+          return currentId ? wbMonitorSummary("", "", currentId) : Promise.resolve(null);
+        }).then((per) => { setLive(per); setBusy(false); }).catch((e) => { setError(String((e && e.message) || e)); setBusy(false); });
+      }, [rangeDays, currentId, sessionsState.ids]);
+      React.useEffect(() => { load(); const timer = window.setInterval(load, 10000); return () => window.clearInterval(timer); }, [load]);
+      React.useEffect(() => wbSubscribeAlert(setAlertNow), []);
+      React.useEffect(() => {
+        const alerts = [];
+        const snapshots = Object.keys(balance).map((key) => balance[key]).filter(Boolean);
+        const money = snapshots.find((p) => p && typeof p.balance === "number");
+        if (money && Number(thresholds.balance) > 0 && money.balance < Number(thresholds.balance)) {
+          alerts.push("账户余额低于 " + thresholds.balance + " " + (money.costCurrency || money.currency || "CNY"));
+        }
+        if (summary && Number(thresholds.daily) > 0 && summary.cost > Number(thresholds.daily)) alerts.push("今日费用 " + summary.cost.toFixed(2) + " 超过日预算 " + thresholds.daily);
+        if (summary && Number(thresholds.monthly) > 0 && summary.cost > Number(thresholds.monthly)) alerts.push("区间费用超过月预算 " + thresholds.monthly);
+        wbPublishAlert(alerts.length ? { level: "warn", text: alerts.join("；") } : null);
+      }, [summary, balance, thresholds]);
+      React.useEffect(() => () => wbPublishAlert(null), []);
+      const tokens = (summary && summary.tokens) || {};
+      const totalTokens = tokens.total || (tokens.uncachedInputTokens || 0) + (tokens.cacheReadTokens || 0) + (tokens.cacheWriteTokens || 0) + (tokens.outputTokens || 0);
+      const moneySnapshot = Object.keys(balance).map((key) => balance[key]).find((p) => p && typeof p.balance === "number") || null;
+      const dailyCost = summary && summary.activeDays > 0 ? (summary.cost || 0) / summary.activeDays : 0;
+      const estDays = moneySnapshot && dailyCost > 0 ? Math.max(0, Math.round((moneySnapshot.balance / dailyCost) * 10) / 10) : null;
+      const series = Array.isArray(summary && summary.series) ? summary.series.slice(-14) : [];
+      const maxCost = Math.max(0.001, ...series.map((entry) => entry.cost || 0));
+      const tabs = [{ id: "account", label: "账户" }, { id: "usage", label: "用量" }, { id: "sessions", label: "会话" }, { id: "live", label: "实时" }, { id: "alerts", label: "告警" }];
+      const fmt = (value) => (typeof value === "number" ? value.toLocaleString("zh-CN", { maximumFractionDigits: 2 }) : "—");
+      const fmtToken = (value) => { const n = Number(value || 0); return n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(n); };
+      const setThreshold = (key, value) => { setThresholds((cur) => { const next = { ...cur, [key]: value }; try { localStorage.setItem("wb.monitorAlerts", JSON.stringify(next)); } catch (e) {} return next; }); };
+      return jsxRuntime.jsxs("div", { className: "wb-page wb-monitor", children: [
+        jsxRuntime.jsxs("div", { className: "wb-page-inner", children: [
+          jsxRuntime.jsxs("div", { className: "wb-style-head", children: [jsxRuntime.jsx("h1", { className: "wb-page-title", children: "监控" }), jsxRuntime.jsxs("div", { className: "wb-style-actions", children: [jsxRuntime.jsx("span", { className: "wb-style-status", children: busy ? "刷新中…" : (error ? "加载失败" : "已更新") }), jsxRuntime.jsx("button", { type: "button", className: "wb-style-button", disabled: busy, onClick: load, children: "刷新" })] })] }),
+          error && jsxRuntime.jsx(WbErrNote, { message: error }),
+          alertNow && jsxRuntime.jsx("div", { className: "wb-alert-banner", children: alertNow.text }),
+          jsxRuntime.jsx("div", { className: "wb-style-tabs", role: "tablist", children: tabs.map((item) => jsxRuntime.jsx("button", { type: "button", role: "tab", className: "wb-style-tab" + (tab === item.id ? " wb-style-tab-active" : ""), onClick: () => setTab(item.id), children: item.label }, item.id)) }),
+          tab === "account" && jsxRuntime.jsxs("div", { className: "wb-monitor-grid", children: [
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "账户余额" }), jsxRuntime.jsx("strong", { className: "wb-monitor-big", children: moneySnapshot ? (fmt(moneySnapshot.balance) + " " + (moneySnapshot.costCurrency || moneySnapshot.currency || "CNY")) : "未配置余额接口" }), moneySnapshot && moneySnapshot.updatedAt && jsxRuntime.jsx("small", { children: "更新于 " + new Date(moneySnapshot.updatedAt).toLocaleString() })] }),
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "累计费用" }), jsxRuntime.jsx("strong", { className: "wb-monitor-big", children: (summary ? summary.cost : 0).toFixed(2) + " " + (moneySnapshot ? (moneySnapshot.costCurrency || "CNY") : "CNY") }), jsxRuntime.jsx("small", { children: "近 " + rangeDays + " 天 · 活跃 " + (summary ? summary.activeDays : 0) + " 天" })] }),
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "预计可用" }), jsxRuntime.jsx("strong", { className: "wb-monitor-big", children: estDays === null ? "—" : estDays + " 天" }), jsxRuntime.jsx("small", { children: "按近 " + rangeDays + " 天日均费用估算" })] }),
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "Token 总量" }), jsxRuntime.jsx("strong", { className: "wb-monitor-big", children: fmtToken(totalTokens) }), jsxRuntime.jsx("small", { children: (summary ? summary.requests : 0) + " 次请求 · " + (summary ? summary.turns : 0) + " 轮对话" })] }),
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-monitor-wide", children: [jsxRuntime.jsx("h3", { children: "费用趋势（近 " + Math.min(series.length, 14) + " 天）" }), series.length ? jsxRuntime.jsx("div", { className: "wb-monitor-bars", children: series.map((entry) => jsxRuntime.jsxs("div", { className: "wb-monitor-bar-col", children: [jsxRuntime.jsx("div", { className: "wb-monitor-bar", style: { height: Math.max(4, Math.round(((entry.cost || 0) / maxCost) * 72)) + "px" }, title: entry.bucket + " " + (entry.cost || 0).toFixed(3) }), jsxRuntime.jsx("small", { children: entry.bucket.slice(5) })] }, entry.bucket)) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "当前区间没有用量数据" })] })
+          ] }),
+          tab === "usage" && jsxRuntime.jsxs("div", { children: [
+            jsxRuntime.jsxs("div", { className: "wb-monitor-toolbar", children: [jsxRuntime.jsx("span", { children: "统计区间" }), [7, 30, 90, 365].map((days) => jsxRuntime.jsx("button", { type: "button", className: "wb-collab-log-filter" + (rangeDays === days ? " wb-collab-log-filter-active" : ""), onClick: () => setRangeDays(days), children: days + " 天" }, days))] }),
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
+              jsxRuntime.jsx("h3", { children: "Token 分项" }),
+              jsxRuntime.jsx("div", { className: "wb-monitor-rows", children: [
+                jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "输入" }), jsxRuntime.jsx("strong", { children: fmtToken(tokens.uncachedInputTokens || 0) })] }),
+                jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "缓存读" }), jsxRuntime.jsx("strong", { children: fmtToken(tokens.cacheReadTokens || 0) })] }),
+                jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "缓存写" }), jsxRuntime.jsx("strong", { children: fmtToken(tokens.cacheWriteTokens || 0) })] }),
+                jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "输出" }), jsxRuntime.jsx("strong", { children: fmtToken(tokens.outputTokens || 0) })] }),
+                jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "缓存命中率" }), jsxRuntime.jsx("strong", { children: summary && summary.avgCacheHitRate != null ? Math.round(summary.avgCacheHitRate * 100) + "%" : "—" })] }),
+                jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "主要模型" }), jsxRuntime.jsx("strong", { children: (summary && summary.topModel) || "—" })] })
+              ] })
+            ] }),
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
+              jsxRuntime.jsx("h3", { children: "按模型" }),
+              (summary && summary.byModel && summary.byModel.length) ? jsxRuntime.jsx("div", { className: "wb-monitor-table", children: summary.byModel.map((entry) => jsxRuntime.jsxs("div", { className: "wb-monitor-table-row", children: [jsxRuntime.jsx("span", { children: entry.model }), jsxRuntime.jsx("span", { children: entry.requests + " 次" }), jsxRuntime.jsx("span", { children: fmtToken(entry.tokens) }), jsxRuntime.jsx("span", { children: (entry.cost || 0).toFixed(3) })] }, entry.model)) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "暂无模型用量" })
+            ] }),
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-monitor-wide", children: [
+              jsxRuntime.jsx("h3", { children: "按天" }),
+              series.length ? jsxRuntime.jsx("div", { className: "wb-monitor-table", children: series.slice().reverse().map((entry) => jsxRuntime.jsxs("div", { className: "wb-monitor-table-row", children: [jsxRuntime.jsx("span", { children: entry.bucket }), jsxRuntime.jsx("span", { children: entry.requests + " 次" }), jsxRuntime.jsx("span", { children: fmtToken(entry.tokens) }), jsxRuntime.jsx("span", { children: (entry.cost || 0).toFixed(3) }), jsxRuntime.jsx("span", { children: entry.hitRate != null ? Math.round(entry.hitRate * 100) + "%" : "—" })] }, entry.bucket)) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "暂无按天数据" })
+            ] })
+          ] }),
+          tab === "sessions" && jsxRuntime.jsxs("div", { className: "wb-monitor-sessions", children: [
+            sessionRows.length ? sessionRows.map((row) => jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
+              jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: (sessionsState.byId[row.id] && (sessionsState.byId[row.id].title || sessionsState.byId[row.id].displayTitle)) || row.id.slice(0, 8) }), jsxRuntime.jsx("small", { children: (row.s.turns || 0) + " 轮 · " + (row.s.requests || 0) + " 次请求" })] }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "费用" }), jsxRuntime.jsx("strong", { children: (row.s.cost || 0).toFixed(3) })] }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "Token" }), jsxRuntime.jsx("strong", { children: fmtToken((row.s.tokens || {}).total || 0) })] }),
+              jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "模型 " + (row.s.topModel || "—") + " · 最近 " + (row.s.lastRequestAt ? new Date(row.s.lastRequestAt).toLocaleString() : "—") })
+            ] }, row.id)) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "当前会话还没有可统计的用量；实际使用一段时间后这里会显示消耗最高的会话。" })
+          ] }),
+          tab === "live" && jsxRuntime.jsxs("div", { children: [
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
+              jsxRuntime.jsx("h3", { children: "当前会话实时用量" }),
+              live ? jsxRuntime.jsxs("div", { className: "wb-monitor-rows", children: [
+                jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "本次累计" }), jsxRuntime.jsx("strong", { children: fmtToken((live.tokens || {}).total || 0) + " · " + (live.cost || 0).toFixed(3) })] }),
+                jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "本轮进行中" }), jsxRuntime.jsx("strong", { children: live.perSession && live.perSession.currentTurn ? (fmtToken(live.perSession.currentTurn.tokens) + " · " + (live.perSession.currentTurn.cost || 0).toFixed(3)) : "—" })] }),
+                jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "最近模型" }), jsxRuntime.jsx("strong", { children: live.perSession && live.perSession.lastModel ? live.perSession.lastModel : (live.topModel || "—") })] }),
+                jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "会话轮次" }), jsxRuntime.jsx("strong", { children: live.perSession ? (live.perSession.turns || 0) : "—" })] })
+              ] }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "当前会话暂无用量" })
+            ] }),
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
+              jsxRuntime.jsx("h3", { children: "代理运行状态" }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "进行中的协作任务" }), jsxRuntime.jsx("strong", { children: runningCount })] }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "当前会话" }), jsxRuntime.jsx("strong", { children: currentSession ? (currentSession.title || currentSession.displayTitle || currentSession.id.slice(0, 8)) : "未打开" })] })
+            ] })
+          ] }),
+          tab === "alerts" && jsxRuntime.jsxs("div", { children: [
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
+              jsxRuntime.jsx("h3", { children: "阈值设置（仅本机保存）" }),
+              jsxRuntime.jsxs("div", { className: "wb-monitor-rows", children: [
+                jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "余额低于" }), jsxRuntime.jsx("input", { type: "number", min: 0, step: 1, value: thresholds.balance || "", placeholder: "CNY", onChange: (e) => setThreshold("balance", e.target.value) })] }),
+                jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "日费用超过" }), jsxRuntime.jsx("input", { type: "number", min: 0, step: 0.1, value: thresholds.daily || "", placeholder: "CNY", onChange: (e) => setThreshold("daily", e.target.value) })] }),
+                jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "区间费用超过" }), jsxRuntime.jsx("input", { type: "number", min: 0, step: 0.1, value: thresholds.monthly || "", placeholder: "CNY", onChange: (e) => setThreshold("monthly", e.target.value) })] })
+              ] }),
+              jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "触发后：监控页横幅 + 导航栏红点提示；阈值留空表示不启用。" })
+            ] }),
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "当前告警" }), alertNow ? jsxRuntime.jsx("div", { className: "wb-alert-banner", children: alertNow.text }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "暂无告警" })] })
+          ] })
+        ] })
+      ] });
+    }
+
     function WorkbenchPage({ id }) {
       const meta = PAGE_META[id] || { title: id, desc: "" };
       return jsxRuntime.jsx("div", { className: "wb-page", children: jsxRuntime.jsxs("div", { className: "wb-page-inner", children: [
@@ -3190,6 +3355,7 @@ window.__ModuleLoader__.load({
     function WorkbenchRoot(props) {
       const { useStore, useSessions, useWorkspaces, actions, renderSlot } = props;
       React.useEffect(() => { wbLoadStyleDocument().catch(() => {}); }, []);
+      const [rootAlert, setRootAlert] = React.useState(wbAlertCurrent);
       const [page, setPage] = React.useState(() => {
         try { return localStorage.getItem("wb.page") || "agent"; } catch (e) { return "agent"; }
       });
@@ -3202,15 +3368,19 @@ window.__ModuleLoader__.load({
         setNavExpanded((v) => !v);
       }, []);
       const onToggleSessions = React.useCallback(() => { actions.toggleSidebar(); }, [actions]);
+      React.useEffect(() => wbSubscribeAlert(setRootAlert), []);
       return jsxRuntime.jsx(WbErrorBoundary, { children: jsxRuntime.jsxs("div", { className: "wb-root " + (navExpanded ? "wb-root-nav-expanded" : "wb-root-nav-collapsed"), children: [
         jsxRuntime.jsx(WorkbenchNav, { page, onSelect, expanded: navExpanded, onToggle: onToggleNav, renderSlot, useSessions, useWorkspaces }),
         jsxRuntime.jsx(WbDiag, { useStore, useSessions }),
+        rootAlert && jsxRuntime.jsx("div", { className: "wb-alert-banner wb-alert-banner-global", children: rootAlert.text }),
         jsxRuntime.jsx("div", { className: "wb-content", children: page === "agent"
           ? jsxRuntime.jsx(AgentWorkspace, { useStore, useSessions, useWorkspaces, actions, renderSlot, onToggleSessions })
             : page === "experts"
             ? jsxRuntime.jsx(ExpertsPage, { useWorkspaces, useSessions, onSelect })
             : page === "style"
               ? jsxRuntime.jsx(StylePage, {})
+            : page === "monitor"
+              ? jsxRuntime.jsx(MonitorPage, { useSessions, useWorkbenchTasks })
             : jsxRuntime.jsx(WorkbenchPage, { id: page })
         })
       ] }) });
