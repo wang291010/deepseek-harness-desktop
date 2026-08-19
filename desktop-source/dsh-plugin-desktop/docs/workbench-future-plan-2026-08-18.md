@@ -459,10 +459,11 @@
 #### 三、项目配置独立成工具栏栏
 
 - 右侧工具栏新增“项目配置”tab，三个区块：
-  - 会话专属内容：查看/追加，存于 `sessions/<项目>/<会话>/dsh-workbench-session.md`（UTF-16 slug 与
-    harness-home 会话目录命名一致）。
+  - 会话专属内容：查看/追加，存于应用数据目录 `sessions/<项目>/<会话>/dsh-workbench-session.md`
+    （UTF-16 slug 与 harness-home 会话目录命名一致），**不写入项目文件夹**（2026-08-20 明确文案与行为）。
   - 项目规则：自动发现 AGENTS.md / CLAUDE.md / AGENT_RULES.md / .cursorrules / README /
-    .cursor/rules/*.mdc；支持追加与“初始化 AGENTS.md”（决策点：AGENTS.md）。
+    .cursor/rules/*.mdc；支持追加与“初始化 AGENTS.md”（决策点：AGENTS.md）。**明确会读写项目文件夹
+    内的规则文件**，与“会话专属内容”在面板中分区注明，避免污染项目疑虑。
   - 项目备注：保留备注/技术栈/注入目录表单；新增“AI 自动精炼”（读 README/规则生成结构化备注，
     可一键填入）。
 - 项目规则自动纳入多 AI 规划提示词注入（`projectContextSummary`）。

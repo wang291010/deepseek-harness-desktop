@@ -2732,7 +2732,7 @@ window.__ModuleLoader__.load({
         err && jsxRuntime.jsx(WbErrNote, { message: err }),
         notice && jsxRuntime.jsx("div", { className: "wb-chat-probe", children: "✓ " + notice }),
         jsxRuntime.jsxs("section", { className: "wb-collab-memory-card", children: [
-          jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: "会话专属内容" }), jsxRuntime.jsx("small", { children: "存于该会话目录 dsh-workbench-session.md" })] }),
+          jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: "会话专属内容" }), jsxRuntime.jsx("small", { children: "存于本机应用数据目录，不写入项目文件夹" })] }),
           sessionText ? jsxRuntime.jsx("pre", { className: "wb-chat-report", children: sessionText }) : jsxRuntime.jsx("div", { className: "wb-tb-meta", children: "还没有会话专属内容，追加第一段约定或进度。" }),
           jsxRuntime.jsx("textarea", { className: "wb-orch-agents-editor", value: sessionDraft, placeholder: "记录本会话的约定、进度、临时结论…", onChange: (event) => setSessionDraft(event.target.value) }),
           jsxRuntime.jsxs("div", { className: "wb-chat-msg-actions", children: [
@@ -2740,7 +2740,7 @@ window.__ModuleLoader__.load({
           ] })
         ] }),
         jsxRuntime.jsxs("section", { className: "wb-collab-memory-card", children: [
-          jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: "项目规则" }), jsxRuntime.jsx("small", { children: "自动发现 AGENTS.md / CLAUDE.md 等" })] }),
+          jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: "项目规则" }), jsxRuntime.jsx("small", { children: "读写项目文件夹内的 AGENTS.md / CLAUDE.md 等" })] }),
           rules.length ? jsxRuntime.jsx("div", { className: "wb-chat-flow", children: rules.map((entry) => jsxRuntime.jsxs("div", { className: "wb-chat-msg wb-chat-msg-assistant", children: [
             jsxRuntime.jsx("div", { className: "wb-chat-msg-head", children: [jsxRuntime.jsx("strong", { children: entry.name }), jsxRuntime.jsx("span", { children: entry.size + " B" })] }),
             jsxRuntime.jsx("div", { children: entry.content.slice(0, 500) + (entry.content.length > 500 ? "\n…" : "") })
