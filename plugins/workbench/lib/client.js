@@ -1929,8 +1929,11 @@ window.__ModuleLoader__.load({
               jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "进行中" }), jsxRuntime.jsx("strong", { children: runningCount })] }),
               jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "已完成 / 收尾" }), jsxRuntime.jsx("strong", { children: doneCount })] }),
               jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "等待队列" }), jsxRuntime.jsx("strong", { children: waitingCount })] }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "并行上限" }), jsxRuntime.jsx("strong", { children: selected.maxParallel || 3 })] }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "预计 LLM 调用" }), jsxRuntime.jsx("strong", { children: 1 + (selected.workers || []).length })] }),
               runningProgress && jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "当前进度" }), jsxRuntime.jsx("strong", { children: runningProgress.pct + "%" })] }),
-              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "代理运行时" }), jsxRuntime.jsx("strong", { children: store.orchestrationRuntime.available ? "就绪" : "未就绪" })] })
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "代理运行时" }), jsxRuntime.jsx("strong", { children: store.orchestrationRuntime.available ? "就绪" : "未就绪" })] }),
+              (selected.workers || []).length >= 4 && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "子代理较多，Token 消耗较大；可减少代理数或调低并行上限。" })
             ] }),
             panelTab === "agents" && jsxRuntime.jsxs("div", { className: "wb-collab-agent-minis", children: [
               selected.mainAgent && jsxRuntime.jsxs("div", { className: "wb-collab-agent-mini wb-collab-agent-mini-main", children: [jsxRuntime.jsx("strong", { children: "主 · " + selected.mainAgent.name }), jsxRuntime.jsx("span", { className: "wb-orch-agent-status wb-orch-agent-status-" + selected.mainAgent.status, children: WB_ORCHESTRATION_AGENT_STATUS[selected.mainAgent.status] || selected.mainAgent.status })] }),

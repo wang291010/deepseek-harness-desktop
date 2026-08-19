@@ -1349,10 +1349,45 @@ async function analyzeIdea(record) {
   };
 }
 
+async function projectContextSummary(projectPath) {
+  if (!projectPath) return '';
+  try {
+    const { canonical } = await authorizeWorkspacePath(projectPath, 'directory');
+    const names = await readdir(canonical, { withFileTypes: true });
+    const entries = names.slice(0, 60).map((entry) => entry.isDirectory() ? entry.name + '/' : entry.name);
+    const manifestCandidates = ['package.json', 'requirements.txt', 'pyproject.toml', 'Cargo.toml', 'go.mod', 'pom.xml', 'build.gradle', 'composer.json', 'README.md', 'readme.md'];
+    const techHints = [];
+    for (const candidate of manifestCandidates) {
+      try {
+        const info = await stat(join(canonical, candidate));
+        if (!info.isFile() || info.size > 64 * 1024) continue;
+        const head = (await readFile(join(canonical, candidate), 'utf8')).slice(0, 800).replace(/\s+/g, ' ').trim();
+        if (head) techHints.push(candidate + ': ' + head);
+      } catch (e) { /* skip missing manifests */ }
+      if (techHints.length >= 4) break;
+    }
+    const store = await readTaskStore();
+    const history = store.orchestrations
+      .filter((item) => taskProjectKey(item.projectPath) === taskProjectKey(projectPath))
+      .sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')))
+      .slice(0, 3)
+      .map((item) => '- ' + item.title + '（' + (item.phase || 'idea') + '）' + (item.finalReport ? '：' + item.finalReport.slice(0, 120) : ''))
+      .join('\n');
+    return [
+      '项目文件结构（前 ' + entries.length + ' 项）：\n' + entries.join(' '),
+      techHints.length ? '技术栈线索：\n' + techHints.join('\n') : '',
+      history ? '本项目近期协作记录：\n' + history : ''
+    ].filter(Boolean).join('\n\n');
+  } catch (e) {
+    return '';
+  }
+}
+
 async function generateOrchestrationPlan(record, feedback, models, policy) {
   const modelList = Array.isArray(models) ? models : [];
   const pool = await readAgentsStore();
   const agents = pool.mode === 'pool' ? pool.agents : [];
+  const projectContext = await projectContextSummary(record.projectPath);
   const modelChoices = modelList.map((item) => item.provider + ' :: ' + item.id + ' (' + item.name + ')').join('\n');
   const system = [
     '你是一个谨慎的多代理任务编排器。把用户的粗略想法转成可审查、可执行、可验收的方案。',
@@ -1364,6 +1399,7 @@ async function generateOrchestrationPlan(record, feedback, models, policy) {
   ].join('\n');
   const prompt = [
     '项目路径：' + (record.projectPath || '全局任务'),
+    projectContext ? '项目上下文：\n' + projectContext : '',
     '用户想法：\n' + record.idea,
     record.memory && record.memory.length ? '记忆快照（跨会话上下文，优先引用）：\n' + record.memory.map((entry) => '- [' + entry.title + '] ' + entry.summary + (entry.findings.length ? '\n  发现：' + entry.findings.slice(0, 3).join('；') : '')).join('\n') : '',
     record.attachments && record.attachments.length ? '已附加文件：\n' + record.attachments.map((entry) => '- ' + entry.name + '（' + entry.size + ' B，' + entry.mime + '）' + (entry.summary ? '\n  内容摘录：' + entry.summary.slice(0, 400) : '')).join('\n') : '',

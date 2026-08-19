@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, stat } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
@@ -13,6 +13,7 @@ const routes = new Map();
 const llmCalls = [];
 const agentPrompts = [];
 const spawnOptions = [];
+const workspaces = [];
 const plan = {
   title: '附件协作测试',
   summary: '一个子代理读取附件并输出结论。',
@@ -28,6 +29,7 @@ const ctx = {
     if (names.includes('webServer')) {
       callback({
         webServer: { register(route) { routes.set(route.path, route); return () => {}; } },
+        workspaceRegistry: { list: () => workspaces },
         llm: {
           listProviders: () => [{ id: 'test-provider', name: 'Test Provider' }],
           listModels: async () => [{ provider: 'test-provider', id: 'test-model', name: 'Test Model' }],
@@ -203,6 +205,26 @@ try {
   const freePrompt = llmCalls[llmCalls.length - 1].prompt;
   assert.ok(!freePrompt.includes('候选专家参考'), 'free mode should omit the pool reference from the plan prompt');
   await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_remove', scope: 'all', projectPath: 'D:\\demo', id: freeId });
+
+  // --- project context injection: file structure + tech stack + history ---
+  const projectDir = join(tempHome, 'projects', 'demo-app');
+  await mkdir(projectDir, { recursive: true });
+  await writeFile(join(projectDir, 'package.json'), JSON.stringify({ name: 'demo-app', dependencies: { react: '^18' } }), 'utf8');
+  await writeFile(join(projectDir, 'src.txt'), 'placeholder', 'utf8');
+  workspaces.push({ path: projectDir });
+  await call('/api/dsh-workbench/tasks/mutate', 'POST', {
+    action: 'orchestration_create', scope: 'all', projectPath: projectDir, sourceSessionId: 'session-1', idea: '项目上下文测试'
+  });
+  const ctxId = (await listAll()).orchestrations.find((item) => item.idea === '项目上下文测试').id;
+  await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_plan', scope: 'all', projectPath: projectDir, id: ctxId });
+  await waitPhase(ctxId, ['planned', 'failed']);
+  const ctxPrompt = llmCalls[llmCalls.length - 1].prompt;
+  assert.ok(ctxPrompt.includes('项目上下文'), 'plan prompt should include project context');
+  assert.ok(ctxPrompt.includes('项目文件结构'), 'plan prompt should include project file structure');
+  assert.ok(ctxPrompt.includes('技术栈线索'), 'plan prompt should include tech stack hints');
+  assert.ok(ctxPrompt.includes('package.json') && ctxPrompt.includes('demo-app'), 'plan prompt should include manifest content');
+  assert.ok(ctxPrompt.includes('src.txt'), 'plan prompt should include project file names');
+  await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_remove', scope: 'all', projectPath: projectDir, id: ctxId });
   console.log('collab smoke test passed');
 } finally {
   await rm(tempHome, { recursive: true, force: true });

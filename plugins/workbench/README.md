@@ -143,6 +143,16 @@ powershell -ExecutionPolicy Bypass -File .\tools\enable-workbench.ps1    # 恢�
 - 接口：`GET /api/dsh-workbench/memory/list`、`POST /api/dsh-workbench/memory/generate`、
   `POST /api/dsh-workbench/memory/remove`。
 - Host 冒烟测试：`node tools/smoke-memory.mjs`。
+- 项目上下文自动注入：生成方案时自动携带项目文件结构（≤60 项）、技术栈线索（常见清单文件
+  头部）与近期协作记录；仅限注册工作区内的项目路径（复用 `authorizeWorkspacePath`），越界或
+  未注册路径自动跳过，不泄露。
+- 成本护栏：概览 Tab 显示并行上限与预计 LLM 调用次数（1 主代理 + N 子代理），子代理 ≥4 时提示
+  Token 消耗较大；引擎层并行上限沿用 ≤4。
+- 项目上下文自动注入：生成方案时自动携带项目文件结构（≤60 项）、技术栈线索（常见清单文件
+  头部）与近期协作记录；仅限注册工作区内的项目路径（复用 `authorizeWorkspacePath`），越界或
+  未注册路径自动跳过，不泄露。
+- 成本护栏：概览 Tab 显示并行上限与预计 LLM 调用次数（1 主代理 + N 子代理），子代理 ≥4 时提示
+  Token 消耗较大；引擎层并行上限沿用 ≤4。
 
 ## 双层任务系统
 
