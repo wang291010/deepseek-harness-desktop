@@ -121,7 +121,7 @@ const IDEA_STATUSES = ['inbox', 'considering', 'promoted', 'snoozed', 'archived'
 const IDEA_RECOMMENDATIONS = ['task', 'orchestration', 'later', 'archive'];
 const ORCHESTRATION_PHASES = ['idea', 'planning', 'planned', 'running', 'refining', 'review', 'changes_requested', 'accepted', 'failed', 'cancelled'];
 const ORCHESTRATION_AGENT_STATUSES = ['planned', 'waiting', 'running', 'completed', 'failed', 'cancelled'];
-const ORCHESTRATION_WORKER_TIMEOUT_MS = Number(process.env.DSH_WORKBENCH_WORKER_TIMEOUT_MS) > 0 ? Number(process.env.DSH_WORKBENCH_WORKER_TIMEOUT_MS) : 5 * 60 * 1000;
+const ORCHESTRATION_WORKER_TIMEOUT_MS = Number(process.env.DSH_WORKBENCH_WORKER_TIMEOUT_MS) > 0 ? Number(process.env.DSH_WORKBENCH_WORKER_TIMEOUT_MS) : 15 * 60 * 1000;
 const ORCHESTRATION_WORKER_MAX_RETRIES = Number.isSafeInteger(Number(process.env.DSH_WORKBENCH_WORKER_MAX_RETRIES)) && Number(process.env.DSH_WORKBENCH_WORKER_MAX_RETRIES) >= 0 ? Number(process.env.DSH_WORKBENCH_WORKER_MAX_RETRIES) : 2;
 const ATTACHMENT_TYPES = new Map([
   ['png', 'image/png'], ['jpg', 'image/jpeg'], ['jpeg', 'image/jpeg'], ['webp', 'image/webp'],
@@ -3508,12 +3508,42 @@ async function streamLlmText(system, prompt, options = {}) {
   return out.join('').trim();
 }
 
+function repairJsonObject(text) {
+  const raw = String(text || '');
+  const start = raw.indexOf('{');
+  if (start < 0) return null;
+  const closers = [];
+  let inString = false;
+  let escaped = false;
+  for (let i = start; i < raw.length; i += 1) {
+    const ch = raw[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === '\\') escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') { inString = true; continue; }
+    if (ch === '{') closers.push('}');
+    else if (ch === '[') closers.push(']');
+    else if (ch === '}' || ch === ']') closers.pop();
+  }
+  if (closers.length === 0) return null;
+  return raw.slice(start).trimEnd() + closers.reverse().join('');
+}
+
 function parseJsonObject(text) {
   const raw = String(text || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
   try { return JSON.parse(raw); } catch (firstError) {
     const start = raw.indexOf('{');
     const end = raw.lastIndexOf('}');
-    if (start >= 0 && end > start) return JSON.parse(raw.slice(start, end + 1));
+    if (start >= 0 && end > start) {
+      try { return JSON.parse(raw.slice(start, end + 1)); } catch (e) { /* fall through to repair */ }
+    }
+    const repaired = repairJsonObject(raw);
+    if (repaired !== null) {
+      try { return JSON.parse(repaired); } catch (e) { /* fall through to original error */ }
+    }
     throw firstError;
   }
 }
@@ -3941,7 +3971,19 @@ async function generateOrchestrationPlan(record, feedback, models, policy) {
       acceptanceCriteria: ['最终由用户验收的标准']
     }, null, 2)
   ].filter(Boolean).join('\n\n');
-  const plan = cleanOrchestrationPlan(parseJsonObject(await streamLlmText(system, prompt, { maxTokens: 6000 })));
+  const plan = cleanOrchestrationPlan(await (async () => {
+    const first = await streamLlmText(system, prompt, { maxTokens: 8000 });
+    try {
+      return parseJsonObject(first);
+    } catch (firstError) {
+      const second = await streamLlmText(system, prompt + '\n\n上一次输出解析失败（可能是 JSON 被截断）。请只输出一个完整、闭合的 JSON 对象，不要 Markdown。', { maxTokens: 8000 });
+      try {
+        return parseJsonObject(second);
+      } catch (secondError) {
+        throw new Error('方案生成失败（已重试一次）：' + String((firstError && firstError.message) || firstError));
+      }
+    }
+  })());
   const allowed = new Set(modelList.map((item) => item.provider + '\u0000' + item.id));
   const validateAgentModel = (agent) => {
     if (!agent) return agent;
