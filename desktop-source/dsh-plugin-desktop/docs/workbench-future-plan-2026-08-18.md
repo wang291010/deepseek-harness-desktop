@@ -435,6 +435,48 @@
   - “在任务中心查看完整记录”精确高亮该编排（`wb-collab-row-active`），详情含方案、模型清单与实际使用模型。
 - 本轮改动已提交（见 git 记录）；备份 `backups/workbench-p26-pre-20260820-000115` 保留。
 
+### Phase 2.7：对话与项目配置体验（P2.7，2026-08-20）
+
+> 用户确认三项方案（决策点均采用建议项），并先行核实行业实践：AGENTS.md 为 2025 年 OpenAI/Google/
+> Anthropic/Cursor 联合推动的开放标准，跨工具兼容，因此项目规则采用 AGENTS.md。
+
+#### 一、单 AI / 多 AI 切换移到左侧栏
+
+- 从对话区右上角移到“临时想法”输入框下方，按会话记忆；对话区不再有模式栏，右上角用量控件不再被遮挡。
+- 左侧栏收起时不提供额外入口（已确认）；会话切换时按钮自动跟随当前会话。
+
+#### 二、多 AI 协作任务进入看板与复盘
+
+- 创建编排时同步生成看板任务卡（带“AI 协作”标识，owner=agent）；删除编排时一并清理。
+- 阶段自动同步：idea/planned→待执行；planning/running/refining/review→进行中；accepted→已完成；
+  failed/cancelled→阻塞。
+- 看板卡片点击跳转对应编排详情；拖拽/状态选择做安全回写：拖到“已完成”→验收通过（仅 review 阶段），
+  拖到“阻塞”→确认后取消；其余状态只更新任务卡。
+- 复盘统计（近 7 天完成 / 正在推进 / 完成率）天然包含协作任务。
+- Host 在 `mutateTasks` 与 `queueOrchestrationPatch` 两处统一同步任务状态。
+
+#### 三、项目配置独立成工具栏栏
+
+- 右侧工具栏新增“项目配置”tab，三个区块：
+  - 会话专属内容：查看/追加，存于 `sessions/<项目>/<会话>/dsh-workbench-session.md`（UTF-16 slug 与
+    harness-home 会话目录命名一致）。
+  - 项目规则：自动发现 AGENTS.md / CLAUDE.md / AGENT_RULES.md / .cursorrules / README /
+    .cursor/rules/*.mdc；支持追加与“初始化 AGENTS.md”（决策点：AGENTS.md）。
+  - 项目备注：保留备注/技术栈/注入目录表单；新增“AI 自动精炼”（读 README/规则生成结构化备注，
+    可一键填入）。
+- 项目规则自动纳入多 AI 规划提示词注入（`projectContextSummary`）。
+- 新增 Host 接口：`GET|POST /api/dsh-workbench/session-context`、`GET|POST /api/dsh-workbench/project-rules`、
+  `POST /api/dsh-workbench/project-context/refine`；规则与会话文件均原子写入、限大小、防越界。
+
+#### 四、验证
+
+- ESLint 零报错；8 项 smoke 通过；`smoke-collab.mjs` 新增：编排任务卡生成与状态同步、规则初始化/追加、
+  会话内容读写、规则注入规划提示词。
+- 真实 GUI 回归（`tools/gui-p26-regression.mjs` 扩展）：左侧栏切换生效且旧模式栏移除；发送编排后
+  看板出现带“AI 协作”标识的任务卡，复盘统计正常；项目配置面板三区块与 AI 精炼/初始化按钮齐全；
+  失败路径（方案生成偶发 JSON 解析错误）正确显示在对话流、任务中心与看板。
+- 部署备份：`backups/workbench-p27-20260820`。
+
 ### Phase 3：监控页（P4）
 
 五板块：

@@ -611,7 +611,7 @@ window.__ModuleLoader__.load({
       "@keyframes wb-task-detail-in{from{transform:translateX(18px);opacity:.5}to{transform:none;opacity:1}}",
       ".wb-task-detail-head{display:flex;align-items:center;justify-content:space-between;min-height:62px;padding:0 16px;border-bottom:1px solid var(--dsw-alias-border-l1)}",
       ".wb-task-detail-head strong{font-size:14px;color:var(--dsw-alias-label-primary)}",
-      ".wb-chat-flow{display:flex;flex-direction:column;gap:10px;padding:14px 16px;max-width:780px;margin:0 auto}.wb-chat-msg{max-width:78%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word}.wb-chat-msg-user{align-self:flex-end;background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-button-primary-label,#fff);border-bottom-right-radius:4px}.wb-chat-msg-assistant{align-self:flex-start;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-bottom-left-radius:4px}.wb-chat-msg-head{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:10px;color:var(--dsw-alias-label-tertiary)}.wb-chat-msg-head strong{color:var(--dsw-alias-label-secondary);font-weight:600}.wb-chat-msg-actions{display:flex;gap:8px;margin-top:7px}.wb-chat-msg-actions button{border:0;padding:0;background:transparent;color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));font:10px inherit;cursor:pointer}.wb-chat-agent-busy{border-color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));background:color-mix(in srgb,var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill)) 10%,var(--dsw-alias-bg-layer-1))}.wb-chat-agents{display:grid;gap:5px;max-width:420px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 96%,transparent);box-shadow:var(--dsw-shadow-lv2)}.wb-chat-agents-head{width:100%;display:flex;align-items:center;gap:7px;padding:2px 0;border:0;background:transparent;color:var(--dsw-alias-label-tertiary);font:10px inherit;text-align:left;cursor:pointer}.wb-chat-agents-head span{color:var(--dsw-alias-label-secondary)}.wb-chat-agents-head small{margin-left:auto}.wb-chat-agents-head svg{transition:transform .18s ease}.wb-chat-agents-collapsed .wb-chat-agents-head svg{transform:rotate(90deg)}.wb-chat-agents-body{display:grid;gap:5px}",
+      ".wb-chat-mode-switch{display:flex;gap:4px;margin:8px 0 4px;padding:3px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-1)}.wb-chat-mode-switch button{flex:1;height:24px;border:0;border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);font:10px inherit;cursor:pointer}.wb-chat-mode-switch .wb-chat-mode-active{background:var(--dsw-alias-button-elevated-fill);color:var(--dsw-alias-label-primary);font-weight:600}.wb-chat-flow{display:flex;flex-direction:column;gap:10px;padding:14px 16px;max-width:780px;margin:0 auto}.wb-chat-msg{max-width:78%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word}.wb-chat-msg-user{align-self:flex-end;background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-button-primary-label,#fff);border-bottom-right-radius:4px}.wb-chat-msg-assistant{align-self:flex-start;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-bottom-left-radius:4px}.wb-chat-msg-head{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:10px;color:var(--dsw-alias-label-tertiary)}.wb-chat-msg-head strong{color:var(--dsw-alias-label-secondary);font-weight:600}.wb-chat-msg-actions{display:flex;gap:8px;margin-top:7px}.wb-chat-msg-actions button{border:0;padding:0;background:transparent;color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));font:10px inherit;cursor:pointer}.wb-chat-agent-busy{border-color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));background:color-mix(in srgb,var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill)) 10%,var(--dsw-alias-bg-layer-1))}.wb-chat-agents{display:grid;gap:5px;max-width:420px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 96%,transparent);box-shadow:var(--dsw-shadow-lv2)}.wb-chat-agents-head{width:100%;display:flex;align-items:center;gap:7px;padding:2px 0;border:0;background:transparent;color:var(--dsw-alias-label-tertiary);font:10px inherit;text-align:left;cursor:pointer}.wb-chat-agents-head span{color:var(--dsw-alias-label-secondary)}.wb-chat-agents-head small{margin-left:auto}.wb-chat-agents-head svg{transition:transform .18s ease}.wb-chat-agents-collapsed .wb-chat-agents-head svg{transform:rotate(90deg)}.wb-chat-agents-body{display:grid;gap:5px}",
       ".wb-task-detail-body{flex:1;min-height:0;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:13px}",
       ".wb-task-field{display:flex;flex-direction:column;gap:5px}",
       ".wb-task-field label{font-size:10px;font-weight:650;color:var(--dsw-alias-label-tertiary)}",
@@ -813,6 +813,21 @@ window.__ModuleLoader__.load({
     })();
 
     // ---- custom session panel ----
+    function ChatModeSwitch({ sessionId }) {
+      const modeKey = "wb.chatMode." + (sessionId || "none");
+      const [mode, setMode] = React.useState(() => { try { return localStorage.getItem(modeKey) === "multi" ? "multi" : "single"; } catch (e) { return "single"; } });
+      React.useEffect(() => { try { setMode(localStorage.getItem(modeKey) === "multi" ? "multi" : "single"); } catch (e) { setMode("single"); } }, [modeKey]);
+      const select = (next) => {
+        setMode(next);
+        try { localStorage.setItem(modeKey, next); } catch (e) { /* ignore */ }
+        try { window.dispatchEvent(new CustomEvent("wb:chat-mode-change", { detail: { sessionId, mode: next } })); } catch (e) { /* ignore */ }
+      };
+      return jsxRuntime.jsxs("div", { className: "wb-chat-mode-switch", role: "group", "aria-label": "对话模式", children: [
+        jsxRuntime.jsx("button", { type: "button", className: mode === "single" ? "wb-chat-mode-active" : "", onClick: () => select("single"), children: "单 AI" }),
+        jsxRuntime.jsx("button", { type: "button", className: mode === "multi" ? "wb-chat-mode-active" : "", onClick: () => select("multi"), children: "多 AI" })
+      ] });
+    }
+
     function SessionPanel({ useSessions, useWorkspaces, onClose }) {
       const sessions = useSessions((s) => s);
       const workspaces = useWorkspaces((s) => s);
@@ -949,6 +964,7 @@ window.__ModuleLoader__.load({
           ideaNotice && jsxRuntime.jsx("div", { className: "wb-sp-capture-note", children: ideaNotice }),
           activeIdeas.length > 0 && jsxRuntime.jsx("div", { className: "wb-sp-idea-list", children: activeIdeas.slice(0, 2).map((idea) => jsxRuntime.jsx("button", { type: "button", className: "wb-sp-idea", title: idea.title, onClick: openIdeas, children: jsxRuntime.jsx("span", { children: idea.title }) }, idea.id)) })
         ] }),
+        jsxRuntime.jsx(ChatModeSwitch, { sessionId: sessions.current }),
         jsxRuntime.jsx("div", { className: "wb-sp-list", children: wsSessions.length === 0
           ? jsxRuntime.jsx("div", { className: "wb-sp-empty", children: activeWs ? "该项目还没有会话" : "请先选择或创建项目。" })
           : wsSessions.map((s) => {
@@ -995,6 +1011,7 @@ window.__ModuleLoader__.load({
     // =====================================================================
     var WB_TB_TABS = [
       { id: "info", label: "详细信息" },
+      { id: "project", label: "项目配置" },
       { id: "git", label: "Git图谱" },
       { id: "files", label: "文件视图" },
       { id: "distill", label: "蒸馏" }
@@ -1512,18 +1529,19 @@ window.__ModuleLoader__.load({
       ] });
     }
 
-    function WorkbenchTaskCard({ task, store, onOpen }) {
+    function WorkbenchTaskCard({ task, store, onOpen, onStatusChange }) {
       return jsxRuntime.jsxs("div", { className: "wb-task-center-card", draggable: true, onDragStart: (e) => e.dataTransfer.setData("text/plain", task.id), onClick: () => onOpen(task.id), children: [
         task.groupId && jsxRuntime.jsx("div", { className: "wb-task-card-group", title: task.groupTitle, children: (task.groupOrder + 1) + ". " + task.groupTitle }),
         jsxRuntime.jsx("div", { className: "wb-task-center-card-title", children: task.title }),
         jsxRuntime.jsxs("div", { className: "wb-task-center-card-meta", children: [
-          jsxRuntime.jsx("span", { className: "wb-priority-dot wb-priority-dot-" + task.priority }),
-          jsxRuntime.jsx("span", { children: WB_PRIORITY_LABEL[task.priority] + "优先级" }),
-          jsxRuntime.jsx("span", { className: "wb-task-owner", children: WB_OWNER_LABEL[task.owner] || "我" }),
-          jsxRuntime.jsx("span", { children: wbProjectLabel(task.projectPath) }),
+        jsxRuntime.jsx("span", { className: "wb-priority-dot wb-priority-dot-" + task.priority }),
+        jsxRuntime.jsx("span", { children: WB_PRIORITY_LABEL[task.priority] + "优先级" }),
+        jsxRuntime.jsx("span", { className: "wb-task-owner", children: WB_OWNER_LABEL[task.owner] || "我" }),
+        task.orchestrationId && jsxRuntime.jsx("span", { className: "wb-task-owner", children: "AI 协作" }),
+        jsxRuntime.jsx("span", { children: wbProjectLabel(task.projectPath) }),
           (task.dueAt || task.plannedFor) && jsxRuntime.jsx("span", { children: wbDateLabel(task.dueAt || task.plannedFor) })
         ] }),
-        jsxRuntime.jsx("select", { className: "wb-task-card-status", value: task.status, title: "不拖拽也可以从这里切换状态", onClick: (e) => e.stopPropagation(), onChange: (e) => store.update(task.id, { status: e.target.value }).catch(() => {}), children: WB_TASK_COLUMNS.map((item) => jsxRuntime.jsx("option", { value: item.key, children: item.label }, item.key)) })
+        jsxRuntime.jsx("select", { className: "wb-task-card-status", value: task.status, title: "不拖拽也可以从这里切换状态", onClick: (e) => e.stopPropagation(), onChange: (e) => { const next = e.target.value; if (onStatusChange) onStatusChange(task.id, next); else store.update(task.id, { status: next }).catch(() => {}); }, children: WB_TASK_COLUMNS.map((item) => jsxRuntime.jsx("option", { value: item.key, children: item.label }, item.key)) })
       ] });
     }
 
@@ -2095,6 +2113,37 @@ window.__ModuleLoader__.load({
         groupMap.get(task.groupId).tasks.push(task);
       });
       const taskGroups = [...groupMap.values()].sort((a, b) => a.title.localeCompare(b.title));
+      const openTask = (id) => {
+        const task = store.tasks.find((item) => item.id === id);
+        if (task && task.orchestrationId) {
+          const orchestration = store.orchestrations.find((item) => item.id === task.orchestrationId);
+          if (orchestration) {
+            setViewProjectPath(orchestration.projectPath || "");
+            setScope(orchestration.projectPath ? "current" : "all");
+            setCollaborationInitialId(orchestration.id);
+            chooseView("orchestrate");
+            return;
+          }
+        }
+        onSelectedId(id);
+      };
+      const applyTaskStatus = (id, status) => {
+        const task = store.tasks.find((item) => item.id === id);
+        if (task && task.orchestrationId) {
+          const orchestration = store.orchestrations.find((item) => item.id === task.orchestrationId);
+          if (orchestration) {
+            if (status === "completed" && orchestration.phase === "review") {
+              store.mutate("orchestration_accept", { id: orchestration.id }).catch(() => {});
+              return;
+            }
+            if (status === "blocked" && !["accepted", "failed", "cancelled"].includes(orchestration.phase) && window.confirm("确定取消这个 AI 协作任务吗？")) {
+              store.mutate("orchestration_cancel", { id: orchestration.id }).catch(() => {});
+              return;
+            }
+          }
+        }
+        store.update(id, { status }).catch(() => {});
+      };
       React.useEffect(() => {
         const onKeyDown = (event) => {
           if (event.key === "Escape") {
@@ -2115,7 +2164,7 @@ window.__ModuleLoader__.load({
         return () => window.removeEventListener("keydown", onKeyDown);
       }, [selectedId, onSelectedId, onClose]);
       const add = () => { const title = draft.trim(); if (title) store.add(title, { projectPath: scope === "global" ? "" : viewProjectPath, status: view === "today" ? "pending" : "inbox", priority: "medium", owner: "human", plannedFor: view === "today" ? today : "" }).then(() => setDraft("")).catch(() => {}); };
-      const renderCards = (items) => items.length ? items.map((task) => jsxRuntime.jsx(WorkbenchTaskCard, { task, store, onOpen: onSelectedId }, task.id)) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "这里暂时没有任务" });
+      const renderCards = (items) => items.length ? items.map((task) => jsxRuntime.jsx(WorkbenchTaskCard, { task, store, onOpen: openTask, onStatusChange: applyTaskStatus }, task.id)) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "这里暂时没有任务" });
       let body;
       if (view === "ideas") {
         body = jsxRuntime.jsx(WorkbenchIdeas, { store, projectPath: viewProjectPath, scope, query, onOpenCollaboration: (id, orchestration) => {
@@ -2142,7 +2191,7 @@ window.__ModuleLoader__.load({
       } else if (view === "board") {
         body = jsxRuntime.jsx("div", { className: "wb-task-center-board", children: WB_TASK_COLUMNS.map((column) => {
           const items = visible.filter((task) => task.status === column.key);
-          return jsxRuntime.jsxs("section", { className: "wb-task-center-col" + (dragOver === column.key ? " wb-task-center-col-over" : ""), onDragOver: (e) => { e.preventDefault(); setDragOver(column.key); }, onDragLeave: () => setDragOver(null), onDrop: (e) => { e.preventDefault(); const id = e.dataTransfer.getData("text/plain"); setDragOver(null); if (id) store.update(id, { status: column.key }).catch(() => {}); }, children: [
+            return jsxRuntime.jsxs("section", { className: "wb-task-center-col" + (dragOver === column.key ? " wb-task-center-col-over" : ""), onDragOver: (e) => { e.preventDefault(); setDragOver(column.key); }, onDragLeave: () => setDragOver(null), onDrop: (e) => { e.preventDefault(); const id = e.dataTransfer.getData("text/plain"); setDragOver(null); if (id) applyTaskStatus(id, column.key); }, children: [
             jsxRuntime.jsxs("div", { className: "wb-task-center-col-head", children: [jsxRuntime.jsx("span", { children: column.label }), jsxRuntime.jsx("span", { className: "wb-board-col-count", children: items.length })] }),
             items.length ? items.map((task) => jsxRuntime.jsx(WorkbenchTaskCard, { task, store, onOpen: onSelectedId }, task.id)) : jsxRuntime.jsx("div", { className: "wb-board-empty", children: "拖到这里" })
           ] }, column.key);
@@ -2641,6 +2690,80 @@ window.__ModuleLoader__.load({
       ] });
     }
 
+    function ProjectConfigPanel({ sessionId, projectPath }) {
+      const [busy, setBusy] = React.useState(false);
+      const [err, setErr] = React.useState("");
+      const [notice, setNotice] = React.useState("");
+      const [sessionText, setSessionText] = React.useState("");
+      const [sessionDraft, setSessionDraft] = React.useState("");
+      const [rules, setRules] = React.useState([]);
+      const [ruleTarget, setRuleTarget] = React.useState("AGENTS.md");
+      const [ruleDraft, setRuleDraft] = React.useState("");
+      const [note, setNote] = React.useState("");
+      const [techStack, setTechStack] = React.useState("");
+      const [paths, setPaths] = React.useState("");
+      const [refined, setRefined] = React.useState("");
+      const refresh = React.useCallback(() => {
+        let alive = true;
+        Promise.all([
+          projectPath ? wbFetchJson("/api/dsh-workbench/project-context?projectPath=" + encodeURIComponent(projectPath)).then(({ data }) => data) : Promise.resolve({}),
+          projectPath ? wbFetchJson("/api/dsh-workbench/project-rules?projectPath=" + encodeURIComponent(projectPath)).then(({ data }) => data) : Promise.resolve({ rules: [] }),
+          projectPath && sessionId ? wbFetchJson("/api/dsh-workbench/session-context?projectPath=" + encodeURIComponent(projectPath) + "&sessionId=" + encodeURIComponent(sessionId)).then(({ data }) => data) : Promise.resolve({ text: "" })
+        ]).then(([ctx, ruleData, sess]) => {
+          if (!alive) return;
+          setNote((ctx && ctx.note) || ""); setTechStack((ctx && ctx.techStack) || ""); setPaths(((ctx && ctx.injectionPaths) || []).join("\n"));
+          setRules((ruleData && ruleData.rules) || []); setSessionText((sess && sess.text) || "");
+        }).catch((e) => { if (alive) setErr(String((e && e.message) || e)); });
+        return () => { alive = false; };
+      }, [projectPath, sessionId]);
+      React.useEffect(() => { refresh(); }, [refresh]);
+      const run = (promise, successText) => {
+        setBusy(true); setErr(""); setNotice("");
+        return promise.then(() => { if (successText) setNotice(successText); refresh(); }).catch((e) => setErr(String((e && e.message) || e))).finally(() => setBusy(false));
+      };
+      const appendSession = () => run(sessionId && wbFetchJson("/api/dsh-workbench/session-context", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ projectPath: projectPath || "", sessionId, append: sessionDraft }) }, 30000).then(() => setSessionDraft("")), "已追加到会话专属内容");
+      const saveContext = () => run(wbFetchJson("/api/dsh-workbench/project-context", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ projectPath, note, techStack, injectionPaths: paths.split(/[\n,，]+/).map((entry) => entry.trim()).filter(Boolean) }) }, 60000), "项目备注已保存");
+      const appendRule = (init) => run(wbFetchJson("/api/dsh-workbench/project-rules", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ projectPath, target: ruleTarget, append: ruleDraft, init }) }, 30000).then(() => { if (!init) setRuleDraft(""); }), init ? "规则文件已初始化" : "已追加到规则文件");
+      const refine = () => run(wbFetchJson("/api/dsh-workbench/project-context/refine", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ projectPath }) }, 120000).then(({ data }) => setRefined((data && data.refined) || "")), "AI 精炼完成");
+      const hasAgents = rules.some((entry) => entry.name === "AGENTS.md");
+      return jsxRuntime.jsxs("div", { className: "wb-tb-card", children: [
+        jsxRuntime.jsx("div", { className: "wb-tb-session-title", children: "项目配置" }),
+        jsxRuntime.jsx("div", { className: "wb-tb-meta", children: projectPath ? projectPath : "当前会话没有绑定项目" }),
+        err && jsxRuntime.jsx(WbErrNote, { message: err }),
+        notice && jsxRuntime.jsx("div", { className: "wb-chat-probe", children: "✓ " + notice }),
+        jsxRuntime.jsxs("section", { className: "wb-collab-memory-card", children: [
+          jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: "会话专属内容" }), jsxRuntime.jsx("small", { children: "存于该会话目录 dsh-workbench-session.md" })] }),
+          sessionText ? jsxRuntime.jsx("pre", { className: "wb-chat-report", children: sessionText }) : jsxRuntime.jsx("div", { className: "wb-tb-meta", children: "还没有会话专属内容，追加第一段约定或进度。" }),
+          jsxRuntime.jsx("textarea", { className: "wb-orch-agents-editor", value: sessionDraft, placeholder: "记录本会话的约定、进度、临时结论…", onChange: (event) => setSessionDraft(event.target.value) }),
+          jsxRuntime.jsxs("div", { className: "wb-chat-msg-actions", children: [
+            jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy || !sessionDraft.trim() || !sessionId, onClick: appendSession, children: "追加" })
+          ] })
+        ] }),
+        jsxRuntime.jsxs("section", { className: "wb-collab-memory-card", children: [
+          jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: "项目规则" }), jsxRuntime.jsx("small", { children: "自动发现 AGENTS.md / CLAUDE.md 等" })] }),
+          rules.length ? jsxRuntime.jsx("div", { className: "wb-chat-flow", children: rules.map((entry) => jsxRuntime.jsxs("div", { className: "wb-chat-msg wb-chat-msg-assistant", children: [
+            jsxRuntime.jsx("div", { className: "wb-chat-msg-head", children: [jsxRuntime.jsx("strong", { children: entry.name }), jsxRuntime.jsx("span", { children: entry.size + " B" })] }),
+            jsxRuntime.jsx("div", { children: entry.content.slice(0, 500) + (entry.content.length > 500 ? "\n…" : "") })
+          ] }, entry.path)) }) : jsxRuntime.jsx("div", { className: "wb-tb-meta", children: "项目里还没有规则文件。" }),
+          !hasAgents && jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: busy || !projectPath, onClick: () => { setRuleTarget("AGENTS.md"); appendRule(true); }, children: "初始化 AGENTS.md" }),
+          jsxRuntime.jsx("select", { className: "wb-chat-mode-switch", value: ruleTarget, onChange: (event) => setRuleTarget(event.target.value), children: ["AGENTS.md", "CLAUDE.md", ".cursorrules", ".cursor/rules/main.mdc"].map((name) => jsxRuntime.jsx("option", { value: name, children: name }, name)) }),
+          jsxRuntime.jsx("textarea", { className: "wb-orch-agents-editor", value: ruleDraft, placeholder: "追加项目规则，例如：只改前端，不动服务端…", onChange: (event) => setRuleDraft(event.target.value) }),
+          jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy || !ruleDraft.trim() || !projectPath, onClick: () => appendRule(false), children: "追加到规则" })
+        ] }),
+        jsxRuntime.jsxs("section", { className: "wb-collab-memory-card", children: [
+          jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: "项目备注（AI 自动注入）" }), jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: busy || !projectPath, onClick: refine, children: "AI 自动精炼" })] }),
+          refined && jsxRuntime.jsxs(React.Fragment, { children: [
+            jsxRuntime.jsx("pre", { className: "wb-chat-report", children: refined }),
+            jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: busy, onClick: () => setNote(refined), children: "填入备注" })
+          ] }),
+          jsxRuntime.jsx("textarea", { className: "wb-orch-agents-editor", value: note, placeholder: "项目目标、约束、当前阶段", onChange: (event) => setNote(event.target.value) }),
+          jsxRuntime.jsx("input", { className: "wb-chat-ref-search", value: techStack, placeholder: "技术栈覆盖（自动识别不出的才填）", onChange: (event) => setTechStack(event.target.value) }),
+          jsxRuntime.jsx("input", { className: "wb-chat-ref-search", value: paths, placeholder: "注入目录，如 src, docs", onChange: (event) => setPaths(event.target.value) }),
+          jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy || !projectPath, onClick: saveContext, children: "保存备注" })
+        ] })
+      ] });
+    }
+
     function WbToolbar({ useSessions, onClose }) {
       // Read primitive values only: a raw object selector would retrigger every render.
       const currentId = useSessions((s) => (s.current === void 0 ? void 0 : s.byId[s.current] ? s.current : void 0));
@@ -2675,6 +2798,7 @@ window.__ModuleLoader__.load({
         ] }),
         jsxRuntime.jsx("div", { className: "wb-tb-scroll", children: [
           tab === "info" && jsxRuntime.jsx(ToolbarInfo, { summary, preset, st }),
+          tab === "project" && jsxRuntime.jsx(ProjectConfigPanel, { sessionId: currentId, projectPath: summary && summary.cwd }),
           tab === "files" && jsxRuntime.jsx(ToolbarFiles, { cwd: summary && summary.cwd }),
           tab === "git" && jsxRuntime.jsx(ToolbarGit, { cwd: summary && summary.cwd }),
           tab === "distill" && jsxRuntime.jsx(ToolbarDistill, {})
@@ -2706,42 +2830,6 @@ window.__ModuleLoader__.load({
       try { localStorage.setItem("wb.chatFlow." + (sessionId || "none"), JSON.stringify(list.slice(-WB_CHAT_FLOW_MAX))); } catch (e) { /* ignore */ }
     }
 
-    function ProjectContextDialog({ projectPath, onClose }) {
-      const [note, setNote] = React.useState("");
-      const [techStack, setTechStack] = React.useState("");
-      const [paths, setPaths] = React.useState("");
-      const [busy, setBusy] = React.useState(true);
-      const [error, setError] = React.useState("");
-      React.useEffect(() => {
-        let alive = true;
-        wbFetchJson("/api/dsh-workbench/project-context?projectPath=" + encodeURIComponent(projectPath || ""))
-          .then(({ data }) => { if (alive) { setNote(data.note || ""); setTechStack(data.techStack || ""); setPaths((data.injectionPaths || []).join("\n")); } })
-          .catch((err) => { if (alive) setError(String((err && err.message) || err)); })
-          .finally(() => { if (alive) setBusy(false); });
-        return () => { alive = false; };
-      }, [projectPath]);
-      const save = () => {
-        setBusy(true); setError("");
-        const injectionPaths = paths.split(/[\n,，]+/).map((entry) => entry.trim()).filter(Boolean);
-        wbFetchJson("/api/dsh-workbench/project-context", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ projectPath, note, techStack, injectionPaths }) }, 60000)
-          .then(() => onClose())
-          .catch((err) => setError(String((err && err.message) || err)))
-          .finally(() => setBusy(false));
-      };
-      return jsxRuntime.jsx("div", { className: "wb-chat-context-overlay", role: "dialog", "aria-modal": true, "aria-label": "项目上下文设置", onMouseDown: (event) => { if (event.target === event.currentTarget) onClose(); }, children: jsxRuntime.jsxs("div", { className: "wb-chat-context-dialog", children: [
-        jsxRuntime.jsx("h3", { children: "项目上下文设置" }),
-        jsxRuntime.jsx("small", { className: "wb-chat-meta", title: projectPath, children: projectPath || "当前会话没有绑定项目" }),
-        error && jsxRuntime.jsx(WbErrNote, { message: error }),
-        jsxRuntime.jsxs("label", { children: ["项目备注", jsxRuntime.jsx("textarea", { value: note, disabled: busy, placeholder: "项目目标、约束、当前阶段", onChange: (event) => setNote(event.target.value) })] }),
-        jsxRuntime.jsxs("label", { children: ["技术栈覆盖", jsxRuntime.jsx("textarea", { value: techStack, disabled: busy, placeholder: "仅填写自动识别不出的框架、版本或运行环境", onChange: (event) => setTechStack(event.target.value) })] }),
-        jsxRuntime.jsxs("label", { children: ["注入目录", jsxRuntime.jsx("input", { value: paths, disabled: busy, placeholder: "src, docs（项目内相对子目录）", onChange: (event) => setPaths(event.target.value) })] }),
-        jsxRuntime.jsxs("div", { className: "wb-chat-context-actions", children: [
-          jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: busy, onClick: onClose, children: "取消" }),
-          jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy || !projectPath, onClick: save, children: busy ? "处理中…" : "保存" })
-        ] })
-      ] }) });
-    }
-
     function MultiAiConversationShell({ sessionId, projectPath, children }) {
       const store = useWorkbenchTasks(sessionId, projectPath);
       const modeKey = "wb.chatMode." + (sessionId || "none");
@@ -2758,7 +2846,6 @@ window.__ModuleLoader__.load({
       const [refOpen, setRefOpen] = React.useState(false);
       const [refQuery, setRefQuery] = React.useState("");
       const [dragOver, setDragOver] = React.useState(false);
-      const [contextOpen, setContextOpen] = React.useState(false);
       const [submitting, setSubmitting] = React.useState(false);
       const [flowMessages, setFlowMessages] = React.useState([]);
       const [flowTarget, setFlowTarget] = React.useState(null);
@@ -2774,6 +2861,15 @@ window.__ModuleLoader__.load({
         autoStartRef.current = new Set(nextAutoStart ? [nextAutoStart] : []);
         setMode(nextMode); setStrategy(nextStrategy); setActiveId(nextActive); setDraft(""); setReferences([]); setAttachments([]);
       }, [modeKey, strategyKey, activeKey, autoStartKey]);
+      React.useEffect(() => {
+        const onChange = (event) => {
+          const detail = event && event.detail;
+          if (!detail || detail.sessionId !== sessionId) return;
+          try { setMode(localStorage.getItem(modeKey) === "multi" ? "multi" : "single"); } catch (e) { setMode("single"); }
+        };
+        window.addEventListener("wb:chat-mode-change", onChange);
+        return () => window.removeEventListener("wb:chat-mode-change", onChange);
+      }, [modeKey, sessionId]);
       React.useEffect(() => {
         if (mode !== "multi" || !sessionId) { setFlowMessages([]); return; }
         setFlowMessages(wbReadChatFlow(sessionId));
@@ -2817,7 +2913,6 @@ window.__ModuleLoader__.load({
         }).catch((error) => store.setErr(String((error && error.message) || error))).finally(() => startingRef.current.delete(active.id));
       }, [active && active.id, active && active.phase]);
 
-      const selectMode = (next) => { setMode(next); try { localStorage.setItem(modeKey, next); } catch (e) {} };
       const selectStrategy = (next) => { setStrategy(next); try { localStorage.setItem(strategyKey, next); } catch (e) {} };
       const rememberActive = (id) => { setActiveId(id); try { localStorage.setItem(activeKey, id); } catch (e) {} };
       const rememberAutoStart = (id) => { autoStartRef.current.add(id); try { localStorage.setItem(autoStartKey, id); } catch (e) {} };
@@ -2878,11 +2973,6 @@ window.__ModuleLoader__.load({
             jsxRuntime.jsx("div", { className: "wb-chat-msg-actions", children: jsxRuntime.jsx("button", { type: "button", onClick: () => window.dispatchEvent(new CustomEvent("wb:open-task-center", { detail: { view: "orchestrate", id: row.orchestration.id } })), children: "在任务中心查看完整记录" }) })
           ] })
         ] }, row.id)) }), flowTarget),
-        jsxRuntime.jsxs("div", { className: "wb-chat-modebar", role: "group", "aria-label": "对话模式", children: [
-          jsxRuntime.jsx("button", { type: "button", "aria-pressed": mode === "single", onClick: () => selectMode("single"), children: "单 AI" }),
-          jsxRuntime.jsx("button", { type: "button", "aria-pressed": mode === "multi", disabled: !sessionId, onClick: () => selectMode("multi"), children: "多 AI" }),
-          jsxRuntime.jsx("button", { type: "button", className: "wb-chat-icon-btn", title: "项目上下文设置", disabled: !projectPath, onClick: () => setContextOpen(true), children: jsxRuntime.jsx(primitives.IconEditOutline16, { size: 14 }) })
-        ] }),
         mode === "multi" && sessionId && jsxRuntime.jsxs("div", { className: "wb-chat-multi-stack", children: [
           active && jsxRuntime.jsxs("div", { className: "wb-chat-agents" + (agentsCollapsed ? " wb-chat-agents-collapsed" : ""), children: [
             jsxRuntime.jsxs("button", { type: "button", className: "wb-chat-agents-head", "aria-expanded": !agentsCollapsed, onClick: toggleAgents, children: [
@@ -2916,8 +3006,7 @@ window.__ModuleLoader__.load({
             ] }),
             store.err && jsxRuntime.jsx(WbErrNote, { message: store.err })
           ] })
-        ] }),
-        contextOpen && jsxRuntime.jsx(ProjectContextDialog, { projectPath, onClose: () => setContextOpen(false) })
+        ] })
       ] });
     }
 

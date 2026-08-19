@@ -53,6 +53,11 @@ const STYLE_STORE = join(DSH_ROOT, 'dsh-workbench-style.json');
 const MEMORY_STORE = join(DSH_ROOT, 'dsh-workbench-memory.json');
 const AGENTS_STORE = join(DSH_ROOT, 'dsh-workbench-agents.json');
 const PROJECT_CONTEXT_STORE = join(DSH_ROOT, 'dsh-workbench-project-contexts.json');
+const SESSION_ROOT = join(DSH_ROOT, 'sessions');
+const SESSION_CONTEXT_FILE = 'dsh-workbench-session.md';
+const SESSION_CONTEXT_MAX_BYTES = 256 * 1024;
+const PROJECT_RULE_FILES = ['AGENTS.md', 'CLAUDE.md', 'AGENT_RULES.md', '.cursorrules', 'README.md', 'readme.md'];
+const PROJECT_RULE_MAX_BYTES = 96 * 1024;
 const ATTACHMENT_ROOT = join(DSH_ROOT, 'attachments');
 const MAX_STYLE_STORE_BYTES = 700 * 1024;
 const MAX_MEMORY_STORE_BYTES = 2 * 1024 * 1024;
@@ -2796,10 +2801,33 @@ function cleanTask(raw) {
     groupOrder: Number.isSafeInteger(raw.groupOrder) && raw.groupOrder >= 0 ? raw.groupOrder : 0,
     projectPath: String(raw.projectPath || ''),
     sourceSessionId: String(raw.sourceSessionId || ''),
+    orchestrationId: String(raw.orchestrationId || ''),
     completedAt: status === 'completed' ? (typeof raw.completedAt === 'string' && raw.completedAt !== '' ? raw.completedAt : now) : '',
     createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : now,
     updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : now
   };
+}
+
+function orchestrationTaskStatus(phase) {
+  if (['planning', 'running', 'refining', 'review'].includes(phase)) return 'in_progress';
+  if (phase === 'accepted') return 'completed';
+  if (phase === 'failed' || phase === 'cancelled') return 'blocked';
+  return 'pending';
+}
+
+function syncOrchestrationTask(store, orchestration) {
+  if (!orchestration || !orchestration.taskId) return;
+  const index = store.tasks.findIndex((task) => task.id === orchestration.taskId);
+  if (index < 0) return;
+  const status = orchestrationTaskStatus(orchestration.phase);
+  const now = new Date().toISOString();
+  store.tasks[index] = cleanTask({
+    ...store.tasks[index],
+    status,
+    completedAt: status === 'completed' ? (orchestration.acceptedAt || now) : '',
+    blockedReason: orchestration.phase === 'failed' ? (orchestration.runtimeError || 'AI 协作执行失败') : (orchestration.phase === 'cancelled' ? 'AI 协作已取消' : (store.tasks[index] && store.tasks[index].blockedReason) || ''),
+    updatedAt: now
+  });
 }
 
 function cleanIdea(raw) {
@@ -2963,6 +2991,7 @@ function cleanOrchestration(raw) {
     modelProbe: cleanModelProbe(raw.modelProbe),
     projectPath: String(raw.projectPath || ''),
     sourceSessionId: String(raw.sourceSessionId || ''),
+    taskId: String(raw.taskId || ''),
     phase,
     plan: currentPlan,
     mainAgent: raw.mainAgent && typeof raw.mainAgent === 'object' ? cleanOrchestrationAgent(raw.mainAgent, '主协调代理', '负责拆解、汇总与质量控制') : null,
@@ -3259,7 +3288,7 @@ async function mutateTasks(body) {
     store.ideas = store.ideas.filter((item) => item.id !== body.id);
     if (store.ideas.length === before) throw new Error('idea not found');
   } else if (action === 'orchestration_create') {
-    store.orchestrations.push(cleanOrchestration({
+    const orchestration = cleanOrchestration({
       title: body.title,
       idea: body.idea,
       projectPath: body.projectPath,
@@ -3272,7 +3301,21 @@ async function mutateTasks(body) {
       phase: 'idea',
       createdAt: now,
       updatedAt: now
+    });
+    const taskId = randomUUID();
+    store.tasks.push(cleanTask({
+      id: taskId,
+      title: orchestration.title,
+      status: 'pending',
+      priority: orchestration.quick ? 'low' : 'medium',
+      owner: 'agent',
+      labels: ['AI协作'],
+      notes: (orchestration.quick ? '快速问答' : '多代理编排') + '（AI 协作任务）\n' + orchestration.idea.slice(0, 400),
+      projectPath: orchestration.projectPath,
+      sourceSessionId: orchestration.sourceSessionId,
+      orchestrationId: orchestration.id
     }));
+    store.orchestrations.push(cleanOrchestration({ ...orchestration, taskId }));
   } else if (action === 'orchestration_set_planning') {
     const index = store.orchestrations.findIndex((item) => item.id === body.id);
     if (index < 0) throw new Error('orchestration not found');
@@ -3426,8 +3469,12 @@ async function mutateTasks(body) {
     if (removed && Array.isArray(removed.attachments)) {
       removed.attachments.forEach((entry) => { if (entry && entry.id) removeAttachmentFile(entry.id).catch(() => {}); });
     }
+    if (removed && removed.taskId) store.tasks = store.tasks.filter((task) => task.id !== removed.taskId);
   } else {
     throw new Error('unsupported task action');
+  }
+  if (action.startsWith('orchestration_')) {
+    for (const orchestration of store.orchestrations) syncOrchestrationTask(store, orchestration);
   }
   store.revision += 1;
   await writeTaskStore(store);
@@ -3689,17 +3736,173 @@ async function projectContextSummary(projectPath) {
       .slice(0, 3)
       .map((item) => '- ' + item.title + '（' + (item.phase || 'idea') + '）' + (item.finalReport ? '：' + item.finalReport.slice(0, 120) : ''))
       .join('\n');
+    const ruleData = await discoverProjectRules(projectPath);
+    const ruleSummary = ruleData.rules.map((entry) => entry.name + '：\n' + entry.content.slice(0, 600)).join('\n\n');
     return [
       config.note ? '项目备注：\n' + config.note : '',
       config.techStack ? '人工指定技术栈：\n' + config.techStack : '',
       config.injectionPaths.length ? '人工指定注入目录：' + config.injectionPaths.join('、') : '',
       '项目文件结构（前 ' + entries.length + ' 项）：\n' + entries.join(' '),
       techHints.length ? '技术栈线索：\n' + techHints.join('\n') : '',
+      ruleSummary ? '项目规则：\n' + ruleSummary : '',
       history ? '本项目近期协作记录：\n' + history : ''
     ].filter(Boolean).join('\n\n');
   } catch (e) {
     return '';
   }
+}
+
+function dshSessionSlug(projectPath) {
+  const value = String(projectPath || '').trim();
+  if (!value) return '';
+  let out = '';
+  for (const ch of value) {
+    const code = ch.codePointAt(0);
+    if ((code >= 0x30 && code <= 0x39) || (code >= 0x41 && code <= 0x5a) || (code >= 0x61 && code <= 0x7a)) out += ch;
+    else if (code > 0x7f) {
+      if (code > 0xffff) {
+        const hi = 0xd800 + ((code - 0x10000) >> 10);
+        const lo = 0xdc00 + ((code - 0x10000) & 0x3ff);
+        out += '~' + hi.toString(16).toUpperCase() + '~' + '~' + lo.toString(16).toUpperCase() + '~';
+      } else {
+        out += '~' + code.toString(16).toUpperCase().padStart(4, '0') + '~';
+      }
+    } else {
+      out += '-';
+    }
+  }
+  return '--' + out + '--';
+}
+
+function sessionContextFile(projectPath, sessionId) {
+  if (!sessionId) return '';
+  const slug = dshSessionSlug(projectPath);
+  if (!slug) return '';
+  return join(SESSION_ROOT, slug, String(sessionId), SESSION_CONTEXT_FILE);
+}
+
+async function readSessionContext(projectPath, sessionId) {
+  const file = sessionContextFile(projectPath, sessionId);
+  if (!file) return { path: '', text: '', updatedAt: '' };
+  try {
+    const info = await lstat(file);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('session context must be a regular file');
+    if (info.size > SESSION_CONTEXT_MAX_BYTES) throw new Error('session context file is too large');
+    return { path: file, text: await readFile(file, 'utf8'), updatedAt: info.mtime.toISOString() };
+  } catch (error) {
+    if (error && error.code === 'ENOENT') return { path: file, text: '', updatedAt: '' };
+    throw error;
+  }
+}
+
+async function appendSessionContext(projectPath, sessionId, appendText) {
+  const current = await readSessionContext(projectPath, sessionId);
+  const append = cleanTaskText(appendText, 8000);
+  if (!append) throw new Error('追加内容不能为空');
+  const file = current.path || sessionContextFile(projectPath, sessionId);
+  if (!file) throw new Error('session context path unavailable');
+  const stamp = '\n\n--- ' + new Date().toISOString() + ' ---\n' + append + '\n';
+  const next = current.text + stamp;
+  if (Buffer.byteLength(next, 'utf8') > SESSION_CONTEXT_MAX_BYTES) throw new Error('会话专属内容超过 256 KB 上限');
+  await mkdir(dirname(file), { recursive: true });
+  const temp = file + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, next, 'utf8');
+  let lastError = null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      await rename(temp, file);
+      return { path: file, text: next };
+    } catch (error) {
+      lastError = error;
+      if (attempt < 4) await new Promise((resolvePromise) => setTimeout(resolvePromise, 25 * (attempt + 1)));
+    }
+  }
+  try { await rm(temp, { force: true }); } catch (e) { /* keep temp for inspection */ }
+  throw lastError;
+}
+
+async function discoverProjectRules(projectPath) {
+  if (!projectPath) return { rules: [] };
+  const { canonical } = await authorizeWorkspacePath(projectPath, 'directory');
+  const rules = [];
+  for (const name of PROJECT_RULE_FILES) {
+    const file = join(canonical, name);
+    try {
+      const info = await stat(file);
+      if (!info.isFile() || info.size > PROJECT_RULE_MAX_BYTES) continue;
+      rules.push({ path: file, name, size: info.size, content: (await readFile(file, 'utf8')).slice(0, 6000), updatedAt: info.mtime.toISOString() });
+    } catch (e) { /* skip missing */ }
+    if (rules.length >= 6) break;
+  }
+  try {
+    const rulesDir = join(canonical, '.cursor', 'rules');
+    const names = await readdir(rulesDir);
+    for (const name of names.filter((entry) => entry.endsWith('.mdc')).slice(0, 6)) {
+      const file = join(rulesDir, name);
+      const info = await stat(file);
+      if (!info.isFile() || info.size > PROJECT_RULE_MAX_BYTES) continue;
+      rules.push({ path: file, name: '.cursor/rules/' + name, size: info.size, content: (await readFile(file, 'utf8')).slice(0, 6000), updatedAt: info.mtime.toISOString() });
+    }
+  } catch (e) { /* no cursor rules dir */ }
+  return { rules };
+}
+
+async function appendProjectRule(projectPath, target, appendText, init) {
+  const { canonical } = await authorizeWorkspacePath(projectPath, 'directory');
+  let name = String(target || '').trim();
+  const allowed = PROJECT_RULE_FILES.includes(name) || /^\.cursor\/rules\/.+\.mdc$/.test(name);
+  if (!allowed) throw new Error('不支持写入该规则文件');
+  const file = resolve(canonical, name);
+  const rel = relative(canonical, file).replace(/\\/g, '/');
+  if (!rel || rel.startsWith('../') || isAbsolute(rel)) throw new Error('规则文件必须在项目内');
+  const append = cleanTaskText(appendText, 8000);
+  let next;
+  try {
+    const info = await lstat(file);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('规则文件必须为普通文件');
+    if (info.size > PROJECT_RULE_MAX_BYTES) throw new Error('规则文件过大');
+    if (init) throw new Error('规则文件已存在，不需要初始化');
+    next = (await readFile(file, 'utf8')) + '\n\n--- 追加 ' + new Date().toISOString() + ' ---\n' + append + '\n';
+  } catch (error) {
+    if (!(init && error && error.code === 'ENOENT')) throw error;
+    next = ['# 项目规则（' + name + '）', '', '> 由工作台初始化，AI 协作与多 AI 模式会自动读取本文件。', '', '## 项目目标', '', '## 技术栈与约束', '', '## 常用命令与约定', '', '--- 初始化 ' + new Date().toISOString() + ' ---', append, ''].join('\n');
+  }
+  if (Buffer.byteLength(next, 'utf8') > PROJECT_RULE_MAX_BYTES) throw new Error('规则文件超过 96 KB 上限');
+  await mkdir(dirname(file), { recursive: true });
+  const temp = file + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, next, 'utf8');
+  let lastError = null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      await rename(temp, file);
+      return { path: file, name, size: Buffer.byteLength(next, 'utf8'), updatedAt: new Date().toISOString() };
+    } catch (error) {
+      lastError = error;
+      if (attempt < 4) await new Promise((resolvePromise) => setTimeout(resolvePromise, 25 * (attempt + 1)));
+    }
+  }
+  try { await rm(temp, { force: true }); } catch (e) { /* keep temp */ }
+  throw lastError;
+}
+
+async function refineProjectContext(projectPath) {
+  const { canonical } = await authorizeWorkspacePath(projectPath, 'directory');
+  const config = await projectContextConfig(projectPath);
+  const rules = await discoverProjectRules(projectPath);
+  const readme = rules.rules.find((entry) => entry.name.toLocaleLowerCase() === 'readme.md');
+  const sources = [
+    readme ? 'README：\n' + readme.content.slice(0, 2000) : '',
+    rules.rules.filter((entry) => entry.name !== 'README.md' && entry.name !== 'readme.md').map((entry) => entry.name + '：\n' + entry.content.slice(0, 1200)).join('\n\n'),
+    config.note ? '已有备注：\n' + config.note : ''
+  ].filter(Boolean).join('\n\n');
+  const system = '你是个人工作台的项目配置助手。根据项目素材提炼结构化项目备注，只输出 Markdown，不要编造。';
+  const prompt = [
+    '项目路径：' + canonical,
+    '请提炼以下内容，输出紧凑的 Markdown（目标 / 技术栈与约束 / 常用约定 / 当前阶段），400 字以内：',
+    sources || '（没有可用的项目素材，请给出建议的初始化模板）'
+  ].join('\n\n');
+  const refined = cleanTaskText(await streamLlmText(system, prompt, { maxTokens: 1200 }), 6000);
+  return { refined, sources: sources.slice(0, 3000) };
 }
 
 async function generateOrchestrationPlan(record, feedback, models, policy) {
@@ -3757,6 +3960,7 @@ function queueOrchestrationPatch(id, update) {
     if (index < 0) throw new Error('orchestration not found');
     const current = store.orchestrations[index];
     store.orchestrations[index] = cleanOrchestration(update(current) || current);
+    syncOrchestrationTask(store, store.orchestrations[index]);
     store.revision += 1;
     await writeTaskStore(store);
     return store.orchestrations[index];
@@ -4367,6 +4571,60 @@ function makeRoutes() {
           });
           projectContextMutationQueue = operation.catch(() => {});
           return writeJson(res, 200, await operation);
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/session-context',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        try {
+          if (req.method === 'GET') {
+            const projectPath = paramOf(req, 'projectPath') || '';
+            const sessionId = paramOf(req, 'sessionId') || '';
+            if (projectPath) await authorizeWorkspacePath(projectPath, 'directory');
+            return writeJson(res, 200, await readSessionContext(projectPath, sessionId));
+          }
+          if (req.method !== 'POST') return bad(res, 'method', 'GET or POST required');
+          const body = JSON.parse(await readBody(req));
+          const projectPath = String(body.projectPath || '');
+          const sessionId = String(body.sessionId || '');
+          if (!sessionId) throw new Error('sessionId required');
+          if (projectPath) await authorizeWorkspacePath(projectPath, 'directory');
+          return writeJson(res, 200, await appendSessionContext(projectPath, sessionId, body.append));
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/project-rules',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        try {
+          if (req.method === 'GET') {
+            const projectPath = paramOf(req, 'projectPath') || '';
+            return writeJson(res, 200, await discoverProjectRules(projectPath));
+          }
+          if (req.method !== 'POST') return bad(res, 'method', 'GET or POST required');
+          const body = JSON.parse(await readBody(req));
+          const projectPath = String(body.projectPath || '');
+          if (!projectPath) throw new Error('projectPath required');
+          return writeJson(res, 200, await appendProjectRule(projectPath, body.target, body.append, Boolean(body.init)));
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/project-context/refine',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        try {
+          const body = JSON.parse(await readBody(req));
+          const projectPath = String(body.projectPath || '');
+          if (!projectPath) throw new Error('projectPath required');
+          return writeJson(res, 200, await refineProjectContext(projectPath));
         } catch (error) { fail(res, error); }
       }
     },

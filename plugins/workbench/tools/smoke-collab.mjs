@@ -257,6 +257,41 @@ try {
   assert.ok(ctxPrompt.includes('人工指定注入目录：src'), 'plan prompt should include configured injection paths');
   assert.ok(ctxPrompt.includes('package.json') && ctxPrompt.includes('demo-app'), 'plan prompt should include manifest content');
   assert.ok(ctxPrompt.includes('src/index.js'), 'plan prompt should include files from configured injection paths');
+
+  // --- P2.7: orchestration tasks appear on the task board and stay in sync ---
+  const ctxTask = (await listAll()).tasks.find((task) => task.orchestrationId === ctxId);
+  assert.ok(ctxTask, 'orchestration should create a board task');
+  assert.equal(ctxTask.status, 'pending', 'planned orchestration task should be pending');
+  await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_start', scope: 'all', projectPath: projectDir, id: ctxId });
+  await waitPhase(ctxId, ['review', 'failed']);
+  const runningTask = (await listAll()).tasks.find((task) => task.orchestrationId === ctxId);
+  assert.ok(['in_progress', 'blocked'].includes(runningTask.status), 'orchestration run should sync task status');
+  if ((await listAll()).orchestrations.find((item) => item.id === ctxId).phase === 'review') {
+    await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_accept', scope: 'all', projectPath: projectDir, id: ctxId, note: 'ok' });
+    const doneTask = (await listAll()).tasks.find((task) => task.orchestrationId === ctxId);
+    assert.equal(doneTask.status, 'completed', 'accepted orchestration should complete the board task');
+  }
+
+  // --- P2.7: project rules + session context ---
+  const rulesBefore = await call('/api/dsh-workbench/project-rules', 'GET', undefined, '?projectPath=' + encodeURIComponent(projectDir));
+  assert.equal(rulesBefore.rules.length, 0, 'fresh project should have no rules');
+  const initedRule = await call('/api/dsh-workbench/project-rules', 'POST', { projectPath: projectDir, target: 'AGENTS.md', append: '只修改桌面端代码，不改服务端。', init: true });
+  assert.equal(initedRule.name, 'AGENTS.md');
+  const rulesAfter = await call('/api/dsh-workbench/project-rules', 'GET', undefined, '?projectPath=' + encodeURIComponent(projectDir));
+  assert.ok(rulesAfter.rules.some((entry) => entry.name === 'AGENTS.md' && entry.content.includes('只修改桌面端代码')), 'project rules should persist');
+  await call('/api/dsh-workbench/project-rules', 'POST', { projectPath: projectDir, target: 'AGENTS.md', append: '追加约束：使用 TypeScript。' });
+  const rulesAppended = await call('/api/dsh-workbench/project-rules', 'GET', undefined, '?projectPath=' + encodeURIComponent(projectDir));
+  assert.ok(rulesAppended.rules[0].content.includes('使用 TypeScript'), 'project rules should support appending');
+  const sessionBefore = await call('/api/dsh-workbench/session-context', 'GET', undefined, '?projectPath=' + encodeURIComponent(projectDir) + '&sessionId=session-1');
+  assert.equal(sessionBefore.text, '');
+  await call('/api/dsh-workbench/session-context', 'POST', { projectPath: projectDir, sessionId: 'session-1', append: '本会话目标是验证项目配置功能。' });
+  const sessionAfter = await call('/api/dsh-workbench/session-context', 'GET', undefined, '?projectPath=' + encodeURIComponent(projectDir) + '&sessionId=session-1');
+  assert.ok(sessionAfter.text.includes('本会话目标是验证项目配置功能'), 'session context should persist');
+  await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_plan', scope: 'all', projectPath: projectDir, id: ctxId });
+  await waitPhase(ctxId, ['planned', 'failed']);
+  const rulePrompt = llmCalls[llmCalls.length - 1].prompt;
+  assert.ok(rulePrompt.includes('项目规则') && rulePrompt.includes('只修改桌面端代码'), 'plan prompt should include project rules');
+
   await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_remove', scope: 'all', projectPath: projectDir, id: ctxId });
   console.log('collab smoke test passed');
 } finally {

@@ -81,7 +81,7 @@ const inspect = () => evaluate(`(() => {
     title: document.title,
     url: location.href,
     hasWbChatShell: !!document.querySelector('.wb-chat-shell'),
-    hasModebar: !!document.querySelector('.wb-chat-modebar'),
+    hasModeSwitch: !!document.querySelector('.wb-chat-mode-switch'),
     hasNativeComposer: !!document.querySelector('[data-composer-seat]'),
     textareas: [...document.querySelectorAll('textarea')].map((t) => (t.placeholder || '').slice(0, 60)),
     navButtons: buttons.filter((b) => /Agent|工作台|任务|知识|风格|监控|流程/.test(b.text + b.title)).slice(0, 30),
@@ -118,8 +118,8 @@ try {
 
   const agentState = await inspect();
   console.log('agent page state: ' + JSON.stringify(agentState, null, 2));
-  if (!agentState.hasWbChatShell || !agentState.hasModebar) {
-    throw new Error('agent chat shell/modebar missing: ' + JSON.stringify(agentState));
+  if (!agentState.hasWbChatShell || !agentState.hasModeSwitch) {
+    throw new Error('agent chat shell/mode switch missing: ' + JSON.stringify(agentState));
   }
 
   console.log('step: switch to root session (临时学习) if present');
@@ -136,8 +136,8 @@ try {
 
   console.log('step: switch to multi AI');
   const multi = await evaluate(`(() => {
-    const btn = [...document.querySelectorAll('.wb-chat-modebar button')].find((b) => (b.textContent || '').replace(/\\s/g, '') === '多AI');
-    if (!btn) return { ok: false, buttons: [...document.querySelectorAll('.wb-chat-modebar button')].map((b) => (b.textContent || '').trim()) };
+    const btn = [...document.querySelectorAll('.wb-chat-mode-switch button')].find((b) => (b.textContent || '').replace(/\\s/g, '') === '多AI');
+    if (!btn) return { ok: false, buttons: [...document.querySelectorAll('.wb-chat-mode-switch button')].map((b) => (b.textContent || '').trim()) };
     btn.click();
     return { ok: true };
   })()`);
@@ -156,18 +156,15 @@ try {
     throw new Error('multi-AI shell regression failed: ' + JSON.stringify(multiState));
   }
   const layoutState = await evaluate(`(() => {
-    const rect = (el) => { if (!el) return null; const r = el.getBoundingClientRect(); return { y: r.y, bottom: r.bottom, right: r.right, left: r.left }; };
-    const modebar = document.querySelector('.wb-chat-modebar');
-    const usage = [...document.querySelectorAll('button')].find((b) => (b.textContent || '').includes('用量:'));
-    const header = document.querySelector('.wSkVaW_header, [class*="header"]');
-    const a = rect(modebar); const b = rect(usage);
-    const overlap = a && b ? !(a.right <= b.left || b.right <= a.left || a.bottom <= b.y || b.bottom <= a.y) : false;
-    const belowHeader = a && header ? a.y >= header.getBoundingClientRect().bottom - 1 : false;
-    return { modebar: a, usage: b, overlap, belowHeader, headerBottom: header ? Math.round(header.getBoundingClientRect().bottom) : null };
+    const sw = document.querySelector('.wb-chat-mode-switch');
+    const active = sw ? [...sw.querySelectorAll('button')].find((b) => (b.className || '').includes('wb-chat-mode-active')) : null;
+    const prev = sw && sw.previousElementSibling;
+    const afterCapture = !!prev && (prev.className || '').toString().includes('wb-sp-capture');
+    return { modeSwitchInSidebar: !!sw && !!sw.closest('.wb-sp') && afterCapture, oldModebarGone: !document.querySelector('.wb-chat-modebar'), activeMode: active ? active.textContent.trim() : '' };
   })()`);
   console.log('layout state: ' + JSON.stringify(layoutState, null, 2));
-  if (layoutState.usage && (layoutState.overlap || !layoutState.belowHeader)) {
-    throw new Error('modebar overlaps the session usage control: ' + JSON.stringify(layoutState));
+  if (!layoutState.modeSwitchInSidebar || !layoutState.oldModebarGone || layoutState.activeMode !== '多 AI') {
+    throw new Error('mode switch should live under the idea capture box: ' + JSON.stringify(layoutState));
   }
   await shot('p26-agent-multi.png');
 
@@ -327,7 +324,43 @@ try {
   console.log('task center state: ' + JSON.stringify(taskCenterState, null, 2));
   await shot('p26-task-center.png');
 
-  console.log(JSON.stringify({ multi: multiState, ref: refState, context: ctxOpen, probe: probeSummary, chat: finalState, taskCenter: taskCenterState }, null, 2));
+  console.log('step: verify board + review include the orchestration task');
+  await evaluate(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === '任务' && x.closest('[class*="task-center"]')); if (b) b.click(); return !!b; })()`);
+  await wait(700);
+  await evaluate(`(() => { const b = [...document.querySelectorAll('.wb-task-subviews button')].find((x) => x.textContent.trim() === '看板'); if (b) b.click(); return !!b; })()`);
+  await wait(900);
+  const boardState = await evaluate(`(() => {
+    const cards = [...document.querySelectorAll('.wb-task-center-card')];
+    return { cardCount: cards.length, hasCollabCard: cards.some((c) => c.textContent.includes('AI 协作')), hasOrchestrationTitle: cards.some((c) => c.textContent.includes('验证主代理结果进入对话窗口')) };
+  })()`);
+  console.log('board state: ' + JSON.stringify(boardState, null, 2));
+  if (!boardState.hasCollabCard || !boardState.hasOrchestrationTitle) throw new Error('orchestration task missing from board: ' + JSON.stringify(boardState));
+  await evaluate(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === '复盘' && x.closest('[class*="task-center"]')); if (b) b.click(); return !!b; })()`);
+  await wait(900);
+  const reviewState = await evaluate(`(() => ({ hasStats: document.body.innerText.includes('近 7 天完成'), hasActive: document.body.innerText.includes('正在推进') }))()`);
+  console.log('review state: ' + JSON.stringify(reviewState, null, 2));
+  if (!reviewState.hasStats || !reviewState.hasActive) throw new Error('review board failed to render: ' + JSON.stringify(reviewState));
+  await shot('p26-task-board-review.png');
+
+  console.log('step: open project config toolbar tab');
+  await evaluate(`(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true; })()`);
+  await wait(900);
+  await evaluate(`(() => { const b = document.querySelector('.wb-tb-reopen'); if (b) b.click(); return !!b; })()`);
+  await wait(900);
+  const projectTabClicked = await evaluate(`(() => { const b = [...document.querySelectorAll('.wb-tb-tab')].find((x) => x.textContent.trim() === '项目配置'); if (b) b.click(); return !!b; })()`);
+  if (!projectTabClicked) throw new Error('project config tab missing');
+  await wait(1200);
+  const projectState = await evaluate(`(() => {
+    const text = document.body.innerText;
+    return { hasSession: text.includes('会话专属内容'), hasRules: text.includes('项目规则'), hasNote: text.includes('项目备注（AI 自动注入）'), hasRefine: [...document.querySelectorAll('button')].some((b) => b.textContent.includes('AI 自动精炼')), hasInit: [...document.querySelectorAll('button')].some((b) => b.textContent.includes('初始化 AGENTS.md')) };
+  })()`);
+  console.log('project config state: ' + JSON.stringify(projectState, null, 2));
+  if (!projectState.hasSession || !projectState.hasRules || !projectState.hasNote || !projectState.hasRefine) {
+    throw new Error('project config panel incomplete: ' + JSON.stringify(projectState));
+  }
+  await shot('p26-project-config.png');
+
+  console.log(JSON.stringify({ multi: multiState, layout: layoutState, ref: refState, context: ctxOpen, probe: probeSummary, chat: finalState, taskCenter: taskCenterState, board: boardState, review: reviewState, project: projectState }, null, 2));
   console.log('p2.6 GUI regression passed');
   process.exit(0);
 } finally {
