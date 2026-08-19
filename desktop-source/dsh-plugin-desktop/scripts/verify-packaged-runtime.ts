@@ -80,6 +80,7 @@ export const REQUIRED_UNPACKED_RUNTIME_ENTRIES = [
   'node_modules/dsh-workbench/cordis.patch.yml',
   'node_modules/dsh-workbench/lib/host/index.js',
   'node_modules/dsh-workbench/lib/client.js',
+  'node_modules/dsh-workbench/tools/knowledge_embed.mjs',
   'node_modules/schemastery/package.json',
   'node_modules/yaml/package.json',
   'node_modules/zod/package.json',

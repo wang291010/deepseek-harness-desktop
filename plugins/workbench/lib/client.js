@@ -611,7 +611,7 @@ window.__ModuleLoader__.load({
       "@keyframes wb-task-detail-in{from{transform:translateX(18px);opacity:.5}to{transform:none;opacity:1}}",
       ".wb-task-detail-head{display:flex;align-items:center;justify-content:space-between;min-height:62px;padding:0 16px;border-bottom:1px solid var(--dsw-alias-border-l1)}",
       ".wb-task-detail-head strong{font-size:14px;color:var(--dsw-alias-label-primary)}",
-      ".wb-chat-mode-switch{display:flex;gap:4px;margin:8px 0 4px;padding:3px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-1)}.wb-chat-mode-switch button{flex:1;height:24px;border:0;border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);font:10px inherit;cursor:pointer}.wb-chat-mode-switch .wb-chat-mode-active{background:var(--dsw-alias-button-elevated-fill);color:var(--dsw-alias-label-primary);font-weight:600}.wb-chat-tool-active{border-color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill))!important;color:var(--dsw-alias-label-primary)!important}.wb-chat-model-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.wb-chat-model-head strong{font-size:11px;color:var(--dsw-alias-label-primary)}.wb-chat-model-list{display:grid;gap:3px;max-height:220px;overflow:auto;margin-top:6px}.wb-chat-model-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;padding:4px 6px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:var(--dsw-alias-bg-layer-1);font-size:10px}.wb-chat-model-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-secondary)}.wb-chat-model-row strong{font-size:10px}.wb-chat-model-row small{grid-column:1/-1;color:var(--dsw-alias-label-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wb-chat-flow{display:flex;flex-direction:column;gap:10px;padding:14px 16px;max-width:780px;margin:0 auto}.wb-chat-msg{max-width:78%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word}.wb-chat-msg-user{align-self:flex-end;background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-button-primary-label,#fff);border-bottom-right-radius:4px}.wb-chat-msg-assistant{align-self:flex-start;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-bottom-left-radius:4px}.wb-chat-msg-head{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:10px;color:var(--dsw-alias-label-tertiary)}.wb-chat-msg-head strong{color:var(--dsw-alias-label-secondary);font-weight:600}.wb-chat-msg-actions{display:flex;gap:8px;margin-top:7px}.wb-chat-msg-actions button{border:0;padding:0;background:transparent;color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));font:10px inherit;cursor:pointer}.wb-chat-agent-busy{border-color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));background:color-mix(in srgb,var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill)) 10%,var(--dsw-alias-bg-layer-1))}.wb-chat-agents{display:grid;gap:5px;max-width:420px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 96%,transparent);box-shadow:var(--dsw-shadow-lv2)}.wb-chat-agents-head{width:100%;display:flex;align-items:center;gap:7px;padding:2px 0;border:0;background:transparent;color:var(--dsw-alias-label-tertiary);font:10px inherit;text-align:left;cursor:pointer}.wb-chat-agents-head span{color:var(--dsw-alias-label-secondary)}.wb-chat-agents-head small{margin-left:auto}.wb-chat-agents-head svg{transition:transform .18s ease}.wb-chat-agents-collapsed .wb-chat-agents-head svg{transform:rotate(90deg)}.wb-chat-agents-body{display:grid;gap:5px}",
+      ".wb-chat-dual-warn{position:absolute;top:50px;left:50%;transform:translateX(-50%);z-index:20;padding:6px 12px;border:1px solid #ff9f0a;border-radius:8px;background:color-mix(in srgb,#ff9f0a 14%,var(--dsw-alias-bg-layer-2));color:var(--dsw-alias-label-primary);font-size:11px;box-shadow:var(--dsw-shadow-lv2)}.wb-chat-mode-switch{display:flex;gap:4px;margin:8px 0 4px;padding:3px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-1)}.wb-chat-mode-switch button{flex:1;height:24px;border:0;border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);font:10px inherit;cursor:pointer}.wb-chat-mode-switch .wb-chat-mode-active{background:var(--dsw-alias-button-elevated-fill);color:var(--dsw-alias-label-primary);font-weight:600}.wb-chat-tool-active{border-color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill))!important;color:var(--dsw-alias-label-primary)!important}.wb-chat-model-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.wb-chat-model-head strong{font-size:11px;color:var(--dsw-alias-label-primary)}.wb-chat-model-list{display:grid;gap:3px;max-height:220px;overflow:auto;margin-top:6px}.wb-chat-model-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;padding:4px 6px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:var(--dsw-alias-bg-layer-1);font-size:10px}.wb-chat-model-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-secondary)}.wb-chat-model-row strong{font-size:10px}.wb-chat-model-row small{grid-column:1/-1;color:var(--dsw-alias-label-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wb-chat-flow{display:flex;flex-direction:column;gap:10px;padding:14px 16px;max-width:780px;margin:0 auto}.wb-chat-msg{max-width:78%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word}.wb-chat-msg-user{align-self:flex-end;background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-button-primary-label,#fff);border-bottom-right-radius:4px}.wb-chat-msg-assistant{align-self:flex-start;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-bottom-left-radius:4px}.wb-chat-msg-head{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:10px;color:var(--dsw-alias-label-tertiary)}.wb-chat-msg-head strong{color:var(--dsw-alias-label-secondary);font-weight:600}.wb-chat-msg-actions{display:flex;gap:8px;margin-top:7px}.wb-chat-msg-actions button{border:0;padding:0;background:transparent;color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));font:10px inherit;cursor:pointer}.wb-chat-agent-busy{border-color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));background:color-mix(in srgb,var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill)) 10%,var(--dsw-alias-bg-layer-1))}.wb-chat-agents{display:grid;gap:5px;max-width:420px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 96%,transparent);box-shadow:var(--dsw-shadow-lv2)}.wb-chat-agents-head{width:100%;display:flex;align-items:center;gap:7px;padding:2px 0;border:0;background:transparent;color:var(--dsw-alias-label-tertiary);font:10px inherit;text-align:left;cursor:pointer}.wb-chat-agents-head span{color:var(--dsw-alias-label-secondary)}.wb-chat-agents-head small{margin-left:auto}.wb-chat-agents-head svg{transition:transform .18s ease}.wb-chat-agents-collapsed .wb-chat-agents-head svg{transform:rotate(90deg)}.wb-chat-agents-body{display:grid;gap:5px}",
       ".wb-task-detail-body{flex:1;min-height:0;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:13px}",
       ".wb-task-field{display:flex;flex-direction:column;gap:5px}",
       ".wb-task-field label{font-size:10px;font-weight:650;color:var(--dsw-alias-label-tertiary)}",
@@ -1464,12 +1464,13 @@ window.__ModuleLoader__.load({
 
     // Shared task-change event stream: all task consumers (chat shell, task
     // center, sidebar) subscribe to one EventSource and refresh silently.
-    let wbTaskEventSource = null;
+    const wbTaskEventSources = new Map();
     const wbTaskEventListeners = new Set();
-    function wbEnsureTaskEventSource() {
-      if (wbTaskEventSource) return;
+    function wbEnsureTaskEventSource(sessionId) {
+      const key = sessionId || "none";
+      if (wbTaskEventSources.has(key)) return;
       try {
-        const source = new EventSource("/api/dsh-workbench/events");
+        const source = new EventSource("/api/dsh-workbench/events?sessionId=" + encodeURIComponent(key));
         source.onmessage = (event) => {
           let payload = null;
           try { payload = JSON.parse(event.data || "{}"); } catch (e) { return; }
@@ -1477,14 +1478,14 @@ window.__ModuleLoader__.load({
         };
         source.onerror = () => {
           try { source.close(); } catch (e) { /* ignore */ }
-          if (wbTaskEventSource === source) wbTaskEventSource = null;
+          if (wbTaskEventSources.get(key) === source) wbTaskEventSources.delete(key);
         };
-        wbTaskEventSource = source;
-      } catch (e) { wbTaskEventSource = null; }
+        wbTaskEventSources.set(key, source);
+      } catch (e) { /* EventSource unavailable */ }
     }
-    function wbSubscribeTaskEvents(listener) {
+    function wbSubscribeTaskEvents(listener, sessionId) {
       wbTaskEventListeners.add(listener);
-      wbEnsureTaskEventSource();
+      wbEnsureTaskEventSource(sessionId);
       return () => wbTaskEventListeners.delete(listener);
     }
 
@@ -1498,13 +1499,14 @@ window.__ModuleLoader__.load({
       const [loading, setLoading] = React.useState(true);
       const [busy, setBusy] = React.useState(false);
       const [err, setErr] = React.useState(null);
+      const [sessionClients, setSessionClients] = React.useState(0);
       const loadTasks = React.useCallback((silent) => {
         if (!silent) { setLoading(true); setErr(null); }
-        wbFetchJson("/api/dsh-workbench/tasks/list?scope=all&projectPath=" + encodeURIComponent(projectPath || ""), null, 30000)
-          .then(({ data }) => { setTasks(Array.isArray(data.tasks) ? data.tasks : []); setTemplates(Array.isArray(data.templates) ? data.templates : []); setIdeas(Array.isArray(data.ideas) ? data.ideas : []); setOrchestrations(Array.isArray(data.orchestrations) ? data.orchestrations : []); setOrchestrationRuntime(data.orchestrationRuntime || { available: false, providers: [] }); setModelCatalog(Array.isArray(data.modelCatalog) ? data.modelCatalog : []); })
+        wbFetchJson("/api/dsh-workbench/tasks/list?scope=all&projectPath=" + encodeURIComponent(projectPath || "") + "&sessionId=" + encodeURIComponent(sessionId || ""), null, 30000)
+          .then(({ data }) => { setTasks(Array.isArray(data.tasks) ? data.tasks : []); setTemplates(Array.isArray(data.templates) ? data.templates : []); setIdeas(Array.isArray(data.ideas) ? data.ideas : []); setOrchestrations(Array.isArray(data.orchestrations) ? data.orchestrations : []); setOrchestrationRuntime(data.orchestrationRuntime || { available: false, providers: [] }); setModelCatalog(Array.isArray(data.modelCatalog) ? data.modelCatalog : []); setSessionClients(Number(data.sessionClients) || 0); })
           .catch((e) => setErr(String((e && e.message) || e)))
           .finally(() => { if (!silent) setLoading(false); });
-      }, [projectPath]);
+      }, [projectPath, sessionId]);
       React.useEffect(() => { loadTasks(); }, [loadTasks]);
 
       const mutate = (action, extra) => {
@@ -1521,11 +1523,11 @@ window.__ModuleLoader__.load({
       const reload = React.useCallback(() => loadTasks(false), [loadTasks]);
       const refresh = React.useCallback(() => loadTasks(true), [loadTasks]);
       React.useEffect(() => {
-        const unsubscribe = wbSubscribeTaskEvents(() => { refresh(); });
+        const unsubscribe = wbSubscribeTaskEvents(() => { refresh(); }, sessionId);
         return unsubscribe;
-      }, [refresh]);
+      }, [refresh, sessionId]);
       return {
-        tasks, templates, ideas, orchestrations, orchestrationRuntime, modelCatalog, loading, busy, err, setErr, projectPath, sessionId,
+        tasks, templates, ideas, orchestrations, orchestrationRuntime, modelCatalog, loading, busy, err, setErr, projectPath, sessionId, sessionClients,
         reload,
         refresh,
         mutate,
@@ -3040,6 +3042,7 @@ window.__ModuleLoader__.load({
       React.useEffect(() => { if (flowTarget && flowTarget.parentElement) flowTarget.parentElement.scrollTop = flowTarget.parentElement.scrollHeight; }, [flowRows.length, flowTarget]);
 
       return jsxRuntime.jsxs("div", { className: "wb-chat-shell" + (mode === "multi" ? " wb-chat-shell-multi" : ""), children: [
+        store.sessionClients > 1 && jsxRuntime.jsx("div", { className: "wb-chat-dual-warn", children: "⚠ 另一客户端正在使用此会话，请勿同时操作" }),
         jsxRuntime.jsx("div", { className: "wb-chat-native", children }),
         mode === "multi" && flowTarget && ReactDOM.createPortal(jsxRuntime.jsx("div", { className: "wb-chat-flow", children: flowRows.map((row) => jsxRuntime.jsxs(React.Fragment, { children: [
           jsxRuntime.jsx("div", { className: "wb-chat-msg wb-chat-msg-user", children: row.text }),

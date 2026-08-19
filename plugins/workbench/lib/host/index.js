@@ -167,6 +167,7 @@ let taskMutationQueue = Promise.resolve();
 let styleMutationQueue = Promise.resolve();
 let projectContextMutationQueue = Promise.resolve();
 const sseClients = new Set();
+const sseSessions = new Map();
 
 function broadcastTaskEvent(payload) {
   if (sseClients.size === 0) return;
@@ -4820,11 +4821,23 @@ function makeRoutes() {
       handler: async (req, res) => {
         if (!fence(req, res)) return;
         if (req.method !== 'GET') return bad(res, 'method', 'GET required');
+        const sessionId = paramOf(req, 'sessionId') || '';
+        if (sessionId) {
+          if (!sseSessions.has(sessionId)) sseSessions.set(sessionId, new Set());
+          sseSessions.get(sessionId).add(res);
+        }
         res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
         res.write('retry: 3000\n\n');
         sseClients.add(res);
-        req.on('close', () => sseClients.delete(res));
-        req.on('error', () => sseClients.delete(res));
+        const cleanup = () => {
+          sseClients.delete(res);
+          if (sessionId) {
+            const set = sseSessions.get(sessionId);
+            if (set) { set.delete(res); if (set.size === 0) sseSessions.delete(sessionId); }
+          }
+        };
+        req.on('close', cleanup);
+        req.on('error', cleanup);
       }
     },
     {
@@ -4834,6 +4847,7 @@ function makeRoutes() {
         if (!fence(req, res)) return;
         if (req.method !== 'GET') return bad(res, 'method', 'GET required');
         const projectPath = paramOf(req, 'projectPath') || '';
+        const sessionId = paramOf(req, 'sessionId') || '';
         const scope = paramOf(req, 'scope') || 'current';
         try {
           const store = await readTaskStore();
@@ -4848,7 +4862,8 @@ function makeRoutes() {
             orchestrations: orchestrationsForScope(store.orchestrations, projectPath, scope),
             orchestrationRuntime: orchestrationRuntimeInfo(),
             modelCatalog,
-            modelHealth: store.modelHealth || {}
+            modelHealth: store.modelHealth || {},
+            sessionClients: sessionId ? (sseSessions.get(sessionId) || new Set()).size : 0
           });
         } catch (error) { fail(res, error); }
       }
