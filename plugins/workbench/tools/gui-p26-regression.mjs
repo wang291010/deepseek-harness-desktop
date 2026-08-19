@@ -257,6 +257,37 @@ try {
   })()`);
   if (!sendBtn) throw new Error('send button missing/disabled');
 
+  console.log('step: verify panel auto-expand + manual collapse');
+  await wait(900);
+  const panelStart = await evaluate(`(() => {
+    const panel = document.querySelector('.wb-chat-agents');
+    const head = panel && panel.querySelector('.wb-chat-agents-head');
+    const expandedInitially = !!panel && !panel.className.includes('collapsed') && !!panel.querySelector('.wb-chat-agents-body');
+    return { hasPanel: !!panel, hasHead: !!head, expandedInitially };
+  })()`);
+  console.log('panel start: ' + JSON.stringify(panelStart, null, 2));
+  if (!panelStart.hasPanel || !panelStart.hasHead || !panelStart.expandedInitially) {
+    throw new Error('agent panel should auto-expand while working: ' + JSON.stringify(panelStart));
+  }
+  await evaluate(`(() => { const head = document.querySelector('.wb-chat-agents-head'); if (head) head.click(); return true; })()`);
+  await wait(350);
+  const panelCollapsed = await evaluate(`(() => {
+    const panel = document.querySelector('.wb-chat-agents');
+    return { collapsed: !!panel && panel.className.includes('collapsed'), bodyGone: !panel || !panel.querySelector('.wb-chat-agents-body') };
+  })()`);
+  console.log('panel collapsed: ' + JSON.stringify(panelCollapsed, null, 2));
+  if (!panelCollapsed.collapsed || !panelCollapsed.bodyGone) {
+    throw new Error('manual collapse failed: ' + JSON.stringify(panelCollapsed));
+  }
+  await evaluate(`(() => { const head = document.querySelector('.wb-chat-agents-head'); if (head) head.click(); return true; })()`);
+  await wait(350);
+  const panelRestored = await evaluate(`(() => {
+    const panel = document.querySelector('.wb-chat-agents');
+    return { expanded: !!panel && !panel.className.includes('collapsed') && !!panel.querySelector('.wb-chat-agents-body') };
+  })()`);
+  console.log('panel restored: ' + JSON.stringify(panelRestored, null, 2));
+  if (!panelRestored.expanded) throw new Error('panel did not restore after manual expand: ' + JSON.stringify(panelRestored));
+
   let finalState = null;
   for (let attempt = 0; attempt < 60; attempt += 1) {
     await wait(3000);
@@ -267,7 +298,7 @@ try {
       const flow = document.querySelector('.wb-chat-flow');
       const flowErr = flow ? (flow.querySelector('.wb-err-note') || {}).textContent || '' : '';
       const done = !!flow && !!flow.querySelector('.wb-chat-msg-assistant');
-      return { agentsPanel: !!agentsPanel, agentRows, headText, hasProgress: !!document.querySelector('.wb-chat-progress'), hasReport: !!document.querySelector('.wb-chat-report'), flowUser: !!document.querySelector('.wb-chat-flow .wb-chat-msg-user'), flowAssistant: !!document.querySelector('.wb-chat-flow .wb-chat-msg-assistant'), flowText: flow ? flow.textContent.slice(0, 240) : '', flowErr: flowErr.slice(0, 200), busyRow: !!document.querySelector('.wb-chat-agent-busy'), done };
+      return { agentsPanel: !!agentsPanel, agentRows, headText, agentsCollapsed: !!document.querySelector('.wb-chat-agents-collapsed'), agentsBody: !!document.querySelector('.wb-chat-agents-body'), hasProgress: !!document.querySelector('.wb-chat-progress'), hasReport: !!document.querySelector('.wb-chat-report'), flowUser: !!document.querySelector('.wb-chat-flow .wb-chat-msg-user'), flowAssistant: !!document.querySelector('.wb-chat-flow .wb-chat-msg-assistant'), flowText: flow ? flow.textContent.slice(0, 240) : '', flowErr: flowErr.slice(0, 200), busyRow: !!document.querySelector('.wb-chat-agent-busy'), done };
     })()`);
     if (finalState.done) break;
     if (attempt === 20) await shot('p26-agent-running.png');
@@ -276,6 +307,7 @@ try {
   if (!finalState.agentsPanel || finalState.hasProgress || finalState.hasReport) throw new Error('agent-status panel regression failed: ' + JSON.stringify(finalState));
   if (!finalState.done) throw new Error('orchestration did not finish in time: ' + JSON.stringify(finalState));
   if (!finalState.flowUser || !finalState.flowAssistant) throw new Error('main-agent result did not appear in the conversation flow: ' + JSON.stringify(finalState));
+  if (!finalState.agentsCollapsed || finalState.agentsBody) throw new Error('agent panel should auto-collapse after completion: ' + JSON.stringify(finalState));
   await shot('p26-agent-final.png');
 
   console.log('step: open task center from chat card');

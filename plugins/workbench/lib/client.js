@@ -611,7 +611,7 @@ window.__ModuleLoader__.load({
       "@keyframes wb-task-detail-in{from{transform:translateX(18px);opacity:.5}to{transform:none;opacity:1}}",
       ".wb-task-detail-head{display:flex;align-items:center;justify-content:space-between;min-height:62px;padding:0 16px;border-bottom:1px solid var(--dsw-alias-border-l1)}",
       ".wb-task-detail-head strong{font-size:14px;color:var(--dsw-alias-label-primary)}",
-      ".wb-chat-flow{display:flex;flex-direction:column;gap:10px;padding:14px 16px;max-width:780px;margin:0 auto}.wb-chat-msg{max-width:78%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word}.wb-chat-msg-user{align-self:flex-end;background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-button-primary-label,#fff);border-bottom-right-radius:4px}.wb-chat-msg-assistant{align-self:flex-start;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-bottom-left-radius:4px}.wb-chat-msg-head{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:10px;color:var(--dsw-alias-label-tertiary)}.wb-chat-msg-head strong{color:var(--dsw-alias-label-secondary);font-weight:600}.wb-chat-msg-actions{display:flex;gap:8px;margin-top:7px}.wb-chat-msg-actions button{border:0;padding:0;background:transparent;color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));font:10px inherit;cursor:pointer}.wb-chat-agent-busy{border-color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));background:color-mix(in srgb,var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill)) 10%,var(--dsw-alias-bg-layer-1))}.wb-chat-agents{display:grid;gap:5px;max-width:420px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 96%,transparent);box-shadow:var(--dsw-shadow-lv2)}.wb-chat-agents-head{font-size:10px;color:var(--dsw-alias-label-tertiary)}",
+      ".wb-chat-flow{display:flex;flex-direction:column;gap:10px;padding:14px 16px;max-width:780px;margin:0 auto}.wb-chat-msg{max-width:78%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word}.wb-chat-msg-user{align-self:flex-end;background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-button-primary-label,#fff);border-bottom-right-radius:4px}.wb-chat-msg-assistant{align-self:flex-start;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-bottom-left-radius:4px}.wb-chat-msg-head{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:10px;color:var(--dsw-alias-label-tertiary)}.wb-chat-msg-head strong{color:var(--dsw-alias-label-secondary);font-weight:600}.wb-chat-msg-actions{display:flex;gap:8px;margin-top:7px}.wb-chat-msg-actions button{border:0;padding:0;background:transparent;color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));font:10px inherit;cursor:pointer}.wb-chat-agent-busy{border-color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));background:color-mix(in srgb,var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill)) 10%,var(--dsw-alias-bg-layer-1))}.wb-chat-agents{display:grid;gap:5px;max-width:420px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 96%,transparent);box-shadow:var(--dsw-shadow-lv2)}.wb-chat-agents-head{width:100%;display:flex;align-items:center;gap:7px;padding:2px 0;border:0;background:transparent;color:var(--dsw-alias-label-tertiary);font:10px inherit;text-align:left;cursor:pointer}.wb-chat-agents-head span{color:var(--dsw-alias-label-secondary)}.wb-chat-agents-head small{margin-left:auto}.wb-chat-agents-head svg{transition:transform .18s ease}.wb-chat-agents-collapsed .wb-chat-agents-head svg{transform:rotate(90deg)}.wb-chat-agents-body{display:grid;gap:5px}",
       ".wb-task-detail-body{flex:1;min-height:0;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:13px}",
       ".wb-task-field{display:flex;flex-direction:column;gap:5px}",
       ".wb-task-field label{font-size:10px;font-weight:650;color:var(--dsw-alias-label-tertiary)}",
@@ -2762,9 +2762,11 @@ window.__ModuleLoader__.load({
       const [submitting, setSubmitting] = React.useState(false);
       const [flowMessages, setFlowMessages] = React.useState([]);
       const [flowTarget, setFlowTarget] = React.useState(null);
+      const [agentsCollapsed, setAgentsCollapsed] = React.useState(false);
       const fileInputRef = React.useRef(null);
       const autoStartRef = React.useRef(new Set());
       const startingRef = React.useRef(new Set());
+      const userCollapsedRef = React.useRef(false);
 
       React.useEffect(() => {
         let nextMode = "single"; let nextStrategy = "auto"; let nextActive = ""; let nextAutoStart = "";
@@ -2791,6 +2793,16 @@ window.__ModuleLoader__.load({
       const sessionItems = store.orchestrations.filter((item) => item.sourceSessionId === sessionId);
       const active = sessionItems.find((item) => item.id === activeId) || null;
       const activeBusy = active && ["planning", "running", "refining"].includes(active.phase);
+      const toggleAgents = () => { const next = !agentsCollapsed; userCollapsedRef.current = next; setAgentsCollapsed(next); };
+      React.useEffect(() => {
+        if (!active) return;
+        userCollapsedRef.current = false;
+      }, [active && active.id]);
+      React.useEffect(() => {
+        if (!active) return;
+        if (activeBusy) { if (!userCollapsedRef.current) setAgentsCollapsed(false); return; }
+        if (["review", "accepted", "failed", "cancelled"].includes(active.phase)) setAgentsCollapsed(true);
+      }, [active && active.id, activeBusy, active && active.phase]);
       React.useEffect(() => {
         if (!activeBusy) return;
         const timer = window.setInterval(() => store.refresh(), 1500);
@@ -2872,16 +2884,20 @@ window.__ModuleLoader__.load({
           jsxRuntime.jsx("button", { type: "button", className: "wb-chat-icon-btn", title: "项目上下文设置", disabled: !projectPath, onClick: () => setContextOpen(true), children: jsxRuntime.jsx(primitives.IconEditOutline16, { size: 14 }) })
         ] }),
         mode === "multi" && sessionId && jsxRuntime.jsxs("div", { className: "wb-chat-multi-stack", children: [
-          active && jsxRuntime.jsxs("div", { className: "wb-chat-agents", children: [
-            jsxRuntime.jsx("div", { className: "wb-chat-agents-head", children: "子代理运行情况" }),
-            agents.map((agent, index) => {
+          active && jsxRuntime.jsxs("div", { className: "wb-chat-agents" + (agentsCollapsed ? " wb-chat-agents-collapsed" : ""), children: [
+            jsxRuntime.jsxs("button", { type: "button", className: "wb-chat-agents-head", "aria-expanded": !agentsCollapsed, onClick: toggleAgents, children: [
+              jsxRuntime.jsx("span", { children: "子代理运行情况" }),
+              jsxRuntime.jsx("small", { children: agents.filter((agent) => ["running", "planning", "working"].includes(agent.status)).length + " 个代理正在工作" }),
+              jsxRuntime.jsx(primitives.IconChevronRightOutline14, { size: 12 })
+            ] }),
+            !agentsCollapsed && jsxRuntime.jsx("div", { className: "wb-chat-agents-body", children: agents.map((agent, index) => {
               const busy = ["running", "planning", "working"].includes(agent.status);
               return jsxRuntime.jsxs("div", { className: "wb-chat-agent-row" + (busy ? " wb-chat-agent-busy" : ""), children: [
                 jsxRuntime.jsx("span", { children: (index === 0 ? "主 · " : "") + agent.name }),
                 jsxRuntime.jsx("strong", { children: (WB_ORCHESTRATION_AGENT_STATUS[agent.status] || agent.status) + (busy ? " · 工作中" : "") }),
                 jsxRuntime.jsx("small", { children: (agent.usedModel || agent.model || "继承主会话模型") + (agent.modelReason ? " · " + agent.modelReason : "") })
               ] }, agent.id || index);
-            })
+            }) })
           ] }),
           jsxRuntime.jsxs("div", { className: "wb-chat-compose" + (dragOver ? " wb-collab-drop-over" : ""), onDragOver: (event) => { event.preventDefault(); setDragOver(true); }, onDragLeave: () => setDragOver(false), onDrop: (event) => { event.preventDefault(); setDragOver(false); uploadFiles(event.dataTransfer && event.dataTransfer.files); }, children: [
             refOpen && jsxRuntime.jsxs("div", { className: "wb-chat-ref-pop", children: [
