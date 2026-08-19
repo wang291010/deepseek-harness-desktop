@@ -89,7 +89,9 @@
   托盘 "Automatic Updates: On/Off" 开关：关闭即停后台检查与弹窗（保留手动检查更新），
   开启即调度下一次后台检查；偏好持久化、跨重启保留。
 - 验证：`updates.spec.ts` 21/22 通过（1 个既有 Windows 权限位断言差异）、tsc ×4 通过，已推送。
-- 生效前提：需要重新构建/打包桌面端（`src/updates.ts` 编译进桌面插件包）。
+- 运行端部署（2026-08-19）：新构建 lib 已备份（`backups\desktop-plugin-lib-before-updates-toggle-20260819-110438`）
+  并复制到运行端 `resources\app.asar.unpacked\lib`（updates.js / profile.js 哈希与源码一致），
+  重启后启动无插件错误、工作台接口正常；托盘 "Automatic Updates" 开关已随插件加载。
 
 ## 三、未完成与下一步
 

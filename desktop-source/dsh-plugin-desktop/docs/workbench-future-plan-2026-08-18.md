@@ -445,7 +445,8 @@
   并跨重启保留。
 - 验证：`updates.spec.ts` 21/22 通过（1 个失败为 Windows 下 POSIX 权限位断言的既有环境差异），
   tsc ×4 通过；已推送 origin/main。
-- 说明：该改动编译进桌面插件包（`src/updates.ts`），运行端生效需要重新构建/打包桌面端；
+- 运行端：新构建 lib 已部署到运行端 `resources\app.asar.unpacked\lib`（备份
+  `backups\desktop-plugin-lib-before-updates-toggle-20260819-110438`），重启验证通过；
   与工作台插件（plugins/workbench）相互独立。
 
 ## 3. 决策清单（需要用户拍板）
