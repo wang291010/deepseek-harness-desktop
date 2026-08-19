@@ -310,13 +310,17 @@
   持久化，方案与子代理提示词携带附件名与摘录；删除编排自动清理附件文件。
 - 快捷命令：`/new <任务>`、`/plan <反馈>`、`/memory`（记忆提示，2.5-C 实现）。
 - @ 引用：输入 `@` 下拉引用想法库条目与当前项目文件（复用受限 `fs/list`）。
-- 子代理池：`GET/POST /api/dsh-workbench/agents/list|write`（默认 7 类专家，持久化到
-  `DSH_HOME/dsh-workbench-agents.json`，数组/去重校验），"决策"Tab 内 JSON 编辑器；
-  拆解提示词携带代理池能力用于角色匹配。
+- 候选专家（可选，默认自由生成）：`GET/POST /api/dsh-workbench/agents/list|write`、
+  `POST /api/dsh-workbench/agents/reset`；持久化到 `DSH_HOME/dsh-workbench-agents.json`
+  （含 `mode: free|pool`，数组/去重校验）。默认"自由生成"——拆解时不参考固定名单，主代理
+  按任务自动创建最适配的专家并自动分配模型；切到"参考候选池"后，池内角色/能力参与拆解匹配，
+  方案可用 `agentRef` 标记命中，命中的子代理会注入池提示词，并以池 `provider/model` 作为
+  未手动指定时的回退模型；"决策"Tab 提供模式开关、JSON 编辑器、重新载入/恢复默认/保存设置。
 - 依赖可视化：方案 Tab 新增"执行顺序"条，按 `dependsOn` 拓扑分组展示并行/串行。
-- 验证：`smoke-collab.mjs` 新增并通过（代理池/附件/日志/提示词注入/清理）；smoke ×5、
-  eslint、`node --check` 通过；CDP GUI 回归通过（四 Tab、日志空态与过滤、拖拽上传、@ 引用、
-  /new、代理池编辑器、执行顺序条），截图 `collab-attach.png`、`collab-order.png`；测试数据已清理。
+- 验证：`smoke-collab.mjs` 覆盖代理池（自由/参考模式、reset、agentRef 提示词与模型回退）/
+  附件/日志/提示词注入/清理；smoke ×5、eslint、`node --check` 通过；CDP GUI 回归通过
+  （四 Tab、日志、拖拽上传、@ 引用、/new、候选专家模式开关与保存/恢复默认、执行顺序条），
+  截图 `collab-attach.png`、`collab-order.png`、`collab-agents-mode.png`；测试数据已清理。
 - 部署：备份 `backups\workbench-p2.5-b-deploy-20260819-102254`，运行副本哈希一致，桌面端已重启
   （本轮 API 端口 58179，带 `--remote-debugging-port=9224`）。
 
