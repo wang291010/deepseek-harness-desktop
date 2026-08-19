@@ -1596,7 +1596,8 @@ function bgeNodeEmbed(config, texts) {
       cwd: DSH_ROOT,
       timeout: 180000,
       maxBuffer: 64 * 1024 * 1024,
-      windowsHide: true
+      windowsHide: true,
+      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }
     }, (error, stdout, stderr) => {
       if (error) {
         rejectPromise(new Error('bge-node embedding failed: ' + String(stderr || error.message).slice(0, 500)));

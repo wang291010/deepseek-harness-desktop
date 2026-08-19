@@ -1112,7 +1112,7 @@ verifiedBy/At，可一键移入 02-Atomic）→ 入索引（文本 + 向量 + �
 - C 已落地：向量设置页未就绪时显示友好文案与 `pip install onnxruntime tokenizers numpy huggingface_hub`
   指引，检索自动回退 BM25+图谱；已部署。
 
-**队列五 R5-B Node 嵌入桥（2026-08-20，代码完成 + 一致性验证，待打包部署）**：
+**队列五 R5-B Node 嵌入桥（2026-08-20，已部署并通过运行端验证）**：
 
 - 新增 `tools/knowledge_embed.mjs`：基于 `@huggingface/transformers`（onnxruntime-web WASM，
   无 sharp/Python/native 依赖），与 Python 桥同 stdin/stdout 契约（mean pooling + L2 归一化）。
@@ -1121,8 +1121,11 @@ verifiedBy/At，可一键移入 02-Atomic）→ 入索引（文本 + 向量 + �
 - 一致性验证：Node 桥与 Python 桥对 4 段中文文本向量余弦全部 = 1.000000（512 维，归一化）。
 - Host 新增 `provider: bge-node`（`bgeNodeEmbed` 走 process.execPath 子进程，契约与 bge-local 相同）；
   向量设置页新增「BGE 本地 Node（免 Python）」选项。
-- 运行端未部署：bge-node 依赖需随“朋友安装包”打包内置（运行端无 node_modules）；打包环节再做
-  运行端验证，运行端当前继续使用 bge-local。
+- 运行端部署：在运行端插件目录安装 `@huggingface/transformers` 依赖（npm install），复制新
+  client/host/tools；Host 子进程以 `ELECTRON_RUN_AS_NODE=1` 让 Electron 以 Node 模式运行嵌入桥
+  （修复 process.execPath 为 electron.exe 的问题）。
+- 运行端实测：向量配置 `bge-node` 测试通过（512 维），知识库评测 recall@5 = 1.0（50/50）；
+  真实桌面端已切换使用 bge-node（免 Python）。打包环节只需把运行端依赖纳入安装包即可。
 
 ### 执行建议（下一轮开始）
 
