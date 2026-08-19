@@ -47,7 +47,13 @@ const PRESET_FILES = new Set(['agent.cordis.yml', 'preset.yml']);
 const DIAG_LOG = join(DSH_ROOT, 'dsh-workbench-host.log');
 const TASK_STORE = join(DSH_ROOT, 'dsh-workbench-tasks.json');
 const STYLE_STORE = join(DSH_ROOT, 'dsh-workbench-style.json');
+const AGENTS_STORE = join(DSH_ROOT, 'dsh-workbench-agents.json');
+const ATTACHMENT_ROOT = join(DSH_ROOT, 'attachments');
 const MAX_STYLE_STORE_BYTES = 700 * 1024;
+const MAX_AGENT_POOL_SIZE = 30;
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+const ATTACHMENT_SUMMARY_BYTES = 64 * 1024;
+const ATTACHMENT_SUMMARY_CHARS = 4000;
 const TODO_STATUSES = ['pending', 'in_progress', 'completed'];
 const TASK_STATUSES = ['inbox', 'pending', 'in_progress', 'blocked', 'completed'];
 const TASK_PRIORITIES = ['low', 'medium', 'high'];
@@ -58,6 +64,23 @@ const ORCHESTRATION_PHASES = ['idea', 'planning', 'planned', 'running', 'refinin
 const ORCHESTRATION_AGENT_STATUSES = ['planned', 'waiting', 'running', 'completed', 'failed', 'cancelled'];
 const ORCHESTRATION_WORKER_TIMEOUT_MS = Number(process.env.DSH_WORKBENCH_WORKER_TIMEOUT_MS) > 0 ? Number(process.env.DSH_WORKBENCH_WORKER_TIMEOUT_MS) : 5 * 60 * 1000;
 const ORCHESTRATION_WORKER_MAX_RETRIES = Number.isSafeInteger(Number(process.env.DSH_WORKBENCH_WORKER_MAX_RETRIES)) && Number(process.env.DSH_WORKBENCH_WORKER_MAX_RETRIES) >= 0 ? Number(process.env.DSH_WORKBENCH_WORKER_MAX_RETRIES) : 2;
+const ATTACHMENT_TYPES = new Map([
+  ['png', 'image/png'], ['jpg', 'image/jpeg'], ['jpeg', 'image/jpeg'], ['webp', 'image/webp'],
+  ['pdf', 'application/pdf'], ['txt', 'text/plain'], ['md', 'text/markdown'], ['json', 'application/json'],
+  ['js', 'text/javascript'], ['ts', 'text/typescript'], ['py', 'text/x-python'], ['html', 'text/html'],
+  ['css', 'text/css'], ['yml', 'text/yaml'], ['yaml', 'text/yaml'], ['csv', 'text/csv'], ['xml', 'text/xml'],
+  ['sql', 'text/sql'], ['log', 'text/plain']
+]);
+const TEXT_ATTACHMENT_EXT = new Set(['txt', 'md', 'json', 'js', 'ts', 'py', 'html', 'css', 'yml', 'yaml', 'csv', 'xml', 'sql', 'log']);
+const AGENT_POOL_DEFAULTS = [
+  { id: 'code-reviewer', name: '代码审查专家', role: '审查代码质量与潜在缺陷', model: '', capabilities: ['review', 'refactor', 'debug'], prompt: '你是资深代码审查专家，逐项核对可维护性、边界与隐患，输出带证据的结论。' },
+  { id: 'architect', name: '架构设计专家', role: '设计技术方案与评估选型', model: '', capabilities: ['design', 'architecture', 'evaluate'], prompt: '你是架构设计专家，输出可评审的技术方案、权衡与风险。' },
+  { id: 'documenter', name: '文档生成专家', role: '编写技术/API 文档', model: '', capabilities: ['docs', 'api', 'guide'], prompt: '你是文档专家，产出结构清晰、面向读者的文档。' },
+  { id: 'tester', name: '测试专家', role: '设计并执行测试用例', model: '', capabilities: ['test', 'qa', 'coverage'], prompt: '你是测试专家，覆盖关键路径与边界，给出可复现的用例。' },
+  { id: 'data-analyst', name: '数据分析专家', role: '处理数据与生成报表', model: '', capabilities: ['data', 'report', 'analysis'], prompt: '你是数据分析专家，核对数据来源并输出可验证的结论。' },
+  { id: 'frontend-dev', name: '前端专家', role: 'React/Vue 等前端开发', model: '', capabilities: ['frontend', 'react', 'ui'], prompt: '你是前端专家，兼顾实现质量、可访问性与视觉一致性。' },
+  { id: 'backend-dev', name: '后端专家', role: 'API 设计与数据库优化', model: '', capabilities: ['backend', 'api', 'database'], prompt: '你是后端专家，关注接口契约、性能与数据安全。' }
+];
 let taskMutationQueue = Promise.resolve();
 let styleMutationQueue = Promise.resolve();
 
@@ -184,6 +207,143 @@ async function writeStyleStore(store) {
   }
   try { await rm(temp, { force: true }); } catch (e) { /* keep the temp for inspection */ }
   throw lastError;
+}
+
+let agentsState = null;
+
+function cleanAgentPoolEntry(raw, index) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  const id = cleanTaskText(value.id, 80);
+  return {
+    id: id || ('agent-' + (index + 1)),
+    name: cleanTaskText(value.name, 120) || id || ('代理 ' + (index + 1)),
+    role: cleanTaskText(value.role, 300),
+    model: cleanTaskText(value.model, 240),
+    capabilities: Array.isArray(value.capabilities) ? [...new Set(value.capabilities.map((item) => cleanTaskText(item, 80)).filter(Boolean))].slice(0, 12) : [],
+    prompt: cleanTaskText(value.prompt, 3000)
+  };
+}
+
+function cleanAgentPool(raw) {
+  const input = Array.isArray(raw) ? raw.slice(0, MAX_AGENT_POOL_SIZE) : [];
+  const pool = input.map(cleanAgentPoolEntry);
+  const seen = new Set();
+  return pool.filter((agent) => {
+    const key = agent.id.toLocaleLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+async function readAgentsStore() {
+  try {
+    const info = await lstat(AGENTS_STORE);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('agents store must be a regular non-symbolic file');
+    if (info.size > 400 * 1024) throw new Error('agents store exceeds 400KB');
+    const parsed = JSON.parse(await readFile(AGENTS_STORE, 'utf8'));
+    agentsState = cleanAgentPool(parsed && parsed.agents);
+  } catch (error) {
+    if (error && error.code === 'ENOENT') agentsState = cleanAgentPool(AGENT_POOL_DEFAULTS);
+    else throw error;
+  }
+  return agentsState;
+}
+
+async function writeAgentsStore(pool) {
+  await mkdir(DSH_ROOT, { recursive: true });
+  const cleaned = cleanAgentPool(pool);
+  const temp = AGENTS_STORE + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, JSON.stringify({ version: 1, agents: cleaned }, null, 2) + '\n', 'utf8');
+  let lastError = null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      await rename(temp, AGENTS_STORE);
+      agentsState = cleaned;
+      return agentsState;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 4) await new Promise((resolvePromise) => setTimeout(resolvePromise, 25 * (attempt + 1)));
+    }
+  }
+  try { await rm(temp, { force: true }); } catch (e) { /* keep temp for inspection */ }
+  throw lastError;
+}
+
+function cleanAttachment(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  return {
+    id: cleanTaskText(value.id, 120) || '',
+    name: cleanTaskText(value.name, 240),
+    mime: cleanTaskText(value.mime, 120),
+    size: Number.isFinite(Number(value.size)) ? Math.max(0, Math.round(Number(value.size))) : 0,
+    path: cleanTaskText(value.path, 500),
+    summary: cleanTaskText(value.summary, 6000)
+  };
+}
+
+function cleanLogEntry(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  const level = ['info', 'warn', 'error'].includes(value.level) ? value.level : 'info';
+  const text = cleanTaskText(value.text, 2000);
+  if (!text) return null;
+  return {
+    at: typeof value.at === 'string' ? value.at : new Date().toISOString(),
+    level,
+    text,
+    agent: cleanTaskText(value.agent, 120)
+  };
+}
+
+async function attachmentFilePath(id) {
+  const safe = cleanTaskText(id, 120);
+  if (!/^[0-9a-f-]{36}$/i.test(safe)) throw new Error('invalid attachment id');
+  return join(ATTACHMENT_ROOT, safe);
+}
+
+async function attachmentSummaryOf(filePath, ext, size) {
+  if (!TEXT_ATTACHMENT_EXT.has(ext) || size > ATTACHMENT_SUMMARY_BYTES) return '';
+  try {
+    const content = await readFile(filePath, 'utf8');
+    return content.slice(0, ATTACHMENT_SUMMARY_CHARS);
+  } catch (e) {
+    return '';
+  }
+}
+
+async function removeAttachmentFile(id) {
+  try {
+    const target = await attachmentFilePath(id);
+    await rm(target, { force: true });
+  } catch (e) { /* best effort */ }
+}
+
+async function resolveAttachments(input) {
+  const raw = Array.isArray(input) ? input.slice(0, 12) : [];
+  const out = [];
+  for (const item of raw) {
+    const id = cleanTaskText(item && item.id, 120);
+    if (!/^[0-9a-f-]{36}$/i.test(id)) continue;
+    let filePath;
+    let info;
+    try {
+      filePath = await attachmentFilePath(id);
+      info = await stat(filePath);
+    } catch (e) {
+      continue;
+    }
+    const name = cleanTaskText(item && item.name, 240) || id;
+    const ext = String(name).toLocaleLowerCase().split('.').pop() || '';
+    out.push(cleanAttachment({
+      id,
+      name,
+      mime: cleanTaskText(item && item.mime, 120) || ATTACHMENT_TYPES.get(ext) || 'application/octet-stream',
+      size: Number.isFinite(Number(item && item.size)) ? Math.round(Number(item && item.size)) : info.size,
+      path: filePath,
+      summary: await attachmentSummaryOf(filePath, ext, info.size)
+    }));
+  }
+  return out;
 }
 
 function conversationStylePrompt() {
@@ -539,6 +699,7 @@ function cleanOrchestration(raw) {
     title: cleanTaskText(raw.title, 200) || idea.slice(0, 80),
     idea,
     quick: Boolean(raw.quick),
+    attachments: Array.isArray(raw.attachments) ? raw.attachments.map(cleanAttachment).filter((entry) => entry.id).slice(0, 12) : [],
     projectPath: String(raw.projectPath || ''),
     sourceSessionId: String(raw.sourceSessionId || ''),
     phase,
@@ -556,6 +717,7 @@ function cleanOrchestration(raw) {
     acceptedNote: cleanTaskText(raw.acceptedNote, 6000),
     planVersions,
     runs: Array.isArray(raw.runs) ? raw.runs.map((run, index) => cleanOrchestrationRun(run, index + 1)).slice(-30) : [],
+    log: Array.isArray(raw.log) ? raw.log.map(cleanLogEntry).filter(Boolean).slice(-200) : [],
     startedAt: typeof raw.startedAt === 'string' ? raw.startedAt : '',
     completedAt: typeof raw.completedAt === 'string' ? raw.completedAt : '',
     acceptedAt: typeof raw.acceptedAt === 'string' ? raw.acceptedAt : '',
@@ -820,6 +982,7 @@ async function mutateTasks(body) {
       projectPath: body.projectPath,
       sourceSessionId: body.sourceSessionId,
       quick: body.quick,
+      attachments: await resolveAttachments(body.attachments),
       phase: 'idea',
       createdAt: now,
       updatedAt: now
@@ -970,8 +1133,12 @@ async function mutateTasks(body) {
     });
   } else if (action === 'orchestration_remove') {
     const before = store.orchestrations.length;
+    const removed = store.orchestrations.find((item) => item.id === body.id);
     store.orchestrations = store.orchestrations.filter((item) => item.id !== body.id);
     if (store.orchestrations.length === before) throw new Error('orchestration not found');
+    if (removed && Array.isArray(removed.attachments)) {
+      removed.attachments.forEach((entry) => { if (entry && entry.id) removeAttachmentFile(entry.id).catch(() => {}); });
+    }
   } else {
     throw new Error('unsupported task action');
   }
@@ -1061,6 +1228,7 @@ async function analyzeIdea(record) {
 
 async function generateOrchestrationPlan(record, feedback, models, policy) {
   const modelList = Array.isArray(models) ? models : [];
+  const agents = await readAgentsStore();
   const modelChoices = modelList.map((item) => item.provider + ' :: ' + item.id + ' (' + item.name + ')').join('\n');
   const system = [
     '你是一个谨慎的多代理任务编排器。把用户的粗略想法转成可审查、可执行、可验收的方案。',
@@ -1073,6 +1241,8 @@ async function generateOrchestrationPlan(record, feedback, models, policy) {
   const prompt = [
     '项目路径：' + (record.projectPath || '全局任务'),
     '用户想法：\n' + record.idea,
+    record.attachments && record.attachments.length ? '已附加文件：\n' + record.attachments.map((entry) => '- ' + entry.name + '（' + entry.size + ' B，' + entry.mime + '）' + (entry.summary ? '\n  内容摘录：' + entry.summary.slice(0, 400) : '')).join('\n') : '',
+    agents.length ? '可用子代理池（请优先匹配能力与角色）：\n' + agents.map((agent) => '- ' + agent.id + '：' + agent.name + '（' + (agent.capabilities || []).join('/') + '）').join('\n') : '',
     feedback ? '用户修改意见：\n' + feedback : '',
     '模型策略：' + (policy || 'balanced') + '（quality=质量优先，balanced=平衡，economy=节省，manual=不自动分配）',
     modelChoices ? '当前已配置模型目录：\n' + modelChoices : '当前没有可用模型目录，所有代理继承父代理模型。',
@@ -1114,6 +1284,11 @@ function queueOrchestrationPatch(id, update) {
   return operation;
 }
 
+async function appendOrchestrationLog(orchestrationId, level, text, agent) {
+  const entry = { at: new Date().toISOString(), level: ['info', 'warn', 'error'].includes(level) ? level : 'info', text: String(text || '').slice(0, 2000), agent: String(agent || '').slice(0, 120) };
+  await queueOrchestrationPatch(orchestrationId, (item) => ({ ...item, log: [...(item.log || []), entry].slice(-200), updatedAt: entry.at })).catch(() => {});
+}
+
 async function orchestrationSnapshot(id) {
   const store = await readTaskStore();
   return store.orchestrations.find((item) => item.id === id) || null;
@@ -1130,6 +1305,7 @@ function workerPrompt(orchestration, worker) {
     '你是“' + worker.name + '”，角色：' + worker.role + '。',
     '这是工作台中已经由用户确认执行的一项多代理任务。只完成分配给你的工作包，不要擅自扩大范围。',
     '项目路径：' + (orchestration.projectPath || '全局任务'),
+    (orchestration.attachments || []).length ? '已附加文件（需要时读取内容）：\n' + (orchestration.attachments || []).map((entry) => '- ' + entry.name + '（' + entry.size + ' B）' + (entry.summary ? '\n  ' + entry.summary.slice(0, 1200) : '')).join('\n') : '',
     '总目标：\n' + orchestration.idea,
     '你的任务：\n' + worker.mission,
     worker.acceptance ? '你的验收标准：\n' + worker.acceptance : '',
@@ -1166,6 +1342,7 @@ async function runOrchestrationWorker(orchestrationId, workerId, parent, control
         workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: 'running', startedAt, error: '', attempts: attempt } : entry),
         updatedAt: startedAt
       }));
+      await appendOrchestrationLog(orchestrationId, 'info', '子代理「' + worker.name + '」第 ' + attempt + ' 次执行开始', worker.id);
       const spawned = await orchestrationSubagents.start('spawn', {
         label: worker.name,
         prompt: [{ type: 'text', text: workerPrompt(current, worker) }],
@@ -1192,7 +1369,10 @@ async function runOrchestrationWorker(orchestrationId, workerId, parent, control
         workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: successful ? 'completed' : 'failed', output, error: successful ? '' : ('子代理结束原因：' + result.stopReason), completedAt, attempts: attempt } : entry),
         updatedAt: completedAt
       }));
-      if (successful) return;
+      if (successful) {
+        await appendOrchestrationLog(orchestrationId, 'info', '子代理「' + worker.name + '」完成', worker.id);
+        return;
+      }
       lastError = '子代理结束原因：' + result.stopReason;
       finished = true;
     } catch (error) {
@@ -1203,6 +1383,7 @@ async function runOrchestrationWorker(orchestrationId, workerId, parent, control
       if (run) { await run.dispose().catch(() => {}); run = null; }
     }
     if (finished && attempt < maxAttempts) {
+      await appendOrchestrationLog(orchestrationId, 'warn', '子代理 ' + workerId + '：' + lastError + '；准备第 ' + (attempt + 1) + ' 次重试', workerId);
       await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
         ...item,
         workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: 'running', error: lastError + '；准备重试（第 ' + (attempt + 1) + ' 次）' } : entry),
@@ -1212,6 +1393,7 @@ async function runOrchestrationWorker(orchestrationId, workerId, parent, control
       continue;
     }
     if (finished) {
+      await appendOrchestrationLog(orchestrationId, 'error', '子代理 ' + workerId + ' 最终失败：' + lastError, workerId);
       const completedAt = new Date().toISOString();
       await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
         ...item,
@@ -1221,6 +1403,7 @@ async function runOrchestrationWorker(orchestrationId, workerId, parent, control
       return;
     }
   }
+  await appendOrchestrationLog(orchestrationId, 'warn', '子代理 ' + workerId + ' 被终止：' + (lastError || '用户终止执行'), workerId);
   const completedAt = new Date().toISOString();
   await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
     ...item,
@@ -1292,6 +1475,7 @@ async function runOrchestration(orchestrationId) {
       orchestration = await orchestrationSnapshot(orchestrationId);
     }
     const pending = new Set(orchestration.workers.filter((worker) => worker.status !== 'completed').map((worker) => worker.id));
+    await appendOrchestrationLog(orchestrationId, 'info', '开始执行：共 ' + orchestration.workers.length + ' 个子代理，本次运行 ' + pending.size + ' 个');
     while (pending.size > 0) {
       if (controller.signal.aborted) throw new Error('用户终止执行');
       orchestration = await orchestrationSnapshot(orchestrationId);
@@ -1323,6 +1507,7 @@ async function runOrchestration(orchestrationId) {
     const completedWorkers = orchestration.workers.filter((worker) => worker.status === 'completed').length;
     const failedWorkers = orchestration.workers.filter((worker) => worker.status === 'failed' || worker.status === 'cancelled').length;
     if (completedWorkers === 0 && failedWorkers > 0) {
+      await appendOrchestrationLog(orchestrationId, 'error', '所有 ' + failedWorkers + ' 个子代理均失败，需要人工介入');
       const completedAt = new Date().toISOString();
       await queueOrchestrationPatch(orchestrationId, (item) => {
         if (item.phase === 'cancelled') return item;
@@ -1333,6 +1518,7 @@ async function runOrchestration(orchestrationId) {
     }
     const mainStartedAt = new Date().toISOString();
     await queueOrchestrationPatch(orchestrationId, (item) => ({ ...item, mainAgent: { ...item.mainAgent, status: 'running', startedAt: mainStartedAt }, updatedAt: mainStartedAt }));
+    await appendOrchestrationLog(orchestrationId, 'info', '主代理「' + orchestration.mainAgent.name + '」开始汇总', orchestration.mainAgent.id);
     orchestration = await orchestrationSnapshot(orchestrationId);
     let mainRun;
     try {
@@ -1360,11 +1546,13 @@ async function runOrchestration(orchestrationId) {
         const next = { ...item, phase: successful ? 'review' : 'failed', mainAgent, finalReport: output, runtimeError, completedAt, updatedAt: completedAt };
         return { ...next, runs: runsWithSnapshot(next, successful ? 'review' : 'failed', completedAt) };
       });
+      await appendOrchestrationLog(orchestrationId, successful ? 'info' : 'error', successful ? '主代理完成汇总，进入验收' : '主代理汇总失败：' + result.stopReason, orchestration.mainAgent.id);
     } finally {
       if (mainRun) await mainRun.dispose().catch(() => {});
     }
   } catch (error) {
     const completedAt = new Date().toISOString();
+    await appendOrchestrationLog(orchestrationId, controller.signal.aborted ? 'warn' : 'error', '编排终止：' + String((error && error.message) || error));
     await queueOrchestrationPatch(orchestrationId, (item) => {
       if (item.phase === 'cancelled') return item;
       const status = controller.signal.aborted ? 'cancelled' : 'failed';
@@ -1421,6 +1609,7 @@ async function continueOrchestration(orchestrationId) {
       mainAgent: { ...item.mainAgent, status: 'running', startedAt, error: '' },
       updatedAt: startedAt
     }));
+    await appendOrchestrationLog(orchestrationId, 'info', '主代理开始按用户指示优化（第 ' + (orchestration.refineCount + 1) + ' 轮）', orchestration.mainAgent && orchestration.mainAgent.id);
     const run = await orchestrationSubagents.start('spawn', {
       label: (orchestration.mainAgent && orchestration.mainAgent.name) + ' · 优化',
       prompt: continuationPrompt(orchestration, lastUser && lastUser.text),
@@ -1447,8 +1636,10 @@ async function continueOrchestration(orchestrationId) {
         updatedAt: completedAt
       });
     });
+    await appendOrchestrationLog(orchestrationId, successful ? 'info' : 'error', successful ? '优化完成，回到验收' : '主代理优化失败：' + result.stopReason, orchestration.mainAgent && orchestration.mainAgent.id);
   } catch (error) {
     const completedAt = new Date().toISOString();
+    await appendOrchestrationLog(orchestrationId, controller.signal.aborted ? 'warn' : 'error', '优化终止：' + String((error && error.message) || error));
     await queueOrchestrationPatch(orchestrationId, (item) => {
       if (item.phase === 'cancelled') return item;
       const status = controller.signal.aborted ? 'cancelled' : 'failed';
@@ -1909,6 +2100,53 @@ function makeRoutes() {
         } catch (error) {
           writeJson(res, 200, { reply: '', error: String((error && error.message) || error) });
         }
+      }
+    },
+    // ---- agents pool: durable config for the multi-AI collaboration pool ----
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/agents/list',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        try { writeJson(res, 200, { agents: await readAgentsStore() }); } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/agents/write',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        if (!Array.isArray(body.agents)) return bad(res, 'bad-agents', 'agents must be an array');
+        try { writeJson(res, 200, { agents: await writeAgentsStore(body.agents) }); } catch (error) { fail(res, error); }
+      }
+    },
+    // ---- attachments: loopback-only upload for orchestration inputs ----
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/attachment/put',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req, MAX_ATTACHMENT_BYTES * 2 + 64 * 1024)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        const name = cleanTaskText(body.name, 240);
+        const data = String(body.data || '');
+        if (!name || !data) return bad(res, 'missing', 'name and base64 data required');
+        const ext = String(name).toLocaleLowerCase().split('.').pop() || '';
+        if (!ATTACHMENT_TYPES.has(ext)) return bad(res, 'type-not-allowed', 'attachment type not allowed: ' + ext);
+        let buffer;
+        try { buffer = Buffer.from(data, 'base64'); } catch (e) { return bad(res, 'bad-data', 'invalid base64 data'); }
+        if (buffer.length === 0 || buffer.length > MAX_ATTACHMENT_BYTES) return bad(res, 'too-large', 'attachment must be ≤ ' + MAX_ATTACHMENT_BYTES + ' bytes');
+        try {
+          await mkdir(ATTACHMENT_ROOT, { recursive: true });
+          const id = randomUUID();
+          const filePath = join(ATTACHMENT_ROOT, id);
+          await writeFile(filePath, buffer);
+          writeJson(res, 200, cleanAttachment({ id, name, mime: ATTACHMENT_TYPES.get(ext), size: buffer.length, path: filePath }));
+        } catch (error) { fail(res, error); }
       }
     }
   ];

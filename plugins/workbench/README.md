@@ -110,6 +110,20 @@ powershell -ExecutionPolicy Bypass -File .\tools\enable-workbench.ps1    # 恢�
   原决策 Tab 保留。
 - Host 冒烟测试：`node tools/smoke-watchdog.mjs`（超时重试 + 需人工介入 + 快速问答标记）。
 
+2.5-B（体验优化，进行中）：
+
+- 执行日志：编排记录新增 `log` 时间线（info/warn/error），右侧面板新增"日志"Tab，
+  支持按级别过滤与文本搜索。
+- 附件：`POST /api/dsh-workbench/attachment/put`（仅本机回环，扩展名白名单，单文件 ≤10MB，
+  文本 ≤64KB 自动生成内容摘录）；输入区支持拖拽上传并显示附件片，创建任务时随记录持久化，
+  方案与子代理提示词自动携带附件名与摘录；删除编排时清理附件文件。
+- 快捷命令：`/new <任务>`、`/plan <反馈>`、`/memory`（2.5-C 提供记忆，当前提示）。
+- @ 引用：输入 `@` 弹出下拉，可引用想法库条目与当前项目文件（复用受限 `fs/list`）。
+- 子代理池：`GET/POST /api/dsh-workbench/agents/list|write`，默认 7 类专家，JSON 编辑器
+  在"决策"Tab 内保存；拆解提示词携带代理池能力用于匹配。
+- 依赖可视化：方案 Tab 新增"执行顺序"条，按 `dependsOn` 拓扑分组展示并行/串行关系。
+- Host 冒烟测试：`node tools/smoke-collab.mjs`（代理池/附件/日志/提示词注入）。
+
 ## 双层任务系统
 
 - **今日聚焦**：右侧快捷栏只展示正在进行、阻塞和今日优先任务，并提示 WIP 超过 2 项；支持快速收集和一键展开任务中心。

@@ -152,6 +152,9 @@ try {
   assert.equal(worker.status, 'failed');
   assert.equal(worker.attempts, 3, 'worker attempts should record 3 tries');
   assert.ok(String(worker.error).includes('超时'), 'worker error should mention timeout');
+  assert.ok(Array.isArray(terminal.log), 'orchestration should have execution logs');
+  assert.ok(terminal.log.some((entry) => entry.level === 'warn' && entry.text.includes('重试')), 'log should record retries');
+  assert.ok(terminal.log.some((entry) => entry.level === 'error' && entry.text.includes('需要人工介入')), 'log should record needs-human intervention');
   console.log('watchdog smoke test passed');
 } finally {
   await rm(tempHome, { recursive: true, force: true });
