@@ -291,6 +291,7 @@ try {
   await waitPhase(ctxId, ['planned', 'failed']);
   const rulePrompt = llmCalls[llmCalls.length - 1].prompt;
   assert.ok(rulePrompt.includes('项目规则') && rulePrompt.includes('只修改桌面端代码'), 'plan prompt should include project rules');
+  assert.ok(rulePrompt.includes('当前会话专属内容') && rulePrompt.includes('本会话目标是验证项目配置功能'), 'plan prompt should include session-specific context');
 
   await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_remove', scope: 'all', projectPath: projectDir, id: ctxId });
   console.log('collab smoke test passed');

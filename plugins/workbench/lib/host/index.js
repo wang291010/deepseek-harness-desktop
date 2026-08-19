@@ -3730,7 +3730,7 @@ async function analyzeIdea(record) {
   };
 }
 
-async function projectContextSummary(projectPath) {
+async function projectContextSummary(projectPath, sessionId = '') {
   if (!projectPath) return '';
   try {
     const { canonical } = await authorizeWorkspacePath(projectPath, 'directory');
@@ -3768,6 +3768,7 @@ async function projectContextSummary(projectPath) {
       .join('\n');
     const ruleData = await discoverProjectRules(projectPath);
     const ruleSummary = ruleData.rules.map((entry) => entry.name + '：\n' + entry.content.slice(0, 600)).join('\n\n');
+    const sessionContext = sessionId ? await readSessionContext(projectPath, sessionId) : { text: '' };
     return [
       config.note ? '项目备注：\n' + config.note : '',
       config.techStack ? '人工指定技术栈：\n' + config.techStack : '',
@@ -3775,6 +3776,7 @@ async function projectContextSummary(projectPath) {
       '项目文件结构（前 ' + entries.length + ' 项）：\n' + entries.join(' '),
       techHints.length ? '技术栈线索：\n' + techHints.join('\n') : '',
       ruleSummary ? '项目规则：\n' + ruleSummary : '',
+      sessionContext.text ? '当前会话专属内容：\n' + sessionContext.text.slice(0, 3000) : '',
       history ? '本项目近期协作记录：\n' + history : ''
     ].filter(Boolean).join('\n\n');
   } catch (e) {
@@ -3939,7 +3941,7 @@ async function generateOrchestrationPlan(record, feedback, models, policy) {
   const modelList = Array.isArray(models) ? models : [];
   const pool = await readAgentsStore();
   const agents = pool.mode === 'pool' ? pool.agents : [];
-  const projectContext = await projectContextSummary(record.projectPath);
+  const projectContext = await projectContextSummary(record.projectPath, record.sourceSessionId);
   const modelChoices = modelList.map((item) => item.provider + ' :: ' + item.id + ' (' + item.name + ')').join('\n');
   const system = [
     '你是一个谨慎的多代理任务编排器。把用户的粗略想法转成可审查、可执行、可验收的方案。',
