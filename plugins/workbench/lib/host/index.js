@@ -56,6 +56,8 @@ const IDEA_STATUSES = ['inbox', 'considering', 'promoted', 'snoozed', 'archived'
 const IDEA_RECOMMENDATIONS = ['task', 'orchestration', 'later', 'archive'];
 const ORCHESTRATION_PHASES = ['idea', 'planning', 'planned', 'running', 'refining', 'review', 'changes_requested', 'accepted', 'failed', 'cancelled'];
 const ORCHESTRATION_AGENT_STATUSES = ['planned', 'waiting', 'running', 'completed', 'failed', 'cancelled'];
+const ORCHESTRATION_WORKER_TIMEOUT_MS = Number(process.env.DSH_WORKBENCH_WORKER_TIMEOUT_MS) > 0 ? Number(process.env.DSH_WORKBENCH_WORKER_TIMEOUT_MS) : 5 * 60 * 1000;
+const ORCHESTRATION_WORKER_MAX_RETRIES = Number.isSafeInteger(Number(process.env.DSH_WORKBENCH_WORKER_MAX_RETRIES)) && Number(process.env.DSH_WORKBENCH_WORKER_MAX_RETRIES) >= 0 ? Number(process.env.DSH_WORKBENCH_WORKER_MAX_RETRIES) : 2;
 let taskMutationQueue = Promise.resolve();
 let styleMutationQueue = Promise.resolve();
 
@@ -466,7 +468,8 @@ function cleanOrchestrationAgent(raw, fallbackName, fallbackRole) {
     output: cleanTaskText(value.output, 30000),
     error: cleanTaskText(value.error, 4000),
     startedAt: typeof value.startedAt === 'string' ? value.startedAt : '',
-    completedAt: typeof value.completedAt === 'string' ? value.completedAt : ''
+    completedAt: typeof value.completedAt === 'string' ? value.completedAt : '',
+    attempts: Number.isSafeInteger(value.attempts) && value.attempts >= 1 ? value.attempts : 1
   };
 }
 
@@ -535,6 +538,7 @@ function cleanOrchestration(raw) {
     id: typeof raw.id === 'string' && raw.id !== '' ? raw.id : randomUUID(),
     title: cleanTaskText(raw.title, 200) || idea.slice(0, 80),
     idea,
+    quick: Boolean(raw.quick),
     projectPath: String(raw.projectPath || ''),
     sourceSessionId: String(raw.sourceSessionId || ''),
     phase,
@@ -815,6 +819,7 @@ async function mutateTasks(body) {
       idea: body.idea,
       projectPath: body.projectPath,
       sourceSessionId: body.sourceSessionId,
+      quick: body.quick,
       phase: 'idea',
       createdAt: now,
       updatedAt: now
@@ -1062,7 +1067,8 @@ async function generateOrchestrationPlan(record, feedback, models, policy) {
     '只输出一个 JSON 对象，不要 Markdown，不要解释。主代理负责最终汇总和质量控制；子代理负责边界清晰的工作包。',
     '优先 2-4 个子代理，最多 6 个。可并行的任务不要添加依赖；确有先后关系时，dependsOn 使用子代理 name。',
     '每个任务必须带明确验收标准，不得声称已经执行。',
-    '如果提供了模型目录，只能从目录中为代理选择 provider/model；没有合适选项时两者留空以继承父代理。'
+    '如果提供了模型目录，只能从目录中为代理选择 provider/model；没有合适选项时两者留空以继承父代理。',
+    record.quick ? '快速问答模式：这是简单问题，不要拆解任务。只生成 1 个名为「直接回答」的子代理（role 用「回答者」）和 1 个主代理，主代理 mission 写「直接回答用户问题并给出可执行的结论」。' : ''
   ].join('\n');
   const prompt = [
     '项目路径：' + (record.projectPath || '全局任务'),
@@ -1132,54 +1138,95 @@ function workerPrompt(orchestration, worker) {
   ].filter(Boolean).join('\n\n');
 }
 
+function withTimeout(promise, ms, message) {
+  let timer = null;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => { if (timer) clearTimeout(timer); });
+}
+
 async function runOrchestrationWorker(orchestrationId, workerId, parent, controller) {
-  const startedAt = new Date().toISOString();
-  let run;
-  try {
-    const current = await orchestrationSnapshot(orchestrationId);
-    if (!current || current.phase !== 'running') return;
-    const worker = current.workers.find((item) => item.id === workerId);
-    if (!worker) throw new Error('worker not found');
-    await queueOrchestrationPatch(orchestrationId, (item) => ({
-      ...item,
-      workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: 'running', startedAt, error: '' } : entry),
-      updatedAt: startedAt
-    }));
-    run = await orchestrationSubagents.start('spawn', {
-      label: worker.name,
-      prompt: [{ type: 'text', text: workerPrompt(current, worker) }],
-      parent,
-      signal: controller.signal,
-      persona: '你是' + worker.role + '。保持专业、独立验证，并以可交接的证据为准。',
-      ...(worker.provider && worker.model ? { agentOptions: { provider: worker.provider, model: worker.model } } : {}),
-      maxDepth: 2
-    });
-    const usedProvider = run.localAgent && run.localAgent.options ? String(run.localAgent.options.provider || worker.provider || '') : worker.provider;
-    const usedModel = run.localAgent && run.localAgent.options ? String(run.localAgent.options.model || worker.model || '') : worker.model;
-    await queueOrchestrationPatch(orchestrationId, (item) => ({
-      ...item,
-      workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, sessionId: String(run.id), usedProvider, usedModel } : entry),
-      updatedAt: new Date().toISOString()
-    }));
-    const result = await run.result;
-    const completedAt = new Date().toISOString();
-    const output = contentBlocksText(result.output);
-    const successful = result.stopReason === 'completed';
-    await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
-      ...item,
-      workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: successful ? 'completed' : 'failed', output, error: successful ? '' : ('子代理结束原因：' + result.stopReason), completedAt } : entry),
-      updatedAt: completedAt
-    }));
-  } catch (error) {
-    const completedAt = new Date().toISOString();
-    await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
-      ...item,
-      workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: controller.signal.aborted ? 'cancelled' : 'failed', error: String((error && error.message) || error), completedAt } : entry),
-      updatedAt: completedAt
-    })).catch(() => {});
-  } finally {
-    if (run) await run.dispose().catch(() => {});
+  const maxAttempts = 1 + ORCHESTRATION_WORKER_MAX_RETRIES;
+  let run = null;
+  let attemptsDone = 0;
+  let lastError = '';
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    attemptsDone = attempt;
+    if (controller.signal.aborted) break;
+    const startedAt = new Date().toISOString();
+    let finished = false;
+    try {
+      const current = await orchestrationSnapshot(orchestrationId);
+      if (!current || current.phase !== 'running') return;
+      const worker = current.workers.find((item) => item.id === workerId);
+      if (!worker) throw new Error('worker not found');
+      await queueOrchestrationPatch(orchestrationId, (item) => ({
+        ...item,
+        workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: 'running', startedAt, error: '', attempts: attempt } : entry),
+        updatedAt: startedAt
+      }));
+      const spawned = await orchestrationSubagents.start('spawn', {
+        label: worker.name,
+        prompt: [{ type: 'text', text: workerPrompt(current, worker) }],
+        parent,
+        signal: controller.signal,
+        persona: '你是' + worker.role + '。保持专业、独立验证，并以可交接的证据为准。',
+        ...(worker.provider && worker.model ? { agentOptions: { provider: worker.provider, model: worker.model } } : {}),
+        maxDepth: 2
+      });
+      run = spawned;
+      const usedProvider = run.localAgent && run.localAgent.options ? String(run.localAgent.options.provider || worker.provider || '') : worker.provider;
+      const usedModel = run.localAgent && run.localAgent.options ? String(run.localAgent.options.model || worker.model || '') : worker.model;
+      await queueOrchestrationPatch(orchestrationId, (item) => ({
+        ...item,
+        workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, sessionId: String(run.id), usedProvider, usedModel } : entry),
+        updatedAt: new Date().toISOString()
+      }));
+      const result = await withTimeout(run.result, ORCHESTRATION_WORKER_TIMEOUT_MS, '子代理执行超时（' + (ORCHESTRATION_WORKER_TIMEOUT_MS / 1000).toFixed(1) + ' 秒）');
+      const completedAt = new Date().toISOString();
+      const output = contentBlocksText(result.output);
+      const successful = result.stopReason === 'completed';
+      await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
+        ...item,
+        workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: successful ? 'completed' : 'failed', output, error: successful ? '' : ('子代理结束原因：' + result.stopReason), completedAt, attempts: attempt } : entry),
+        updatedAt: completedAt
+      }));
+      if (successful) return;
+      lastError = '子代理结束原因：' + result.stopReason;
+      finished = true;
+    } catch (error) {
+      lastError = String((error && error.message) || error);
+      if (controller.signal.aborted) break;
+      finished = true;
+    } finally {
+      if (run) { await run.dispose().catch(() => {}); run = null; }
+    }
+    if (finished && attempt < maxAttempts) {
+      await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
+        ...item,
+        workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: 'running', error: lastError + '；准备重试（第 ' + (attempt + 1) + ' 次）' } : entry),
+        updatedAt: new Date().toISOString()
+      })).catch(() => {});
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 1200 * attempt));
+      continue;
+    }
+    if (finished) {
+      const completedAt = new Date().toISOString();
+      await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
+        ...item,
+        workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: controller.signal.aborted ? 'cancelled' : 'failed', error: lastError, completedAt, attempts: attemptsDone } : entry),
+        updatedAt: completedAt
+      })).catch(() => {});
+      return;
+    }
   }
+  const completedAt = new Date().toISOString();
+  await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
+    ...item,
+    workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: controller.signal.aborted ? 'cancelled' : 'failed', error: lastError || '未知错误', completedAt, attempts: attemptsDone } : entry),
+    updatedAt: completedAt
+  })).catch(() => {});
 }
 
 function coordinatorPrompt(orchestration) {
@@ -1273,6 +1320,17 @@ async function runOrchestration(orchestrationId) {
     if (controller.signal.aborted) throw new Error('用户终止执行');
     orchestration = await orchestrationSnapshot(orchestrationId);
     if (!orchestration || orchestration.phase !== 'running') return;
+    const completedWorkers = orchestration.workers.filter((worker) => worker.status === 'completed').length;
+    const failedWorkers = orchestration.workers.filter((worker) => worker.status === 'failed' || worker.status === 'cancelled').length;
+    if (completedWorkers === 0 && failedWorkers > 0) {
+      const completedAt = new Date().toISOString();
+      await queueOrchestrationPatch(orchestrationId, (item) => {
+        if (item.phase === 'cancelled') return item;
+        const next = { ...item, phase: 'failed', runtimeError: '所有 ' + failedWorkers + ' 个子代理均未成功，需要人工介入：请查看下方子代理错误详情，点击“继续执行”只重跑失败部分，或重新生成方案。', completedAt, updatedAt: completedAt };
+        return { ...next, runs: runsWithSnapshot(next, 'failed', completedAt) };
+      });
+      return;
+    }
     const mainStartedAt = new Date().toISOString();
     await queueOrchestrationPatch(orchestrationId, (item) => ({ ...item, mainAgent: { ...item.mainAgent, status: 'running', startedAt: mainStartedAt }, updatedAt: mainStartedAt }));
     orchestration = await orchestrationSnapshot(orchestrationId);

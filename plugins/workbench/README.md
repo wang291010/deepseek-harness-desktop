@@ -99,6 +99,17 @@ powershell -ExecutionPolicy Bypass -File .\tools\enable-workbench.ps1    # 恢�
 - Host 路由：`GET /api/dsh-workbench/style/read`、`POST /api/dsh-workbench/style/write`。
 - 风格 Host 冒烟测试：`node tools/smoke-style.mjs`，使用独立临时用户目录，不触碰真实数据。
 
+## 多AI协作工作台（P2.5，进行中）
+
+- 协作模式：快速问答（单个回答代理，轻量）与多AI协作（任务拆解 + 子代理编排），
+  在任务中心 AI 协作页顶部切换；可开启"自动判断复杂任务"（启发式阈值 0.6，默认关闭）。
+- 看门狗：子代理单次执行超时默认 300 秒（`DSH_WORKBENCH_WORKER_TIMEOUT_MS` 可调），
+  自动重试最多 2 次（`DSH_WORKBENCH_WORKER_MAX_RETRIES`），全部失败时编排进入
+  "执行异常"并提示需要人工介入；代理卡显示尝试次数。
+- 右侧面板：概览（进行中/已完成/等待队列/进度/运行时）与代理状态两个新 Tab，
+  原决策 Tab 保留。
+- Host 冒烟测试：`node tools/smoke-watchdog.mjs`（超时重试 + 需人工介入 + 快速问答标记）。
+
 ## 双层任务系统
 
 - **今日聚焦**：右侧快捷栏只展示正在进行、阻塞和今日优先任务，并提示 WIP 超过 2 项；支持快速收集和一键展开任务中心。
