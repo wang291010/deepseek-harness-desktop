@@ -284,6 +284,8 @@
           "package.json",
           "cordis.patch.yml",
           "lib/**",
+          "tools/**",
+          "node_modules/**",
           "README.md"
         ]
       }

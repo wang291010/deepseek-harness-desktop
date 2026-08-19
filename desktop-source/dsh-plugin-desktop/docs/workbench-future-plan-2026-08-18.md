@@ -1127,6 +1127,15 @@ verifiedBy/At，可一键移入 02-Atomic）→ 入索引（文本 + 向量 + �
 - 运行端实测：向量配置 `bge-node` 测试通过（512 维），知识库评测 recall@5 = 1.0（50/50）；
   真实桌面端已切换使用 bge-node（免 Python）。打包环节只需把运行端依赖纳入安装包即可。
 
+**队列五 R5 打包配置与形态验证（2026-08-20）**：
+
+- 根因：electron-builder 的 dsh-workbench 拷贝 filter 只含 package.json / cordis.patch.yml / lib/**
+  / README.md，导致朋友安装包缺 tools 与 node_modules。
+- 修复：`desktop-source/dsh-plugin-desktop/package.json` 的 filter 增加 `tools/**`、`node_modules/**`。
+- 形态验证：在现有 win-unpacked 产物中补齐插件 tools + node_modules 后，Node 桥正常输出 512 维向量；
+  `verify-packaged-runtime.ts` 的必需条目可补充 tools/knowledge_embed.mjs 断言（下次构建时）。
+- 完整 `dist:win` 重建与 R2 覆盖安装实测留待构建环境执行（网络/工具链依赖）。
+
 ### 执行建议（下一轮开始）
 
 1. 先跑一轮完整 GUI 回归把 V1/V2 的实测结果拿到（我可代跑，你按清单抽查）。
