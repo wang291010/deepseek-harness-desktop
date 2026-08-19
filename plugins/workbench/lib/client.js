@@ -871,10 +871,10 @@ window.__ModuleLoader__.load({
         }).catch((e) => { console.error("[dsh-workbench] create workspace failed", e); });
       };
       const pickWsFolder = () => {
-        wbPickFolder().then((path) => {
-          if (path) { setWsPath(path); return; }
-          if (wsPickerRef.current) wsPickerRef.current.click();
-        }).catch(() => { if (wsPickerRef.current) wsPickerRef.current.click(); });
+        wbPickFolder().then((result) => {
+          if (result.status === "picked") { setWsPath(result.path); return; }
+          if (result.status === "unavailable" && wsPickerRef.current) wsPickerRef.current.click();
+        });
       };
       const onWsPicked = (e) => {
         const files = Array.prototype.slice.call((e.target && e.target.files) || []);
@@ -1195,7 +1195,13 @@ window.__ModuleLoader__.load({
     }
 
     function wbPickFolder() {
-      return wbFetchJson("/api/dsh-workbench/fs/pick-folder", { method: "POST" }).then(({ data }) => (data && typeof data.path === "string" ? data.path : "")).catch(() => "");
+      return wbFetchJson("/api/dsh-workbench/fs/pick-folder", { method: "POST" })
+        .then(({ data }) => {
+          if (data && data.canceled === true) return { status: "canceled", path: "" };
+          if (data && typeof data.path === "string" && data.path !== "") return { status: "picked", path: data.path };
+          return { status: "canceled", path: "" };
+        })
+        .catch(() => ({ status: "unavailable", path: "" }));
     }
 
     function wbLoadAgents() {

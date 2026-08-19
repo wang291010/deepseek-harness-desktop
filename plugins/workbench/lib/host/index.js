@@ -2095,7 +2095,8 @@ function makeRoutes() {
         try {
           const result = await dialog.showOpenDialog({ properties: ['openDirectory'], title: '选择项目文件夹' });
           const picked = result && !result.canceled && Array.isArray(result.filePaths) ? result.filePaths[0] : '';
-          writeJson(res, 200, { path: typeof picked === 'string' ? picked : '' });
+          if (typeof picked !== 'string' || picked === '') return writeJson(res, 200, { canceled: true, path: '' });
+          writeJson(res, 200, { canceled: false, path: picked });
         } catch (error) { fail(res, error); }
       }
     },

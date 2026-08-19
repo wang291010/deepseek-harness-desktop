@@ -111,6 +111,8 @@
   降级（`400 native-dialog-unavailable`）。
 - 验证：`smoke-collab` 新增降级断言；smoke ×6、eslint、`node --check` 通过；运行端已部署并重启
   （备份 `backups\workbench-fs-pick-folder-20260819-112558`），路由注册确认、接口正常。
+- 取消修复：用户取消原生对话框时不再回退弹出 HTML 选择框（区分 `canceled` 与原生不可用；
+  备份 `backups\workbench-fs-pick-cancel-20260819-112947`）。
 
 ## 三、未完成与下一步
 
