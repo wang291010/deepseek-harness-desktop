@@ -121,6 +121,17 @@ try {
   if (!agentState.hasWbChatShell || !agentState.hasModebar) {
     throw new Error('agent chat shell/modebar missing: ' + JSON.stringify(agentState));
   }
+
+  console.log('step: switch to root session (临时学习) if present');
+  const sessionSwitch = await evaluate(`(() => {
+    const rows = [...document.querySelectorAll('.wb-sp-row')];
+    const target = rows.find((row) => (row.querySelector('.wb-sp-title') || {}).textContent === '临时学习' && !row.className.includes('active'));
+    if (!target) return { ok: false };
+    target.click();
+    return { ok: true };
+  })()`);
+  console.log('session switch: ' + JSON.stringify(sessionSwitch));
+  await wait(1800);
   await shot('p26-agent-single.png');
 
   console.log('step: switch to multi AI');
@@ -209,14 +220,19 @@ try {
   console.log('probe summary: ' + JSON.stringify(probeSummary, null, 2));
 
   console.log('step: send a quick real message through multi-AI composer');
-  const sent = await evaluate(`(() => {
-    const area = document.querySelector('.wb-chat-compose textarea');
-    if (!area) return false;
-    const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
-    setter.call(area, '一句话说明你正在做什么，用于验证多AI快速回答链路。');
-    area.dispatchEvent(new Event('input', { bubbles: true }));
-    return true;
-  })()`);
+  let sent = false;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    sent = await evaluate(`(() => {
+      const area = document.querySelector('.wb-chat-compose textarea');
+      if (!area) return false;
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+      setter.call(area, '一句话说明你正在做什么，用于验证主代理结果进入对话窗口。');
+      area.dispatchEvent(new Event('input', { bubbles: true }));
+      return true;
+    })()`);
+    if (sent) break;
+    await wait(600);
+  }
   if (!sent) throw new Error('multi-AI composer textarea missing');
   await wait(400);
   const sendBtn = await evaluate(`(() => {
@@ -236,8 +252,9 @@ try {
       const report = card ? (card.querySelector('.wb-chat-report') || {}).textContent || '' : '';
       const err = card ? (card.querySelector('.wb-err-note, .wb-chat-error, [class*="err"]') || {}).textContent || '' : '';
       const phaseText = card ? (card.querySelector('.wb-chat-progress-head') || {}).textContent || '' : '';
-      const done = report.length > 0 || err.length > 0 || phaseText.includes('失败') || phaseText.includes('已拒绝') || phaseText.includes('已完成');
-      return { card: !!card, probeText, report: report.slice(0, 200), err: err.slice(0, 200), phaseText: phaseText.slice(0, 120), done };
+      const flow = document.querySelector('.wb-chat-flow');
+      const done = (flow && !!flow.querySelector('.wb-chat-msg-assistant')) || err.length > 0 || phaseText.includes('失败') || phaseText.includes('已拒绝') || phaseText.includes('已完成') || phaseText.includes('等待验收');
+      return { card: !!card, probeText, report: report.slice(0, 200), err: err.slice(0, 200), phaseText: phaseText.slice(0, 120), done, flowUser: !!document.querySelector('.wb-chat-flow .wb-chat-msg-user'), flowAssistant: !!document.querySelector('.wb-chat-flow .wb-chat-msg-assistant'), flowText: flow ? flow.textContent.slice(0, 240) : '', busyRow: !!document.querySelector('.wb-chat-agent-busy') };
     })()`);
     if (finalState.done) break;
     if (attempt === 20) await shot('p26-agent-running.png');
@@ -245,6 +262,7 @@ try {
   console.log('final chat state: ' + JSON.stringify(finalState, null, 2));
   if (!finalState.card) throw new Error('progress card never appeared');
   if (!finalState.done) throw new Error('orchestration did not finish in time: ' + JSON.stringify(finalState));
+  if (!finalState.flowUser || !finalState.flowAssistant) throw new Error('main-agent result did not appear in the conversation flow: ' + JSON.stringify(finalState));
   await shot('p26-agent-final.png');
 
   console.log('step: open task center from chat card');

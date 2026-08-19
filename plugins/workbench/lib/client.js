@@ -611,6 +611,7 @@ window.__ModuleLoader__.load({
       "@keyframes wb-task-detail-in{from{transform:translateX(18px);opacity:.5}to{transform:none;opacity:1}}",
       ".wb-task-detail-head{display:flex;align-items:center;justify-content:space-between;min-height:62px;padding:0 16px;border-bottom:1px solid var(--dsw-alias-border-l1)}",
       ".wb-task-detail-head strong{font-size:14px;color:var(--dsw-alias-label-primary)}",
+      ".wb-chat-flow{display:flex;flex-direction:column;gap:10px;padding:14px 16px;max-width:780px;margin:0 auto}.wb-chat-msg{max-width:78%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word}.wb-chat-msg-user{align-self:flex-end;background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-button-primary-label,#fff);border-bottom-right-radius:4px}.wb-chat-msg-assistant{align-self:flex-start;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-bottom-left-radius:4px}.wb-chat-msg-head{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:10px;color:var(--dsw-alias-label-tertiary)}.wb-chat-msg-head strong{color:var(--dsw-alias-label-secondary);font-weight:600}.wb-chat-msg-actions{display:flex;gap:8px;margin-top:7px}.wb-chat-msg-actions button{border:0;padding:0;background:transparent;color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));font:10px inherit;cursor:pointer}.wb-chat-agent-busy{border-color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));background:color-mix(in srgb,var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill)) 10%,var(--dsw-alias-bg-layer-1))}",
       ".wb-task-detail-body{flex:1;min-height:0;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:13px}",
       ".wb-task-field{display:flex;flex-direction:column;gap:5px}",
       ".wb-task-field label{font-size:10px;font-weight:650;color:var(--dsw-alias-label-tertiary)}",
@@ -2693,6 +2694,18 @@ window.__ModuleLoader__.load({
       return Math.min(92, 30 + Math.round(done / workers.length * 58));
     }
 
+    const WB_CHAT_FLOW_MAX = 50;
+    function wbReadChatFlow(sessionId) {
+      try {
+        const raw = localStorage.getItem("wb.chatFlow." + (sessionId || "none"));
+        const list = raw ? JSON.parse(raw) : [];
+        return Array.isArray(list) ? list : [];
+      } catch (e) { return []; }
+    }
+    function wbWriteChatFlow(sessionId, list) {
+      try { localStorage.setItem("wb.chatFlow." + (sessionId || "none"), JSON.stringify(list.slice(-WB_CHAT_FLOW_MAX))); } catch (e) { /* ignore */ }
+    }
+
     function ProjectContextDialog({ projectPath, onClose }) {
       const [note, setNote] = React.useState("");
       const [techStack, setTechStack] = React.useState("");
@@ -2748,6 +2761,8 @@ window.__ModuleLoader__.load({
       const [dragOver, setDragOver] = React.useState(false);
       const [contextOpen, setContextOpen] = React.useState(false);
       const [submitting, setSubmitting] = React.useState(false);
+      const [flowMessages, setFlowMessages] = React.useState([]);
+      const [flowTarget, setFlowTarget] = React.useState(null);
       const fileInputRef = React.useRef(null);
       const autoStartRef = React.useRef(new Set());
       const startingRef = React.useRef(new Set());
@@ -2758,6 +2773,15 @@ window.__ModuleLoader__.load({
         autoStartRef.current = new Set(nextAutoStart ? [nextAutoStart] : []);
         setMode(nextMode); setStrategy(nextStrategy); setActiveId(nextActive); setDraft(""); setReferences([]); setAttachments([]); setExpanded(false);
       }, [modeKey, strategyKey, activeKey, autoStartKey]);
+      React.useEffect(() => {
+        if (mode !== "multi" || !sessionId) { setFlowMessages([]); return; }
+        setFlowMessages(wbReadChatFlow(sessionId));
+        const timer = window.setInterval(() => {
+          const node = document.querySelector(".wb-chat-native [data-conversation-scroll] > div:first-child");
+          setFlowTarget((current) => (current && document.contains(current) ? current : node || null));
+        }, 800);
+        return () => window.clearInterval(timer);
+      }, [mode, sessionId]);
       React.useEffect(() => {
         if (!refOpen || !projectPath) { setFiles([]); return; }
         let alive = true;
@@ -2786,6 +2810,7 @@ window.__ModuleLoader__.load({
       const selectStrategy = (next) => { setStrategy(next); try { localStorage.setItem(strategyKey, next); } catch (e) {} };
       const rememberActive = (id) => { setActiveId(id); try { localStorage.setItem(activeKey, id); } catch (e) {} };
       const rememberAutoStart = (id) => { autoStartRef.current.add(id); try { localStorage.setItem(autoStartKey, id); } catch (e) {} };
+      const pushFlowMessage = (entry) => { const next = wbReadChatFlow(sessionId); next.push(entry); wbWriteChatFlow(sessionId, next); setFlowMessages(next); };
       const uploadFiles = (selected) => {
         const input = Array.from(selected || []).slice(0, Math.max(0, 6 - attachments.length));
         if (!input.length) return;
@@ -2814,6 +2839,7 @@ window.__ModuleLoader__.load({
             if (!created) throw new Error("任务已创建，但未找到对应的协作记录");
             rememberActive(created.id); rememberAutoStart(created.id); setExpanded(true);
             setDraft(""); setReferences([]); setAttachments([]);
+            pushFlowMessage({ id: created.id + "-user-" + Date.now(), role: "user", text, orchestrationId: created.id, time: new Date().toISOString() });
             return store.mutate("orchestration_plan", { id: created.id, modelPolicy: "balanced", probeModels: true });
           })
           .catch((error) => store.setErr(String((error && error.message) || error)))
@@ -2823,9 +2849,27 @@ window.__ModuleLoader__.load({
       const phaseLabel = active ? (WB_ORCHESTRATION_PHASE[active.phase] || active.phase) : "";
       const probe = active && active.modelProbe;
       const agents = active ? [active.mainAgent, ...(active.workers || [])].filter(Boolean) : [];
+      const flowRows = flowMessages.map((message) => {
+        const orchestration = message.orchestrationId ? store.orchestrations.find((item) => item.id === message.orchestrationId) : null;
+        return { ...message, orchestration };
+      });
+      React.useEffect(() => { if (flowTarget && flowTarget.parentElement) flowTarget.parentElement.scrollTop = flowTarget.parentElement.scrollHeight; }, [flowRows.length, flowTarget]);
 
       return jsxRuntime.jsxs("div", { className: "wb-chat-shell" + (mode === "multi" ? " wb-chat-shell-multi" : ""), children: [
         jsxRuntime.jsx("div", { className: "wb-chat-native", children }),
+        mode === "multi" && flowTarget && ReactDOM.createPortal(jsxRuntime.jsx("div", { className: "wb-chat-flow", children: flowRows.map((row) => jsxRuntime.jsxs(React.Fragment, { children: [
+          jsxRuntime.jsx("div", { className: "wb-chat-msg wb-chat-msg-user", children: row.text }),
+          row.orchestration && row.orchestration.finalReport && jsxRuntime.jsxs("div", { className: "wb-chat-msg wb-chat-msg-assistant", children: [
+            jsxRuntime.jsxs("div", { className: "wb-chat-msg-head", children: [
+              jsxRuntime.jsx("strong", { children: "主代理" }),
+              jsxRuntime.jsx("span", { children: (row.orchestration.mainAgent && (row.orchestration.mainAgent.usedModel || row.orchestration.mainAgent.model)) || "继承主会话模型" }),
+              jsxRuntime.jsx("span", { children: wbDateLabel(row.orchestration.updatedAt) })
+            ] }),
+            jsxRuntime.jsx("div", { children: row.orchestration.finalReport }),
+            row.orchestration.runtimeError && jsxRuntime.jsx(WbErrNote, { message: row.orchestration.runtimeError }),
+            jsxRuntime.jsx("div", { className: "wb-chat-msg-actions", children: jsxRuntime.jsx("button", { type: "button", onClick: () => window.dispatchEvent(new CustomEvent("wb:open-task-center", { detail: { view: "orchestrate", id: row.orchestration.id } })), children: "在任务中心查看完整记录" }) })
+          ] })
+        ] }, row.id)) }), flowTarget),
         jsxRuntime.jsxs("div", { className: "wb-chat-modebar", role: "group", "aria-label": "对话模式", children: [
           jsxRuntime.jsx("button", { type: "button", "aria-pressed": mode === "single", onClick: () => selectMode("single"), children: "单 AI" }),
           jsxRuntime.jsx("button", { type: "button", "aria-pressed": mode === "multi", disabled: !sessionId, onClick: () => selectMode("multi"), children: "多 AI" }),
@@ -2842,12 +2886,15 @@ window.__ModuleLoader__.load({
             jsxRuntime.jsx("div", { className: "wb-chat-progress-track", children: jsxRuntime.jsx("span", { style: { width: progress + "%" } }) }),
             expanded && jsxRuntime.jsxs("div", { className: "wb-chat-progress-body", children: [
               probe && jsxRuntime.jsx("div", { className: "wb-chat-probe", children: probe.totalCount ? "模型实测：" + probe.availableCount + "/" + probe.totalCount + " 可用" + (probe.skippedCount ? " · 目录共 " + probe.catalogCount + " 个，本次跳过 " + probe.skippedCount + " 个" : "") + (probe.results.some((entry) => entry.cached) ? " · 10 分钟缓存" : "") : "未发现可测试模型，代理继承主会话模型" }),
-              agents.map((agent, index) => jsxRuntime.jsxs("div", { className: "wb-chat-agent-row", children: [
-                jsxRuntime.jsx("span", { children: (index === 0 ? "主 · " : "") + agent.name }),
-                jsxRuntime.jsx("strong", { children: WB_ORCHESTRATION_AGENT_STATUS[agent.status] || agent.status }),
-                jsxRuntime.jsx("small", { children: (agent.usedModel || agent.model || "继承主会话模型") + (agent.modelReason ? " · " + agent.modelReason : "") })
-              ] }, agent.id || index)),
-              active.finalReport && jsxRuntime.jsx("pre", { className: "wb-chat-report", children: active.finalReport }),
+              agents.map((agent, index) => {
+                const busy = ["running", "planning", "working"].includes(agent.status);
+                return jsxRuntime.jsxs("div", { className: "wb-chat-agent-row" + (busy ? " wb-chat-agent-busy" : ""), children: [
+                  jsxRuntime.jsx("span", { children: (index === 0 ? "主 · " : "") + agent.name }),
+                  jsxRuntime.jsx("strong", { children: (WB_ORCHESTRATION_AGENT_STATUS[agent.status] || agent.status) + (busy ? " · 工作中" : "") }),
+                  jsxRuntime.jsx("small", { children: (agent.usedModel || agent.model || "继承主会话模型") + (agent.modelReason ? " · " + agent.modelReason : "") })
+                ] }, agent.id || index);
+              }),
+              active.finalReport && jsxRuntime.jsx("div", { className: "wb-chat-probe", children: "✓ 最终报告已展示在对话窗口" }),
               active.runtimeError && jsxRuntime.jsx(WbErrNote, { message: active.runtimeError }),
               jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => window.dispatchEvent(new CustomEvent("wb:open-task-center", { detail: { view: "orchestrate", id: active.id } })), children: "在任务中心查看完整记录" })
             ] })
