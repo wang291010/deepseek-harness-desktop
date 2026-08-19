@@ -560,6 +560,19 @@
   （`%APPDATA%\obsidian\obsidian.json` 写入 knowledge vault）；Dataview 0.5.70 + Excalidraw 2.25.3
   已放入 `.obsidian\plugins` 并启用（首次打开 vault 需点一次"信任作者并启用插件"）。
 
+第三迭代（2026-08-19，评测 + 自生长优化）：
+
+- 造知识 + 评测集：`tools/seed-knowledge-workbench.mjs` 写入 18 条工作台真实知识（任务面板/风格页/
+  多AI协作/看门狗/记忆/候选专家/监控/工作流/知识库架构/检索/蒸馏/部署/文件夹修复/简历生成器/
+  FastAPI/BGE/维护器/评测集）+ 25 条评测题。
+- 基线跑分：recall@5 = 0.96（24/25），唯一 miss 是 04-Projects 条目——默认检索范围未含 projects。
+- 调优：默认检索范围加入 04-Projects（模板仍默认排除），重跑 recall@5 = **1.0**（25/25），
+  平均 268 token / 3ms。
+- 自生长优化：检索无结果自动记入评测候选池（去重）；评测历史存档（最近 10 次，可对比调优）；
+  维护器每 24h 自动运行（unref 不阻塞）+ 启动 15s 后自动维护一轮（MOC/去重/断链）。
+- 验证：smoke 新增历史存档与空检索自动候选断言；全套 8 smoke + eslint 通过；已部署
+  （备份 `backups\workbench-p5-selfgrow-deploy-20260819-163600`）。
+
 ### Phase 6：打磨与文档（P7）
 
 任务：

@@ -3462,7 +3462,7 @@ window.__ModuleLoader__.load({
               jsxRuntime.jsx("p", { className: "wb-knowledge-snippet", children: item.snippet || item.summary }),
               item.tags.length > 0 && jsxRuntime.jsx("div", { className: "wb-collab-files", children: item.tags.map((tag) => jsxRuntime.jsx("span", { className: "wb-collab-file-chip", children: "#" + tag }, tag)) }),
               jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "溯源：" + item.path + " · " + new Date(item.updatedAt).toLocaleString() })
-            ] }, item.path)) }) : results && jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "无匹配结果。默认检索范围是 01-Inbox / 02-Atomic / 03-MOCs；04-Projects / 99-Templates 需在检索画像中开启对应目录。直接修改过的文件会自动重新索引，仍找不到可点右上角「同步索引」，或确认关键词出现在标题/标签/正文里。" }),
+            ] }, item.path)) }) : results && jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "无匹配结果。默认检索范围：01-Inbox / 02-Atomic / 03-MOCs / 04-Projects；99-Templates 模板默认不参与（可在检索画像开启）。该问题已自动记入评测候选池。仍找不到可点右上角「同步索引」，或确认关键词出现在标题/标签/正文里。" }),
             results && jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-workflow-editor", children: [
               jsxRuntime.jsx("h3", { children: "反馈（没找到/不准 → 自动记入评测候选池）" }),
               jsxRuntime.jsx("input", { value: feedback.note, placeholder: "说明哪里不准或缺失（可选）", onChange: (e) => setFeedback((cur) => ({ ...cur, note: e.target.value })) }),

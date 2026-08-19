@@ -220,6 +220,12 @@ try {
   assert.equal(evalRun.items, 1);
   assert.equal(evalRun.recallAtK, 1, 'fastapi entry should be recalled');
   assert.ok(evalRun.avgTokens > 0);
+  const evalAfterRun = await call('/api/dsh-workbench/knowledge/eval', 'GET');
+  assert.ok((evalAfterRun.history || []).length >= 1, 'eval history should be stored');
+  const emptySearch = await call('/api/dsh-workbench/knowledge/search', 'POST', { query: 'zzzznomatchxyz' });
+  assert.equal(emptySearch.results.length, 0);
+  const evalAfterEmpty = await call('/api/dsh-workbench/knowledge/eval', 'GET');
+  assert.ok(evalAfterEmpty.candidates.some((item) => item.question === 'zzzznomatchxyz'), 'empty search should auto-record a candidate');
 
   const readEntry = await call('/api/dsh-workbench/knowledge/read?path=' + encodeURIComponent(written.entry.path), 'GET');
   assert.ok(readEntry.content.includes('FastAPI'));

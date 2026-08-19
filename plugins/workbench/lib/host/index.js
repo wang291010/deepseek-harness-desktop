@@ -95,7 +95,7 @@ const KNOWLEDGE_DEFAULT_PROFILE = {
   topK: 5,
   tokenBudget: 1500,
   rerank: 'none',
-  folders: ['inbox', 'atomic', 'mocs'],
+  folders: ['inbox', 'atomic', 'mocs', 'projects'],
   projectType: ''
 };
 const TODO_STATUSES = ['pending', 'in_progress', 'completed'];
@@ -1712,10 +1712,11 @@ async function readKnowledgeEval() {
       version: 1,
       items: Array.isArray(parsed.items) ? parsed.items.map(cleanEvalItem) : [],
       candidates: Array.isArray(parsed.candidates) ? parsed.candidates.map((item) => cleanEvalItem({ ...item, id: undefined })) : [],
-      lastRun: parsed.lastRun && typeof parsed.lastRun === 'object' ? parsed.lastRun : null
+      lastRun: parsed.lastRun && typeof parsed.lastRun === 'object' ? parsed.lastRun : null,
+      history: Array.isArray(parsed.history) ? parsed.history.slice(-10) : []
     };
   } catch (error) {
-    if (error && error.code === 'ENOENT') knowledgeEvalCache = { version: 1, items: [], candidates: [], lastRun: null };
+    if (error && error.code === 'ENOENT') knowledgeEvalCache = { version: 1, items: [], candidates: [], lastRun: null, history: [] };
     else throw error;
   }
   return knowledgeEvalCache;
@@ -1738,8 +1739,9 @@ async function runKnowledgeEvalSet(options = {}) {
   for (const item of items) {
     const start = Date.now();
     const search = await runKnowledgeSearch(item.question, '', { topK: Math.max(topK, 10), tokenBudget: 4000 });
-    const paths = new Set((search.results || []).map((result) => result.path));
-    const titles = new Set((search.results || []).map((result) => result.title.toLowerCase()));
+    const topResults = (search.results || []).slice(0, topK);
+    const paths = new Set(topResults.map((result) => result.path));
+    const titles = new Set(topResults.map((result) => result.title.toLowerCase()));
     const expected = item.expected || [];
     const hits = expected.filter((exp) => {
       const normalized = String(exp).toLowerCase();
@@ -1769,8 +1771,23 @@ async function runKnowledgeEvalSet(options = {}) {
     results
   };
   store.lastRun = report;
+  store.history = store.history || [];
+  store.history.push(report);
+  if (store.history.length > 10) store.history = store.history.slice(-10);
   await writeKnowledgeEval(store);
   return report;
+}
+
+async function addKnowledgeEvalCandidate(question) {
+  const text = cleanTaskText(question, 500);
+  if (!text) return;
+  const store = await readKnowledgeEval();
+  store.candidates = store.candidates || [];
+  const lower = text.toLowerCase();
+  if (store.candidates.some((item) => String(item.question || '').toLowerCase() === lower)) return;
+  store.candidates.push(cleanEvalItem({ question: text, note: '自动记录：检索无结果', expected: [] }));
+  store.candidates = store.candidates.slice(-200);
+  await writeKnowledgeEval(store);
 }
 
 function knowledgeResolve(relPath) {
@@ -3905,6 +3922,9 @@ function makeRoutes() {
             topK: body.topK,
             tokenBudget: body.tokenBudget
           });
+          if (result && !result.error && (!result.results || !result.results.length)) {
+            try { await addKnowledgeEvalCandidate(body.query); } catch (e) { /* best effort */ }
+          }
           writeJson(res, 200, result);
         } catch (error) { fail(res, error); }
       }
@@ -4178,9 +4198,16 @@ function apply(ctx) {
   });
   workflowTimer = setInterval(() => { void pollWorkflowSchedules(); }, WORKFLOW_SCHEDULE_POLL_MS);
   if (workflowTimer && typeof workflowTimer.unref === 'function') workflowTimer.unref();
+  const knowledgeMaintain = () => { void maintainKnowledgeVault().catch(() => {}); };
+  const knowledgeMaintainTimer = setInterval(knowledgeMaintain, 24 * 3600 * 1000);
+  if (knowledgeMaintainTimer && typeof knowledgeMaintainTimer.unref === 'function') knowledgeMaintainTimer.unref();
+  const knowledgeMaintainBoot = setTimeout(knowledgeMaintain, 15000);
+  if (knowledgeMaintainBoot && typeof knowledgeMaintainBoot.unref === 'function') knowledgeMaintainBoot.unref();
   ctx.on('dispose', () => {
     if (workflowTimer !== null) clearInterval(workflowTimer);
     workflowTimer = null;
+    clearInterval(knowledgeMaintainTimer);
+    clearTimeout(knowledgeMaintainBoot);
     workflowInFlight.clear();
     for (const controller of orchestrationControllers.values()) controller.abort('host disposed');
     orchestrationControllers.clear();
