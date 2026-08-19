@@ -47,9 +47,12 @@ const PRESET_FILES = new Set(['agent.cordis.yml', 'preset.yml']);
 const DIAG_LOG = join(DSH_ROOT, 'dsh-workbench-host.log');
 const TASK_STORE = join(DSH_ROOT, 'dsh-workbench-tasks.json');
 const STYLE_STORE = join(DSH_ROOT, 'dsh-workbench-style.json');
+const MEMORY_STORE = join(DSH_ROOT, 'dsh-workbench-memory.json');
 const AGENTS_STORE = join(DSH_ROOT, 'dsh-workbench-agents.json');
 const ATTACHMENT_ROOT = join(DSH_ROOT, 'attachments');
 const MAX_STYLE_STORE_BYTES = 700 * 1024;
+const MAX_MEMORY_STORE_BYTES = 2 * 1024 * 1024;
+const MAX_MEMORY_SNAPSHOTS = 100;
 const MAX_AGENT_POOL_SIZE = 30;
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 const ATTACHMENT_SUMMARY_BYTES = 64 * 1024;
@@ -273,6 +276,116 @@ async function writeAgentsStore(pool, mode) {
   }
   try { await rm(temp, { force: true }); } catch (e) { /* keep temp for inspection */ }
   throw lastError;
+}
+
+let memoryState = { version: 1, revision: 0, snapshots: [] };
+
+function cleanMemorySnapshot(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  return {
+    id: cleanTaskText(value.id, 120) || randomUUID(),
+    at: typeof value.at === 'string' ? value.at : new Date().toISOString(),
+    title: cleanTaskText(value.title, 200),
+    summary: cleanTaskText(value.summary, 4000),
+    findings: Array.isArray(value.findings) ? value.findings.map((item) => cleanTaskText(item, 1000)).filter(Boolean).slice(0, 20) : [],
+    decisions: Array.isArray(value.decisions) ? value.decisions.map((item) => cleanTaskText(item, 1000)).filter(Boolean).slice(0, 20) : [],
+    pending: Array.isArray(value.pending) ? value.pending.map((item) => cleanTaskText(item, 1000)).filter(Boolean).slice(0, 20) : [],
+    sourceOrchestrationId: cleanTaskText(value.sourceOrchestrationId, 120)
+  };
+}
+
+async function readMemoryStore() {
+  try {
+    const info = await lstat(MEMORY_STORE);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('memory store must be a regular non-symbolic file');
+    if (info.size > MAX_MEMORY_STORE_BYTES) throw new Error(`memory store exceeds ${MAX_MEMORY_STORE_BYTES} bytes`);
+    const parsed = JSON.parse(await readFile(MEMORY_STORE, 'utf8'));
+    memoryState = {
+      version: 1,
+      revision: Number.isSafeInteger(parsed.revision) && parsed.revision >= 0 ? parsed.revision : 0,
+      snapshots: Array.isArray(parsed.snapshots) ? parsed.snapshots.map(cleanMemorySnapshot).filter((entry) => entry.id).slice(-MAX_MEMORY_SNAPSHOTS) : []
+    };
+  } catch (error) {
+    if (error && error.code === 'ENOENT') memoryState = { version: 1, revision: 0, snapshots: [] };
+    else throw error;
+  }
+  return memoryState;
+}
+
+async function writeMemoryStore(store) {
+  await mkdir(DSH_ROOT, { recursive: true });
+  const next = { version: 1, revision: store.revision, snapshots: (store.snapshots || []).slice(-MAX_MEMORY_SNAPSHOTS) };
+  const temp = MEMORY_STORE + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, JSON.stringify(next, null, 2) + '\n', 'utf8');
+  let lastError = null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      await rename(temp, MEMORY_STORE);
+      memoryState = next;
+      return next;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 4) await new Promise((resolvePromise) => setTimeout(resolvePromise, 25 * (attempt + 1)));
+    }
+  }
+  try { await rm(temp, { force: true }); } catch (e) { /* keep temp for inspection */ }
+  throw lastError;
+}
+
+async function resolveMemorySnapshots(tokens) {
+  const input = Array.isArray(tokens) ? tokens.slice(0, 5).map((token) => String(token || '').trim()).filter(Boolean) : [];
+  if (input.length === 0) return [];
+  const store = await readMemoryStore();
+  const byId = new Map(store.snapshots.map((entry) => [entry.id, entry]));
+  return input.map((token) => byId.get(token)).filter(Boolean).map(cleanMemorySnapshot).slice(0, 5);
+}
+
+async function generateMemorySnapshot(orchestration) {
+  const workersText = (Array.isArray(orchestration.workers) ? orchestration.workers : [])
+    .map((worker) => '- ' + worker.name + '：' + String(worker.output || worker.error || '无结果').slice(0, 500))
+    .join('\n')
+    .slice(0, 30000);
+  const fallbackSummary = String(orchestration.finalReport || (orchestration.plan && orchestration.plan.summary) || orchestration.idea || '').slice(0, 3000);
+  let summary = fallbackSummary;
+  let findings = [];
+  let decisions = [];
+  let pending = [];
+  try {
+    if (chatLlm !== null) {
+      const text = await streamLlmText(
+        '你负责把一次多代理任务的成果压缩成记忆快照。只输出一个 JSON 对象，不要 Markdown，不要解释。',
+        [
+          '任务：' + (orchestration.idea || ''),
+          '最终报告：\n' + String(orchestration.finalReport || '').slice(0, 20000),
+          '子代理结果：\n' + workersText,
+          '输出结构：{ "summary": "一句话摘要", "findings": ["关键发现，含证据"], "decisions": ["已做的决策"], "pending": ["未完成/待办"] }'
+        ].join('\n\n'),
+        { maxTokens: 1500 }
+      );
+      const parsed = parseJsonObject(text);
+      summary = cleanTaskText(parsed.summary, 4000) || fallbackSummary;
+      findings = Array.isArray(parsed.findings) ? parsed.findings.map((item) => cleanTaskText(item, 1000)).filter(Boolean) : [];
+      decisions = Array.isArray(parsed.decisions) ? parsed.decisions.map((item) => cleanTaskText(item, 1000)).filter(Boolean) : [];
+      pending = Array.isArray(parsed.pending) ? parsed.pending.map((item) => cleanTaskText(item, 1000)).filter(Boolean) : [];
+    }
+  } catch (e) { /* fall back to heuristic extraction */ }
+  if (findings.length === 0) {
+    findings = (Array.isArray(orchestration.workers) ? orchestration.workers : [])
+      .map((worker) => worker.name + '：' + String(worker.output || '').slice(0, 200))
+      .filter(Boolean)
+      .slice(0, 10);
+  }
+  if (decisions.length === 0 && orchestration.acceptedNote) decisions = [cleanTaskText(orchestration.acceptedNote, 1000)];
+  if (pending.length === 0 && orchestration.runtimeError) pending = [cleanTaskText(orchestration.runtimeError, 1000)];
+  return cleanMemorySnapshot({
+    id: randomUUID(),
+    title: orchestration.title || '记忆快照',
+    summary,
+    findings,
+    decisions,
+    pending,
+    sourceOrchestrationId: orchestration.id
+  });
 }
 
 function cleanAttachment(raw) {
@@ -706,6 +819,7 @@ function cleanOrchestration(raw) {
     idea,
     quick: Boolean(raw.quick),
     attachments: Array.isArray(raw.attachments) ? raw.attachments.map(cleanAttachment).filter((entry) => entry.id).slice(0, 12) : [],
+    memory: Array.isArray(raw.memory) ? raw.memory.map(cleanMemorySnapshot).filter((entry) => entry.id).slice(0, 5) : [],
     projectPath: String(raw.projectPath || ''),
     sourceSessionId: String(raw.sourceSessionId || ''),
     phase,
@@ -989,6 +1103,7 @@ async function mutateTasks(body) {
       sourceSessionId: body.sourceSessionId,
       quick: body.quick,
       attachments: await resolveAttachments(body.attachments),
+      memory: await resolveMemorySnapshots(body.memoryTokens),
       phase: 'idea',
       createdAt: now,
       updatedAt: now
@@ -1248,6 +1363,7 @@ async function generateOrchestrationPlan(record, feedback, models, policy) {
   const prompt = [
     '项目路径：' + (record.projectPath || '全局任务'),
     '用户想法：\n' + record.idea,
+    record.memory && record.memory.length ? '记忆快照（跨会话上下文，优先引用）：\n' + record.memory.map((entry) => '- [' + entry.title + '] ' + entry.summary + (entry.findings.length ? '\n  发现：' + entry.findings.slice(0, 3).join('；') : '')).join('\n') : '',
     record.attachments && record.attachments.length ? '已附加文件：\n' + record.attachments.map((entry) => '- ' + entry.name + '（' + entry.size + ' B，' + entry.mime + '）' + (entry.summary ? '\n  内容摘录：' + entry.summary.slice(0, 400) : '')).join('\n') : '',
     agents.length ? '候选专家参考（可按需创建更合适的角色；若使用候选，请在 workers/mainAgent 里带上 agentRef）：\n' + agents.map((agent) => '- ' + agent.id + '：' + agent.name + '（' + (agent.capabilities || []).join('/') + '）' + (agent.model ? '；模型 ' + agent.model : '')).join('\n') : '',
     feedback ? '用户修改意见：\n' + feedback : '',
@@ -2152,6 +2268,56 @@ function makeRoutes() {
         if (!fence(req, res)) return;
         if (req.method !== 'POST') return bad(res, 'method', 'POST required');
         try { writeJson(res, 200, await writeAgentsStore(AGENT_POOL_DEFAULTS, 'free')); } catch (error) { fail(res, error); }
+      }
+    },
+    // ---- memory snapshots: cross-session context ----
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/memory/list',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        try { writeJson(res, 200, await readMemoryStore()); } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/memory/generate',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        try {
+          const store = await readTaskStore();
+          const orchestration = store.orchestrations.find((item) => item.id === body.orchestrationId);
+          if (!orchestration) return bad(res, 'not-found', 'orchestration not found');
+          if (!['review', 'accepted', 'failed', 'cancelled'].includes(orchestration.phase)) return bad(res, 'not-ready', '只对已结束的任务生成记忆快照');
+          const snapshot = await generateMemorySnapshot(orchestration);
+          const memory = await readMemoryStore();
+          memory.revision += 1;
+          memory.snapshots = [...memory.snapshots, snapshot];
+          await writeMemoryStore(memory);
+          writeJson(res, 200, { snapshot, revision: memory.revision });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/memory/remove',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        try {
+          const memory = await readMemoryStore();
+          const before = memory.snapshots.length;
+          memory.snapshots = memory.snapshots.filter((entry) => entry.id !== body.id);
+          if (memory.snapshots.length === before) return bad(res, 'not-found', 'snapshot not found');
+          memory.revision += 1;
+          await writeMemoryStore(memory);
+          writeJson(res, 200, { revision: memory.revision });
+        } catch (error) { fail(res, error); }
       }
     },
     // ---- attachments: loopback-only upload for orchestration inputs ----

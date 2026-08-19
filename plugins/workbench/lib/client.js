@@ -588,7 +588,7 @@ window.__ModuleLoader__.load({
       ".wb-collab-files{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.wb-collab-file-chip{display:inline-flex;align-items:center;gap:6px;max-width:220px;padding:3px 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);font-size:10px}.wb-collab-file-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wb-collab-file-chip button{border:0;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer;font-size:11px}.wb-collab-file-hint{color:var(--dsw-alias-label-tertiary);font-size:10px}.wb-collab-command-hint{color:var(--dsw-alias-accent-fill);font-size:10px}",
       ".wb-collab-attachments{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:4px 0 8px}",
       ".wb-collab-order{margin:10px 0}.wb-collab-order>strong{display:block;margin-bottom:8px;font-size:11px;color:var(--dsw-alias-label-secondary)}.wb-collab-order-flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.wb-collab-order-group{display:flex;gap:6px;flex-wrap:wrap}.wb-collab-order-node{padding:4px 9px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);font-size:10px}.wb-collab-order-arrow{color:var(--dsw-alias-label-tertiary);font-size:11px}",
-      ".wb-collab-log-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}.wb-collab-log-toolbar input{flex:1;min-width:120px;height:28px;padding:0 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:11px inherit}.wb-collab-log-filter{height:26px;padding:0 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);font:10px inherit;cursor:pointer}.wb-collab-log-filter-active{border-color:var(--dsw-alias-accent-fill);color:var(--dsw-alias-label-primary)}.wb-collab-log-list{display:grid;gap:4px;max-height:360px;overflow:auto}.wb-collab-log-row{display:grid;grid-template-columns:52px 1fr;gap:8px;padding:5px 7px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:var(--dsw-alias-bg-layer-2);font-size:10px;line-height:1.5}.wb-collab-log-row small{color:var(--dsw-alias-label-tertiary)}.wb-collab-log-info{border-left:2px solid #30b650}.wb-collab-log-warn{border-left:2px solid #ff9f0a}.wb-collab-log-error{border-left:2px solid #ff453a}.wb-orch-agents-editor{width:100%;box-sizing:border-box;min-height:120px;margin-top:8px;padding:8px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;resize:vertical;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:10px/1.5 monospace}.wb-orch-agent-ref{display:block;margin:2px 0;color:var(--dsw-alias-label-tertiary);font-size:10px}",
+      ".wb-collab-log-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}.wb-collab-log-toolbar input{flex:1;min-width:120px;height:28px;padding:0 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:11px inherit}.wb-collab-log-filter{height:26px;padding:0 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);font:10px inherit;cursor:pointer}.wb-collab-log-filter-active{border-color:var(--dsw-alias-accent-fill);color:var(--dsw-alias-label-primary)}.wb-collab-log-list{display:grid;gap:4px;max-height:360px;overflow:auto}.wb-collab-log-row{display:grid;grid-template-columns:52px 1fr;gap:8px;padding:5px 7px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:var(--dsw-alias-bg-layer-2);font-size:10px;line-height:1.5}.wb-collab-log-row small{color:var(--dsw-alias-label-tertiary)}.wb-collab-log-info{border-left:2px solid #30b650}.wb-collab-log-warn{border-left:2px solid #ff9f0a}.wb-collab-log-error{border-left:2px solid #ff453a}.wb-orch-agents-editor{width:100%;box-sizing:border-box;min-height:120px;margin-top:8px;padding:8px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;resize:vertical;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:10px/1.5 monospace}.wb-orch-agent-ref{display:block;margin:2px 0;color:var(--dsw-alias-label-tertiary);font-size:10px}.wb-collab-memory-actions{margin-bottom:10px}.wb-collab-memory-card{padding:9px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-2);display:grid;gap:6px}.wb-collab-memory-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.wb-collab-memory-head strong{font-size:12px;color:var(--dsw-alias-label-primary)}.wb-collab-memory-head small{font-size:10px;color:var(--dsw-alias-label-tertiary)}.wb-collab-memory-card p{margin:0;font-size:11px;line-height:1.6;color:var(--dsw-alias-label-secondary)}.wb-collab-memory-list{display:grid;gap:3px}.wb-collab-memory-finding{font-size:10px;color:var(--dsw-alias-label-secondary);line-height:1.5}",
       ".wb-orch-main p,.wb-orch-worker p{margin:8px 0 0;font-size:10px;line-height:1.55;color:var(--dsw-alias-label-secondary);white-space:pre-wrap}",
       ".wb-orch-workers{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px;margin-top:8px}.wb-orch-deps,.wb-orch-acceptance{margin-top:7px;font-size:9px;line-height:1.5;color:var(--dsw-alias-label-tertiary)}.wb-orch-acceptance{padding-top:7px;border-top:1px dashed var(--dsw-alias-border-l1)}",
       ".wb-orch-criteria,.wb-orch-report{margin-top:10px;padding:11px 12px;border:1px solid var(--dsw-alias-border-l1);border-radius:11px;background:var(--dsw-alias-bg-base)}.wb-orch-criteria>strong,.wb-orch-report>strong{font-size:11px;color:var(--dsw-alias-label-primary)}.wb-orch-criteria ol{margin:7px 0 0;padding-left:20px;font-size:10px;line-height:1.7;color:var(--dsw-alias-label-secondary)}",
@@ -1199,6 +1199,20 @@ window.__ModuleLoader__.load({
       return wbFetchJson("/api/dsh-workbench/agents/reset", { method: "POST" }).then(({ data }) => ({ mode: data.mode === "pool" ? "pool" : "free", agents: data.agents || [] }));
     }
 
+    function wbMemoryList() {
+      return wbFetchJson("/api/dsh-workbench/memory/list").then(({ data }) => data.snapshots || []).catch(() => []);
+    }
+
+    function wbMemoryGenerate(orchestrationId) {
+      return wbFetchJson("/api/dsh-workbench/memory/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ orchestrationId }) })
+        .then(({ data }) => data.snapshot || null).catch(() => null);
+    }
+
+    function wbMemoryRemove(id) {
+      return wbFetchJson("/api/dsh-workbench/memory/remove", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id }) })
+        .then(() => true).catch(() => false);
+    }
+
     function wbDependencyGroups(workers) {
       const list = Array.isArray(workers) ? workers : [];
       const byId = new Map(list.map((worker) => [worker.id, worker]));
@@ -1756,6 +1770,9 @@ window.__ModuleLoader__.load({
       const [agentsText, setAgentsText] = React.useState("");
       const [agentsBusy, setAgentsBusy] = React.useState(false);
       const [agentsMode, setAgentsMode] = React.useState("free");
+      const [memorySnapshots, setMemorySnapshots] = React.useState([]);
+      const [memoryChips, setMemoryChips] = React.useState([]);
+      const [memoryBusy, setMemoryBusy] = React.useState(false);
       const [dragOver, setDragOver] = React.useState(false);
       const scoped = wbTasksForScope(store.orchestrations, projectPath, scope);
       const q = String(query || "").trim().toLocaleLowerCase();
@@ -1774,6 +1791,7 @@ window.__ModuleLoader__.load({
       const selectedLog = (selected && Array.isArray(selected.log) ? selected.log : []).filter((entry) => logFilter === "all" || entry.level === logFilter).filter((entry) => !logQuery || String(entry.text).toLocaleLowerCase().includes(logQuery.toLocaleLowerCase()));
       React.useEffect(() => { if (!isRunning) return; const timer = window.setInterval(() => store.refresh(), 1800); return () => window.clearInterval(timer); }, [isRunning, store.refresh]);
       React.useEffect(() => { wbLoadAgents().then(({ mode, agents }) => { setAgentsMode(mode); setAgentsText(JSON.stringify(agents, null, 2)); }).catch(() => {}); }, []);
+      React.useEffect(() => { wbMemoryList().then(setMemorySnapshots).catch(() => {}); }, []);
       React.useEffect(() => { if (!atOpen || !projectPath) { setAtFiles([]); return; } let alive = true; wbListProjectFiles(projectPath).then((entries) => { if (alive) setAtFiles(entries); }).catch(() => {}); return () => { alive = false; }; }, [atOpen, projectPath]);
       const plan = () => { if (!selected) return; const value = feedback.trim() || (selected.phase === "changes_requested" ? String(selected.feedback || "") : ""); store.mutate("orchestration_plan", { id: selected.id, feedback: value, modelPolicy: policy }).then(() => setFeedback("")).catch(() => {}); };
       const createDirect = () => {
@@ -1791,11 +1809,12 @@ window.__ModuleLoader__.load({
         }
         const value = raw.startsWith("/new ") ? raw.slice(5).trim() : raw;
         if (!value) return;
-        store.mutate("orchestration_create", { title: value.split(/\r?\n/)[0].slice(0, 120), idea: value, quick: effectiveMode === "quick", projectPath: scope === "global" ? "" : projectPath, attachments: draftFiles.map((file) => ({ id: file.id, name: file.name, mime: file.mime, size: file.size })) }).then((data) => {
+        store.mutate("orchestration_create", { title: value.split(/\r?\n/)[0].slice(0, 120), idea: value, quick: effectiveMode === "quick", projectPath: scope === "global" ? "" : projectPath, attachments: draftFiles.map((file) => ({ id: file.id, name: file.name, mime: file.mime, size: file.size })), memoryTokens: memoryChips }).then((data) => {
           const created = (Array.isArray(data.orchestrations) ? data.orchestrations : []).slice().sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))[0];
           if (created) setSelectedId(created.id);
           setDraftIdea("");
           setDraftFiles([]);
+          setMemoryChips([]);
           setAtOpen(false);
           setTab("plan");
         }).catch(() => {});
@@ -1851,6 +1870,10 @@ window.__ModuleLoader__.load({
             draftFiles.map((file, index) => jsxRuntime.jsxs("span", { className: "wb-collab-file-chip", children: [jsxRuntime.jsx("span", { children: file.name }), jsxRuntime.jsx("button", { type: "button", title: "移除附件", onClick: () => setDraftFiles((current) => current.filter((_, i) => i !== index)), children: "×" })] }, index)),
             draftFiles.length > 0 && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "已附加 " + draftFiles.length + " 个文件，将随任务一起交给代理。" })
           ] }),
+          memoryChips.length > 0 && jsxRuntime.jsxs("div", { className: "wb-collab-files", children: [
+            memoryChips.map((token, index) => jsxRuntime.jsxs("span", { className: "wb-collab-file-chip", children: [jsxRuntime.jsx("span", { children: "记忆 " + token.slice(0, 8) + "…" }), jsxRuntime.jsx("button", { type: "button", title: "移除记忆", onClick: () => setMemoryChips((current) => current.filter((_, i) => i !== index)), children: "×" })] }, index)),
+            jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "已加载 " + memoryChips.length + " 条记忆，将注入新任务的方案生成上下文。" })
+          ] }),
           jsxRuntime.jsxs("div", { children: [
             draftIdea.trim() && jsxRuntime.jsx("span", { className: "wb-complexity-badge" + (complexity.score >= WB_COMPLEXITY_THRESHOLD ? " wb-complexity-badge-hot" : ""), title: complexity.reasons.join("；"), children: "复杂度 " + complexity.score + (complexity.score >= WB_COMPLEXITY_THRESHOLD ? " · 建议多AI协作" : " · 建议快速问答") }),
             draftIdea.trim().startsWith("/") && jsxRuntime.jsx("small", { className: "wb-collab-command-hint", children: "支持 /new <任务> · /plan <反馈> · /memory" }),
@@ -1866,6 +1889,7 @@ window.__ModuleLoader__.load({
           selected ? jsxRuntime.jsxs("main", { className: "wb-collab-main", children: [
             jsxRuntime.jsxs("header", { className: "wb-collab-title", children: [jsxRuntime.jsxs("div", { children: [jsxRuntime.jsx("span", { className: "wb-orch-phase wb-orch-phase-" + selected.phase, children: WB_ORCHESTRATION_PHASE[selected.phase] || selected.phase }), jsxRuntime.jsx("h3", { children: selected.title }), jsxRuntime.jsx("p", { children: selected.idea })] }), jsxRuntime.jsx("span", { className: "wb-task-owner", children: "第 " + (selected.attempt || 0) + " 次执行" })] }),
             (selected.attachments || []).length > 0 && jsxRuntime.jsx("div", { className: "wb-collab-attachments", children: (selected.attachments || []).map((entry) => jsxRuntime.jsx("span", { className: "wb-collab-file-chip", children: entry.name + "（" + entry.size + " B）" }, entry.id)) }),
+            (selected.memory || []).length > 0 && jsxRuntime.jsx("div", { className: "wb-collab-attachments", children: (selected.memory || []).map((entry) => jsxRuntime.jsx("span", { className: "wb-collab-file-chip", children: "记忆 · " + entry.title }, entry.id)) }),
             runningProgress && jsxRuntime.jsxs("section", { className: "wb-run-progress", children: [
               jsxRuntime.jsx("div", { className: "wb-run-progress-bar", children: jsxRuntime.jsx("span", { style: { width: runningProgress.pct + "%" } }) }),
               jsxRuntime.jsxs("div", { className: "wb-run-progress-meta", children: [
@@ -1883,7 +1907,7 @@ window.__ModuleLoader__.load({
             ] })
           ] }) : jsxRuntime.jsx("main", { className: "wb-collab-main wb-collab-empty", children: "在上方直接发布任务，或从想法库提升一个事项；随后在这里审方案、执行和验收。" }),
           selected && jsxRuntime.jsxs("aside", { className: "wb-collab-decision", children: [
-            jsxRuntime.jsx("nav", { className: "wb-collab-panel-tabs", children: [{ id: "overview", label: "概览" }, { id: "agents", label: "代理状态" }, { id: "log", label: "日志" }, { id: "decision", label: "决策" }].map((item) => jsxRuntime.jsx("button", { type: "button", className: "wb-collab-panel-tab" + (panelTab === item.id ? " wb-collab-panel-tab-active" : ""), onClick: () => setPanelTab(item.id), children: item.label }, item.id)) }),
+            jsxRuntime.jsx("nav", { className: "wb-collab-panel-tabs", children: [{ id: "overview", label: "概览" }, { id: "agents", label: "代理状态" }, { id: "log", label: "日志" }, { id: "memory", label: "记忆" }, { id: "decision", label: "决策" }].map((item) => jsxRuntime.jsx("button", { type: "button", className: "wb-collab-panel-tab" + (panelTab === item.id ? " wb-collab-panel-tab-active" : ""), onClick: () => setPanelTab(item.id), children: item.label }, item.id)) }),
             panelTab === "overview" && jsxRuntime.jsxs("div", { className: "wb-collab-overview", children: [
               jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "进行中" }), jsxRuntime.jsx("strong", { children: runningCount })] }),
               jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "已完成 / 收尾" }), jsxRuntime.jsx("strong", { children: doneCount })] }),
@@ -1905,6 +1929,21 @@ window.__ModuleLoader__.load({
                 [{ id: "all", label: "全部" }, { id: "info", label: "信息" }, { id: "warn", label: "警告" }, { id: "error", label: "错误" }].map((item) => jsxRuntime.jsx("button", { type: "button", className: "wb-collab-log-filter" + (logFilter === item.id ? " wb-collab-log-filter-active" : ""), onClick: () => setLogFilter(item.id), children: item.label }, item.id))
               ] }),
               selectedLog.length ? jsxRuntime.jsx("div", { className: "wb-collab-log-list", children: selectedLog.slice().reverse().map((entry, index) => jsxRuntime.jsxs("div", { className: "wb-collab-log-row wb-collab-log-" + entry.level, children: [jsxRuntime.jsx("small", { children: new Date(entry.at).toLocaleTimeString() }), jsxRuntime.jsx("span", { children: entry.text })] }, index)) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "暂无日志" })
+            ] }),
+            panelTab === "memory" && jsxRuntime.jsxs("div", { className: "wb-collab-memory", children: [
+              selected && jsxRuntime.jsxs("div", { className: "wb-collab-memory-actions", children: [
+                jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: memoryBusy || !["review", "accepted", "failed", "cancelled"].includes(selected.phase), title: "任务结束后生成，保存摘要/发现/决策/待办（不含原文与代码全文）", onClick: () => { setMemoryBusy(true); wbMemoryGenerate(selected.id).then((snapshot) => { if (snapshot) { setMemorySnapshots((current) => [snapshot, ...current]); store.setErr(""); } else { store.setErr("生成失败：任务尚未结束或服务暂不可用。"); } }).finally(() => setMemoryBusy(false)); }, children: memoryBusy ? "生成中…" : "从当前任务生成快照" })
+              ] }),
+              memorySnapshots.length ? memorySnapshots.map((snapshot) => jsxRuntime.jsxs("div", { className: "wb-collab-memory-card", children: [
+                jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: snapshot.title }), jsxRuntime.jsx("small", { children: new Date(snapshot.at).toLocaleString() })] }),
+                jsxRuntime.jsx("p", { children: snapshot.summary }),
+                snapshot.findings.length > 0 && jsxRuntime.jsx("div", { className: "wb-collab-memory-list", children: snapshot.findings.slice(0, 5).map((item, index) => jsxRuntime.jsx("div", { className: "wb-collab-memory-finding", children: "· " + item }, index)) }),
+                jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [
+                  jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => { const token = snapshot.id; if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(token).catch(() => {}); } const ta = document.createElement("textarea"); ta.value = token; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); } catch (e) {} document.body.removeChild(ta); store.setErr(""); }, children: "复制 Token" }),
+                  jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: memoryChips.includes(snapshot.id), onClick: () => setMemoryChips((current) => current.includes(snapshot.id) ? current : [...current, snapshot.id].slice(-5)), children: memoryChips.includes(snapshot.id) ? "已加载" : "加载到输入" }),
+                  jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => { wbMemoryRemove(snapshot.id).then((ok) => { if (ok) setMemorySnapshots((current) => current.filter((entry) => entry.id !== snapshot.id)); }); }, children: "删除" })
+                ] })
+              ] }, snapshot.id)) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "还没有记忆快照。任务结束后点“从当前任务生成快照”，即可在后续任务里加载跨会话上下文。" })
             ] }),
             panelTab === "decision" && jsxRuntime.jsxs(React.Fragment, { children: [
               jsxRuntime.jsxs("div", { className: "wb-orch-runtime", children: [jsxRuntime.jsx("span", { className: store.orchestrationRuntime.available ? "wb-orch-dot wb-orch-dot-on" : "wb-orch-dot" }), jsxRuntime.jsx("strong", { children: store.orchestrationRuntime.available ? "代理运行时已就绪" : "代理运行时未就绪" }), jsxRuntime.jsx("small", { children: (store.orchestrationRuntime.providers || []).join(" · ") || "当前只能保存和规划" })] }),

@@ -127,6 +127,16 @@ powershell -ExecutionPolicy Bypass -File .\tools\enable-workbench.ps1    # 恢�
 - 依赖可视化：方案 Tab 新增"执行顺序"条，按 `dependsOn` 拓扑分组展示并行/串行关系。
 - Host 冒烟测试：`node tools/smoke-collab.mjs`（代理池/附件/日志/提示词注入）。
 
+2.5-C（完整形态，进行中）：
+
+- 记忆快照：已结束（验收/异常/终止）的任务可生成压缩快照（摘要/关键发现/决策/待办，不含
+  对话原文与代码全文），持久化到 `DSH_HOME/dsh-workbench-memory.json`；右侧面板新增"记忆"Tab
+  （生成/复制 Token/加载到输入/删除）；新建任务可携带记忆 Token（最多 5 条），方案生成提示词
+  注入快照摘要作为跨会话上下文。
+- 接口：`GET /api/dsh-workbench/memory/list`、`POST /api/dsh-workbench/memory/generate`、
+  `POST /api/dsh-workbench/memory/remove`。
+- Host 冒烟测试：`node tools/smoke-memory.mjs`。
+
 ## 双层任务系统
 
 - **今日聚焦**：右侧快捷栏只展示正在进行、阻塞和今日优先任务，并提示 WIP 超过 2 项；支持快速收集和一键展开任务中心。
