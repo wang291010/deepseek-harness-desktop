@@ -32,7 +32,7 @@ const ctx = {
         workspaceRegistry: { list: () => workspaces },
         llm: {
           listProviders: () => [{ id: 'test-provider', name: 'Test Provider' }],
-          listModels: async () => [{ provider: 'test-provider', id: 'test-model', name: 'Test Model' }],
+          listModels: async () => Array.from({ length: 14 }, (_, index) => ({ provider: 'test-provider', id: 'test-model-' + index, name: 'Test Model ' + index })),
           async *stream(options) {
             const messageText = Array.isArray(options && options.messages) && options.messages[0] && Array.isArray(options.messages[0].content)
               ? options.messages[0].content.map((block) => block && block.text || '').join('')
@@ -118,6 +118,18 @@ try {
   const { apply } = await import('../lib/host/index.js?' + Date.now());
   apply(ctx);
 
+  // --- P2.6 model probe: tiny request + 10 minute success cache ---
+  const firstProbe = await call('/api/dsh-workbench/models/probe', 'POST', {});
+  assert.equal(firstProbe.models.length, 12, 'model probing should cap the number of tiny requests');
+  assert.equal(firstProbe.probe.availableCount, 12);
+  assert.equal(firstProbe.probe.catalogCount, 14);
+  assert.equal(firstProbe.probe.skippedCount, 2);
+  assert.equal(firstProbe.probe.results[0].cached, false, 'first probe should hit the model');
+  const callsAfterFirstProbe = llmCalls.length;
+  const cachedProbe = await call('/api/dsh-workbench/models/probe', 'POST', {});
+  assert.equal(llmCalls.length, callsAfterFirstProbe, 'second probe should not call the model within cache window');
+  assert.equal(cachedProbe.probe.results[0].cached, true, 'cached probe should be visible to clients');
+
   // --- agents pool: defaults + validation + write ---
   const defaults = await call('/api/dsh-workbench/agents/list', 'GET');
   assert.equal(defaults.mode, 'free', 'default pool mode should be free-form');
@@ -149,19 +161,24 @@ try {
   // --- create orchestration with attachment, plan prompt carries pool + attachment ---
   await call('/api/dsh-workbench/tasks/mutate', 'POST', {
     action: 'orchestration_create', scope: 'all', projectPath: 'D:\\demo', sourceSessionId: 'session-1',
-    idea: '总结附件内容', attachments: [{ id: uploaded.id, name: uploaded.name, mime: uploaded.mime, size: uploaded.size }]
+    idea: '总结附件内容', attachments: [{ id: uploaded.id, name: uploaded.name, mime: uploaded.mime, size: uploaded.size }],
+    sourceRefs: [{ kind: 'idea', title: '需求说明', content: '必须核对附件中的 hello world' }]
   });
   let created = (await listAll()).orchestrations[0];
   assert.equal(created.attachments.length, 1);
+  assert.equal(created.sourceRefs.length, 1, 'structured source references should persist');
   assert.ok(String(created.attachments[0].summary).includes('hello world'), 'text attachment should be summarized');
   const id = created.id;
+  const callsBeforePlan = llmCalls.length;
   await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_plan', scope: 'all', projectPath: 'D:\\demo', id });
   const planned = await waitPhase(id, ['planned', 'failed']);
   assert.equal(planned.phase, 'planned');
-  assert.ok(llmCalls.length >= 1);
-  assert.ok(llmCalls[0].prompt.includes('说明.txt'), 'plan prompt should include attachment name');
-  assert.ok(llmCalls[0].prompt.includes('候选专家参考'), 'plan prompt should include agent pool in pool mode');
-  assert.ok(llmCalls[0].prompt.includes('alpha'), 'plan prompt should include written pool agent ids');
+  const planCall = llmCalls.slice(callsBeforePlan).find((entry) => entry.prompt.includes('总结附件内容'));
+  assert.ok(planCall, 'planning should call the model');
+  assert.ok(planCall.prompt.includes('说明.txt'), 'plan prompt should include attachment name');
+  assert.ok(planCall.prompt.includes('候选专家参考'), 'plan prompt should include agent pool in pool mode');
+  assert.ok(planCall.prompt.includes('alpha'), 'plan prompt should include written pool agent ids');
+  assert.ok(llmCalls.some((entry) => entry.prompt.includes('[来源: 需求说明]')), 'plan prompt should carry traceable source references');
 
   // --- execute: worker prompt carries attachment; logs are recorded ---
   await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_start', scope: 'all', projectPath: 'D:\\demo', id });
@@ -171,10 +188,12 @@ try {
   assert.equal(terminal.phase, 'review');
   assert.ok(agentPrompts.some((text) => text.includes('说明.txt')), 'worker prompt should include attachment');
   assert.ok(agentPrompts.some((text) => text.includes('验证一切')), 'worker prompt should include matched pool prompt');
+  assert.ok(agentPrompts.some((text) => text.includes('[来源: 需求说明]')), 'worker prompt should carry source references');
   assert.ok(spawnOptions.some((options) => options.agentOptions && options.agentOptions.model === 'pool-model'), 'pool model should be used as fallback when worker model is empty');
   assert.ok(Array.isArray(terminal.log) && terminal.log.length >= 3, 'orchestration should record execution logs');
   assert.ok(terminal.log.some((entry) => entry.level === 'info' && entry.text.includes('主代理完成汇总')), 'log should include main agent completion');
   assert.ok(terminal.log.every((entry) => ['info', 'warn', 'error'].includes(entry.level)), 'log levels should be valid');
+  assert.ok(terminal.runtimeError.includes('溯源门未通过'), 'missing source markers in final report should be surfaced as an acceptance risk');
 
   // --- removal deletes attachment files ---
   const attachmentPath = join(tempHome, '.dsh', 'attachments', uploaded.id);
@@ -208,10 +227,21 @@ try {
 
   // --- project context injection: file structure + tech stack + history ---
   const projectDir = join(tempHome, 'projects', 'demo-app');
-  await mkdir(projectDir, { recursive: true });
+  await mkdir(join(projectDir, 'src'), { recursive: true });
   await writeFile(join(projectDir, 'package.json'), JSON.stringify({ name: 'demo-app', dependencies: { react: '^18' } }), 'utf8');
-  await writeFile(join(projectDir, 'src.txt'), 'placeholder', 'utf8');
+  await writeFile(join(projectDir, 'src', 'index.js'), 'export const ready = true', 'utf8');
   workspaces.push({ path: projectDir });
+  const savedContext = await call('/api/dsh-workbench/project-context', 'POST', {
+    projectPath: projectDir,
+    note: '只处理桌面端，不改服务端',
+    techStack: 'React 18 + Electron',
+    injectionPaths: ['src']
+  });
+  assert.deepEqual(savedContext.injectionPaths, ['src']);
+  const loadedContext = await call('/api/dsh-workbench/project-context', 'GET', undefined, '?projectPath=' + encodeURIComponent(projectDir));
+  assert.equal(loadedContext.note, '只处理桌面端，不改服务端');
+  const escapedContext = await callRaw('/api/dsh-workbench/project-context', 'POST', { projectPath: projectDir, injectionPaths: ['../'] });
+  assert.notEqual(escapedContext.status, 200, 'project context must reject injection paths outside the project');
   await call('/api/dsh-workbench/tasks/mutate', 'POST', {
     action: 'orchestration_create', scope: 'all', projectPath: projectDir, sourceSessionId: 'session-1', idea: '项目上下文测试'
   });
@@ -222,8 +252,11 @@ try {
   assert.ok(ctxPrompt.includes('项目上下文'), 'plan prompt should include project context');
   assert.ok(ctxPrompt.includes('项目文件结构'), 'plan prompt should include project file structure');
   assert.ok(ctxPrompt.includes('技术栈线索'), 'plan prompt should include tech stack hints');
+  assert.ok(ctxPrompt.includes('只处理桌面端，不改服务端'), 'plan prompt should include the project note override');
+  assert.ok(ctxPrompt.includes('React 18 + Electron'), 'plan prompt should include the tech stack override');
+  assert.ok(ctxPrompt.includes('人工指定注入目录：src'), 'plan prompt should include configured injection paths');
   assert.ok(ctxPrompt.includes('package.json') && ctxPrompt.includes('demo-app'), 'plan prompt should include manifest content');
-  assert.ok(ctxPrompt.includes('src.txt'), 'plan prompt should include project file names');
+  assert.ok(ctxPrompt.includes('src/index.js'), 'plan prompt should include files from configured injection paths');
   await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_remove', scope: 'all', projectPath: projectDir, id: ctxId });
   console.log('collab smoke test passed');
 } finally {

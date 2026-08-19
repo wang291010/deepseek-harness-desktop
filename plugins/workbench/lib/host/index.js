@@ -31,7 +31,7 @@
  * paths owned by ctx.workspaceRegistry.
  */
 import { homedir } from 'node:os';
-import { basename, dirname, isAbsolute, join, resolve, sep } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { readdir, readFile, writeFile, stat, lstat, realpath, mkdir, rename, rm } from 'node:fs/promises';
@@ -52,11 +52,13 @@ const TASK_STORE = join(DSH_ROOT, 'dsh-workbench-tasks.json');
 const STYLE_STORE = join(DSH_ROOT, 'dsh-workbench-style.json');
 const MEMORY_STORE = join(DSH_ROOT, 'dsh-workbench-memory.json');
 const AGENTS_STORE = join(DSH_ROOT, 'dsh-workbench-agents.json');
+const PROJECT_CONTEXT_STORE = join(DSH_ROOT, 'dsh-workbench-project-contexts.json');
 const ATTACHMENT_ROOT = join(DSH_ROOT, 'attachments');
 const MAX_STYLE_STORE_BYTES = 700 * 1024;
 const MAX_MEMORY_STORE_BYTES = 2 * 1024 * 1024;
 const MAX_MEMORY_SNAPSHOTS = 100;
 const MAX_AGENT_POOL_SIZE = 30;
+const MAX_PROJECT_CONTEXT_STORE_BYTES = 1024 * 1024;
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 const ATTACHMENT_SUMMARY_BYTES = 64 * 1024;
 const ATTACHMENT_SUMMARY_CHARS = 4000;
@@ -157,6 +159,7 @@ const WORKFLOW_DEFAULT_TEMPLATES = [
 ];
 let taskMutationQueue = Promise.resolve();
 let styleMutationQueue = Promise.resolve();
+let projectContextMutationQueue = Promise.resolve();
 
 const STYLE_DEFAULTS = Object.freeze({
   theme: 'system',
@@ -191,6 +194,11 @@ let orchestrationAgents = null;
 let workspaceRegistry = null;
 const orchestrationControllers = new Map();
 let modelCatalogCache = { expiresAt: 0, items: [] };
+const modelProbeCache = new Map();
+const MODEL_PROBE_CACHE_MS = 10 * 60 * 1000;
+const MODEL_PROBE_TIMEOUT_MS = 12 * 1000;
+const MAX_MODEL_PROBE_COUNT = 12;
+const MAX_PROJECT_CONTEXTS = 200;
 
 /** Diagnostic trail for host loading issues (also tells us module load failed when absent). */
 function diag(msg) {
@@ -2901,6 +2909,40 @@ function cleanOrchestrationRun(raw, fallbackAttempt) {
   };
 }
 
+function cleanModelProbe(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  const results = Array.isArray(value.results) ? value.results.map((entry) => ({
+    provider: cleanTaskText(entry && entry.provider, 160),
+    model: cleanTaskText(entry && (entry.model || entry.id), 240),
+    name: cleanTaskText(entry && entry.name, 240),
+    available: Boolean(entry && entry.available),
+    cached: Boolean(entry && entry.cached),
+    reason: cleanTaskText(entry && entry.reason, 1000),
+    checkedAt: typeof (entry && entry.checkedAt) === 'string' ? entry.checkedAt : ''
+  })).filter((entry) => entry.provider && entry.model).slice(0, 200) : [];
+  const catalogCount = Math.max(results.length, Number.isSafeInteger(value.catalogCount) ? value.catalogCount : results.length);
+  return {
+    status: ['idle', 'probing', 'ready', 'fallback'].includes(value.status) ? value.status : (results.length ? 'ready' : 'idle'),
+    checkedAt: typeof value.checkedAt === 'string' ? value.checkedAt : '',
+    cacheMinutes: 10,
+    availableCount: results.filter((entry) => entry.available).length,
+    totalCount: results.length,
+    catalogCount,
+    skippedCount: Math.max(0, catalogCount - results.length),
+    results
+  };
+}
+
+function cleanSourceReference(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  const kind = ['idea', 'file', 'knowledge'].includes(value.kind) ? value.kind : 'file';
+  return {
+    kind,
+    title: cleanTaskText(value.title, 300),
+    content: cleanTaskText(value.content, 6000)
+  };
+}
+
 function cleanOrchestration(raw) {
   if (raw === null || typeof raw !== 'object') throw new Error('invalid orchestration record');
   const idea = cleanTaskText(raw.idea, 12000);
@@ -2917,6 +2959,8 @@ function cleanOrchestration(raw) {
     quick: Boolean(raw.quick),
     attachments: Array.isArray(raw.attachments) ? raw.attachments.map(cleanAttachment).filter((entry) => entry.id).slice(0, 12) : [],
     memory: Array.isArray(raw.memory) ? raw.memory.map(cleanMemorySnapshot).filter((entry) => entry.id).slice(0, 5) : [],
+    sourceRefs: Array.isArray(raw.sourceRefs) ? raw.sourceRefs.map(cleanSourceReference).filter((entry) => entry.title).slice(0, 12) : [],
+    modelProbe: cleanModelProbe(raw.modelProbe),
     projectPath: String(raw.projectPath || ''),
     sourceSessionId: String(raw.sourceSessionId || ''),
     phase,
@@ -3223,6 +3267,8 @@ async function mutateTasks(body) {
       quick: body.quick,
       attachments: await resolveAttachments(body.attachments),
       memory: await resolveMemorySnapshots(body.memoryTokens),
+      sourceRefs: body.sourceRefs,
+      modelProbe: body.modelProbe,
       phase: 'idea',
       createdAt: now,
       updatedAt: now
@@ -3235,6 +3281,7 @@ async function mutateTasks(body) {
       ...current,
       phase: 'planning',
       planningNote: cleanTaskText(body.planningNote, 200) || 'AI 正在生成方案…',
+      modelProbe: body.modelProbe || current.modelProbe,
       runtimeError: '',
       updatedAt: now
     });
@@ -3439,6 +3486,146 @@ async function listOrchestrationModels() {
   return items;
 }
 
+async function probeOneOrchestrationModel(item, force) {
+  const key = item.provider + '\u0000' + item.id;
+  const cached = modelProbeCache.get(key);
+  if (!force && cached && cached.expiresAt > Date.now()) return { ...cached.result, cached: true };
+  const checkedAt = new Date().toISOString();
+  let result;
+  try {
+    const iterator = chatLlm.stream({
+      provider: item.provider,
+      model: item.id,
+      system: 'Reply with exactly OK.',
+      messages: [{ id: 'wb-model-probe-' + (++chatCounter), role: 'user', content: [{ type: 'text', text: 'OK' }], source: { kind: 'user' } }],
+      temperature: 0,
+      maxTokens: 4
+    })[Symbol.asyncIterator]();
+    let timer;
+    try {
+      const first = await Promise.race([
+        iterator.next(),
+        new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('探测超时')), MODEL_PROBE_TIMEOUT_MS); })
+      ]);
+      if (!first || first.done) throw new Error('模型未返回内容');
+      result = { provider: item.provider, model: item.id, name: item.name || item.id, available: true, cached: false, reason: '极小请求验证通过', checkedAt };
+    } finally {
+      if (timer) clearTimeout(timer);
+      try { void Promise.resolve(iterator.return()).catch(() => {}); } catch { /* best effort */ }
+    }
+  } catch (error) {
+    result = { provider: item.provider, model: item.id, name: item.name || item.id, available: false, cached: false, reason: cleanTaskText(String((error && error.message) || error), 1000), checkedAt };
+  }
+  modelProbeCache.set(key, { expiresAt: Date.now() + MODEL_PROBE_CACHE_MS, result });
+  return result;
+}
+
+function modelProbeCandidates(catalog) {
+  const groups = new Map();
+  for (const item of catalog) {
+    if (!groups.has(item.provider)) groups.set(item.provider, []);
+    groups.get(item.provider).push(item);
+  }
+  const selected = [];
+  while (selected.length < MAX_MODEL_PROBE_COUNT && [...groups.values()].some((items) => items.length > 0)) {
+    for (const items of groups.values()) {
+      if (items.length > 0) selected.push(items.shift());
+      if (selected.length >= MAX_MODEL_PROBE_COUNT) break;
+    }
+  }
+  return selected;
+}
+
+async function probeOrchestrationModels(force = false) {
+  const catalog = await listOrchestrationModels();
+  if (chatLlm === null || catalog.length === 0) return { models: [], probe: cleanModelProbe({ status: 'fallback', checkedAt: new Date().toISOString(), catalogCount: catalog.length, results: [] }) };
+  const candidates = modelProbeCandidates(catalog);
+  const results = [];
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < candidates.length) {
+      const index = cursor++;
+      results[index] = await probeOneOrchestrationModel(candidates[index], force);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(3, candidates.length) }, worker));
+  const availableKeys = new Set(results.filter((entry) => entry.available).map((entry) => entry.provider + '\u0000' + entry.model));
+  const models = candidates.filter((entry) => availableKeys.has(entry.provider + '\u0000' + entry.id));
+  return {
+    models,
+    probe: cleanModelProbe({ status: models.length ? 'ready' : 'fallback', checkedAt: new Date().toISOString(), catalogCount: catalog.length, results })
+  };
+}
+
+function cleanProjectContext(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  return {
+    projectPath: String(value.projectPath || ''),
+    note: cleanTaskText(value.note, 4000),
+    techStack: cleanTaskText(value.techStack, 2000),
+    injectionPaths: Array.isArray(value.injectionPaths)
+      ? [...new Set(value.injectionPaths.map((entry) => String(entry || '').trim().replace(/\\/g, '/')).filter(Boolean))].slice(0, 20)
+      : [],
+    updatedAt: typeof value.updatedAt === 'string' ? value.updatedAt : new Date().toISOString()
+  };
+}
+
+async function readProjectContexts() {
+  try {
+    const info = await lstat(PROJECT_CONTEXT_STORE);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('project context store must be a regular non-symbolic file');
+    if (info.size > MAX_PROJECT_CONTEXT_STORE_BYTES) throw new Error('project context store is too large');
+    const parsed = JSON.parse(await readFile(PROJECT_CONTEXT_STORE, 'utf8'));
+    const items = Array.isArray(parsed && parsed.items) ? parsed.items.map(cleanProjectContext).filter((entry) => entry.projectPath).slice(-MAX_PROJECT_CONTEXTS) : [];
+    return { version: 1, items };
+  } catch (error) {
+    if (error && error.code === 'ENOENT') return { version: 1, items: [] };
+    throw error;
+  }
+}
+
+async function writeProjectContexts(value) {
+  await mkdir(dirname(PROJECT_CONTEXT_STORE), { recursive: true });
+  const next = { version: 1, items: (value.items || []).map(cleanProjectContext).filter((entry) => entry.projectPath).slice(-MAX_PROJECT_CONTEXTS) };
+  const serialized = JSON.stringify(next, null, 2) + '\n';
+  if (Buffer.byteLength(serialized, 'utf8') > MAX_PROJECT_CONTEXT_STORE_BYTES) throw new Error('project context store is too large');
+  const temp = PROJECT_CONTEXT_STORE + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, serialized, 'utf8');
+  let lastError = null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      await rename(temp, PROJECT_CONTEXT_STORE);
+      return next;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 4) await new Promise((resolvePromise) => setTimeout(resolvePromise, 25 * (attempt + 1)));
+    }
+  }
+  try { await rm(temp, { force: true }); } catch (e) { /* keep temp for inspection */ }
+  throw lastError;
+}
+
+async function projectContextConfig(projectPath) {
+  if (!projectPath) return cleanProjectContext({ projectPath: '' });
+  const store = await readProjectContexts();
+  return store.items.find((entry) => taskProjectKey(entry.projectPath) === taskProjectKey(projectPath)) || cleanProjectContext({ projectPath });
+}
+
+async function validateProjectInjectionPaths(projectPath, paths) {
+  const { canonical: root } = await authorizeWorkspacePath(projectPath, 'directory');
+  const valid = [];
+  for (const input of paths) {
+    const target = resolve(root, input);
+    const requestedRelative = relative(root, target).replace(/\\/g, '/');
+    if (!requestedRelative || requestedRelative === '.' || requestedRelative.startsWith('../') || isAbsolute(requestedRelative)) throw new Error('注入目录必须是项目内的相对子目录');
+    const { canonical } = await authorizeWorkspacePath(target, 'directory');
+    const canonicalRelative = relative(root, canonical).replace(/\\/g, '/');
+    if (!canonicalRelative || canonicalRelative === '.' || canonicalRelative.startsWith('../') || isAbsolute(canonicalRelative)) throw new Error('注入目录的真实路径必须位于当前项目内');
+    valid.push(requestedRelative);
+  }
+  return [...new Set(valid)].slice(0, 20);
+}
+
 async function analyzeIdea(record) {
   const system = [
     '你是个人工作台的想法整理助手。你的任务是帮助用户判断下一步，不要擅自执行。',
@@ -3470,15 +3657,27 @@ async function projectContextSummary(projectPath) {
   if (!projectPath) return '';
   try {
     const { canonical } = await authorizeWorkspacePath(projectPath, 'directory');
-    const names = await readdir(canonical, { withFileTypes: true });
-    const entries = names.slice(0, 60).map((entry) => entry.isDirectory() ? entry.name + '/' : entry.name);
+    const config = await projectContextConfig(projectPath);
+    const roots = config.injectionPaths.length ? config.injectionPaths : ['.'];
+    const entries = [];
+    for (const injectionPath of roots) {
+      let target;
+      try {
+        target = (await authorizeWorkspacePath(injectionPath === '.' ? canonical : resolve(canonical, injectionPath), 'directory')).canonical;
+        if (!inside(canonical, target)) continue;
+      } catch (e) { continue; }
+      const names = await readdir(target, { withFileTypes: true });
+      entries.push(...names.slice(0, 60).map((entry) => (injectionPath === '.' ? '' : injectionPath + '/') + entry.name + (entry.isDirectory() ? '/' : '')));
+      if (entries.length >= 80) break;
+    }
     const manifestCandidates = ['package.json', 'requirements.txt', 'pyproject.toml', 'Cargo.toml', 'go.mod', 'pom.xml', 'build.gradle', 'composer.json', 'README.md', 'readme.md'];
     const techHints = [];
     for (const candidate of manifestCandidates) {
       try {
-        const info = await stat(join(canonical, candidate));
+        const { canonical: manifestPath, info } = await authorizeWorkspacePath(join(canonical, candidate), 'file');
+        if (!inside(canonical, manifestPath)) continue;
         if (!info.isFile() || info.size > 64 * 1024) continue;
-        const head = (await readFile(join(canonical, candidate), 'utf8')).slice(0, 800).replace(/\s+/g, ' ').trim();
+        const head = (await readFile(manifestPath, 'utf8')).slice(0, 800).replace(/\s+/g, ' ').trim();
         if (head) techHints.push(candidate + ': ' + head);
       } catch (e) { /* skip missing manifests */ }
       if (techHints.length >= 4) break;
@@ -3491,6 +3690,9 @@ async function projectContextSummary(projectPath) {
       .map((item) => '- ' + item.title + '（' + (item.phase || 'idea') + '）' + (item.finalReport ? '：' + item.finalReport.slice(0, 120) : ''))
       .join('\n');
     return [
+      config.note ? '项目备注：\n' + config.note : '',
+      config.techStack ? '人工指定技术栈：\n' + config.techStack : '',
+      config.injectionPaths.length ? '人工指定注入目录：' + config.injectionPaths.join('、') : '',
       '项目文件结构（前 ' + entries.length + ' 项）：\n' + entries.join(' '),
       techHints.length ? '技术栈线索：\n' + techHints.join('\n') : '',
       history ? '本项目近期协作记录：\n' + history : ''
@@ -3520,6 +3722,7 @@ async function generateOrchestrationPlan(record, feedback, models, policy) {
     '用户想法：\n' + record.idea,
     record.memory && record.memory.length ? '记忆快照（跨会话上下文，优先引用）：\n' + record.memory.map((entry) => '- [' + entry.title + '] ' + entry.summary + (entry.findings.length ? '\n  发现：' + entry.findings.slice(0, 3).join('；') : '')).join('\n') : '',
     record.attachments && record.attachments.length ? '已附加文件：\n' + record.attachments.map((entry) => '- ' + entry.name + '（' + entry.size + ' B，' + entry.mime + '）' + (entry.summary ? '\n  内容摘录：' + entry.summary.slice(0, 400) : '')).join('\n') : '',
+    record.sourceRefs && record.sourceRefs.length ? '用户明确引用的来源（方案中依赖这些内容的判断必须可追溯）：\n' + record.sourceRefs.map((entry) => '- [来源: ' + entry.title + '] ' + entry.content.slice(0, 1200)).join('\n') : '',
     agents.length ? '候选专家参考（可按需创建更合适的角色；若使用候选，请在 workers/mainAgent 里带上 agentRef）：\n' + agents.map((agent) => '- ' + agent.id + '：' + agent.name + '（' + (agent.capabilities || []).join('/') + '）' + (agent.model ? '；模型 ' + agent.model : '')).join('\n') : '',
     feedback ? '用户修改意见：\n' + feedback : '',
     '模型策略：' + (policy || 'balanced') + '（quality=质量优先，balanced=平衡，economy=节省，manual=不自动分配）',
@@ -3591,10 +3794,12 @@ async function workerPrompt(orchestration, worker) {
     '这是工作台中已经由用户确认执行的一项多代理任务。只完成分配给你的工作包，不要擅自扩大范围。',
     '项目路径：' + (orchestration.projectPath || '全局任务'),
     (orchestration.attachments || []).length ? '已附加文件（需要时读取内容）：\n' + (orchestration.attachments || []).map((entry) => '- ' + entry.name + '（' + entry.size + ' B）' + (entry.summary ? '\n  ' + entry.summary.slice(0, 1200) : '')).join('\n') : '',
+    (orchestration.sourceRefs || []).length ? '用户明确引用的来源：\n' + orchestration.sourceRefs.map((entry) => '- [来源: ' + entry.title + '] ' + entry.content).join('\n') : '',
     '总目标：\n' + orchestration.idea,
     '你的任务：\n' + worker.mission,
     worker.acceptance ? '你的验收标准：\n' + worker.acceptance : '',
     dependencyContext ? '依赖任务的结果：\n' + dependencyContext : '',
+    (orchestration.sourceRefs || []).length ? '凡是依赖上述引用资料的事实、判断或建议，必须紧邻标注 [来源: 对应名称]；无法从来源确认时明确写“未验证”，不得补造。' : '',
     '完成后给出结构清晰的交接报告：完成内容、证据/产物、验证结果、风险和建议。'
   ].filter(Boolean).join('\n\n');
 }
@@ -3716,9 +3921,11 @@ function coordinatorPrompt(orchestration) {
     '用户已经确认执行，现在所有子代理都已结束。请进行最终汇总和质量把关，但不要替用户宣告验收通过。',
     '项目路径：' + (orchestration.projectPath || '全局任务'),
     '原始想法：\n' + orchestration.idea,
+    (orchestration.sourceRefs || []).length ? '用户明确引用的来源：\n' + orchestration.sourceRefs.map((entry) => '- [来源: ' + entry.title + '] ' + entry.content).join('\n') : '',
     orchestration.plan && orchestration.plan.strategy ? '执行策略：\n' + orchestration.plan.strategy : '',
     '子代理交接：\n' + results,
     orchestration.plan && orchestration.plan.acceptanceCriteria.length ? '最终验收标准：\n- ' + orchestration.plan.acceptanceCriteria.join('\n- ') : '',
+    (orchestration.sourceRefs || []).length ? '生成侧溯源门：依赖引用资料的结论必须紧邻标注 [来源: 对应名称]；无法确认就标记“未验证”。提交前自行检查至少出现一条有效来源标注。' : '',
     '输出一份给用户验收的最终报告：结论、各子任务完成情况、产物/证据、验证结果、未完成项与风险、建议验收步骤。'
   ].filter(Boolean).join('\n\n');
 }
@@ -3834,7 +4041,11 @@ async function runOrchestration(orchestrationId) {
       await queueOrchestrationPatch(orchestrationId, (item) => {
         if (item.phase === 'cancelled') return item;
         const mainAgent = { ...item.mainAgent, status: successful ? 'completed' : 'failed', output, error: successful ? '' : ('主代理结束原因：' + result.stopReason), completedAt };
-        const runtimeError = successful && workerFailures > 0 ? workerFailures + ' 个子代理未正常完成，请在验收时重点检查。' : successful ? '' : ('主代理结束原因：' + result.stopReason);
+        const traceMissing = successful && (item.sourceRefs || []).length > 0 && !/\[来源:\s*[^\]]+\]/.test(output);
+        const warnings = [];
+        if (successful && workerFailures > 0) warnings.push(workerFailures + ' 个子代理未正常完成，请在验收时重点检查。');
+        if (traceMissing) warnings.push('生成侧溯源门未通过：最终报告使用了引用资料，但没有找到 [来源: 名称] 标注，请要求主代理补充后再验收。');
+        const runtimeError = successful ? warnings.join('\n') : ('主代理结束原因：' + result.stopReason);
         const next = { ...item, phase: successful ? 'review' : 'failed', mainAgent, finalReport: output, runtimeError, completedAt, updatedAt: completedAt };
         return { ...next, runs: runsWithSnapshot(next, successful ? 'review' : 'failed', completedAt) };
       });
@@ -4116,6 +4327,49 @@ function makeRoutes() {
         try { writeJson(res, 200, await operation); } catch (error) { fail(res, error); }
       }
     },
+    // ---- P2.6 model readiness + per-project context overrides ----
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/models/probe',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body = {};
+        try { body = JSON.parse(await readBody(req) || '{}'); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        try { writeJson(res, 200, await probeOrchestrationModels(Boolean(body.force))); } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/project-context',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        const requestedPath = req.method === 'GET' ? (paramOf(req, 'projectPath') || '') : '';
+        try {
+          if (req.method === 'GET') {
+            if (requestedPath) await authorizeWorkspacePath(requestedPath, 'directory');
+            return writeJson(res, 200, await projectContextConfig(requestedPath));
+          }
+          if (req.method !== 'POST') return bad(res, 'method', 'GET or POST required');
+          let body;
+          try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+          const projectPath = String(body.projectPath || '');
+          if (!projectPath) throw new Error('projectPath required');
+          const { canonical } = await authorizeWorkspacePath(projectPath, 'directory');
+          const injectionPaths = await validateProjectInjectionPaths(canonical, Array.isArray(body.injectionPaths) ? body.injectionPaths : []);
+          const operation = projectContextMutationQueue.then(async () => {
+            const next = cleanProjectContext({ ...body, projectPath: canonical, injectionPaths, updatedAt: new Date().toISOString() });
+            const store = await readProjectContexts();
+            const index = store.items.findIndex((entry) => taskProjectKey(entry.projectPath) === taskProjectKey(canonical));
+            if (index >= 0) store.items[index] = next; else store.items.push(next);
+            await writeProjectContexts(store);
+            return next;
+          });
+          projectContextMutationQueue = operation.catch(() => {});
+          return writeJson(res, 200, await operation);
+        } catch (error) { fail(res, error); }
+      }
+    },
     // ---- persistent workbench tasks (separate from per-turn agent todos) ----
     {
       kind: 'exact',
@@ -4167,11 +4421,12 @@ function makeRoutes() {
             if (record.phase === 'planning') throw new Error('方案正在生成中，请稍候');
             const feedback = cleanTaskText(body.feedback, 6000);
             const modelPolicy = cleanTaskText(body.modelPolicy, 40) || 'balanced';
-            const planRequest = { ...body, feedback, modelPolicy };
+            const probed = body.probeModels ? await probeOrchestrationModels(Boolean(body.forceProbe)) : { models: await listOrchestrationModels(), probe: record.modelProbe };
+            const planRequest = { ...body, feedback, modelPolicy, modelProbe: probed.probe };
             await taskMutationQueue.then(() => mutateTasks({ ...planRequest, action: 'orchestration_set_planning', planningNote: feedback ? '正在按反馈重新编排…' : 'AI 正在生成第一份方案…' }));
             void (async () => {
               try {
-                const plan = await generateOrchestrationPlan(record, feedback, await listOrchestrationModels(), modelPolicy);
+                const plan = await generateOrchestrationPlan({ ...record, modelProbe: probed.probe }, feedback, probed.models, modelPolicy);
                 await taskMutationQueue.then(() => mutateTasks({ ...planRequest, action: 'orchestration_set_plan', plan }));
               } catch (error) {
                 diag('orchestration plan failed: ' + String((error && error.stack) || error));

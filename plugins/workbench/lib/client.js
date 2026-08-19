@@ -603,6 +603,10 @@ window.__ModuleLoader__.load({
       ".wb-collab-main{min-height:540px;padding:16px}.wb-collab-title{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.wb-collab-title h3{margin:7px 0 3px;font-size:18px;color:var(--dsw-alias-label-primary)}.wb-collab-title p{margin:0;max-width:720px;font-size:10px;line-height:1.55;color:var(--dsw-alias-label-secondary);white-space:pre-wrap}.wb-collab-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:15px 0}.wb-collab-steps>div{position:relative;display:flex;align-items:center;gap:6px;color:var(--dsw-alias-label-tertiary)}.wb-collab-steps>div:after{content:'';position:absolute;left:27px;right:5px;top:10px;height:1px;background:var(--dsw-alias-border-l2)}.wb-collab-steps>div:last-child:after{display:none}.wb-collab-steps span{z-index:1;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--dsw-alias-bg-base);border:1px solid var(--dsw-alias-border-l2);font-size:9px}.wb-collab-steps small{z-index:1;padding-right:5px;background:var(--dsw-alias-bg-layer-1);font-size:9px}.wb-collab-steps .wb-collab-step-active{color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill))}.wb-collab-steps .wb-collab-step-active span{border-color:currentColor;background:color-mix(in srgb,currentColor 12%,var(--dsw-alias-bg-layer-1))}.wb-collab-tabs{display:flex;gap:16px;border-bottom:1px solid var(--dsw-alias-border-l1)}.wb-collab-tabs button{height:34px;padding:0 2px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--dsw-alias-label-secondary);font:11px inherit;cursor:pointer}.wb-collab-tabs .wb-collab-tab-active{border-bottom-color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));color:var(--dsw-alias-label-primary);font-weight:650}",
       ".wb-collab-agent{margin-top:9px;padding:11px;border:1px solid var(--dsw-alias-border-l1);border-radius:11px;background:var(--dsw-alias-bg-layer-2)}.wb-collab-agent-main{border-color:color-mix(in srgb,var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill)) 28%,var(--dsw-alias-border-l1))}.wb-collab-agent>p{margin:8px 0 0;font-size:10px;line-height:1.55;color:var(--dsw-alias-label-secondary);white-space:pre-wrap}.wb-collab-agents{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px}.wb-agent-model{display:flex;flex-direction:column;gap:3px;margin-top:9px;padding-top:8px;border-top:1px dashed var(--dsw-alias-border-l1)}.wb-agent-model select{width:100%;height:30px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-secondary);font:9px inherit}.wb-agent-model small{font-size:8px;line-height:1.4;color:var(--dsw-alias-label-tertiary)}.wb-collab-delivery{padding-top:10px}.wb-collab-history{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:10px}.wb-collab-history>section{padding:10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px}.wb-collab-history h4{margin:0 0 7px;font-size:11px;color:var(--dsw-alias-label-primary)}.wb-collab-history-row{display:grid;grid-template-columns:34px 1fr;gap:7px;padding:7px 0;border-bottom:1px solid var(--dsw-alias-border-l1);font-size:9px;color:var(--dsw-alias-label-secondary)}.wb-collab-history-row:last-child{border-bottom:none}.wb-collab-history-row p{margin:3px 0 0;line-height:1.45}.wb-collab-history-row small{color:var(--dsw-alias-label-tertiary)}",
       ".wb-collab-decision{position:sticky;top:0;display:flex;flex-direction:column;gap:9px;padding:10px}.wb-collab-decision .wb-orch-runtime{min-width:0}.wb-collab-decision-card{display:flex;flex-direction:column;gap:7px;padding:10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-2)}.wb-collab-decision-card>strong{font-size:11px;color:var(--dsw-alias-label-primary)}.wb-collab-decision-card>small{font-size:9px;line-height:1.5;color:var(--dsw-alias-label-tertiary)}.wb-collab-decision-card select{height:31px;padding:0 7px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-secondary);font:10px inherit}.wb-collab-decision-card textarea{min-height:108px;box-sizing:border-box;padding:8px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:10px/1.5 inherit;resize:vertical}.wb-collab-actions{display:flex;flex-direction:column;gap:6px}.wb-collab-actions .wb-sp-btn{width:100%}",
+      ".wb-chat-shell{position:relative;flex:1;min-height:0;overflow:hidden}.wb-chat-native{height:100%}.wb-chat-native>*{height:100%}.wb-chat-shell-multi [data-composer-seat]{visibility:hidden;pointer-events:none}.wb-chat-modebar{position:absolute;top:10px;right:18px;z-index:12;display:flex;align-items:center;gap:6px;padding:4px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 94%,transparent);box-shadow:var(--dsw-shadow-lv1)}.wb-chat-modebar button{height:27px;padding:0 9px;border:0;border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);font:11px inherit;cursor:pointer}.wb-chat-modebar button[aria-pressed=true]{background:var(--dsw-alias-button-elevated-fill);color:var(--dsw-alias-label-primary);font-weight:600}.wb-chat-modebar .wb-chat-icon-btn{width:27px;padding:0;display:grid;place-items:center}.wb-chat-modebar button:disabled{cursor:not-allowed;opacity:.45}",
+      ".wb-chat-multi-stack{position:absolute;left:16px;right:16px;bottom:12px;z-index:11;display:grid;gap:7px;max-width:780px;margin:0 auto}.wb-chat-progress{border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 97%,transparent);box-shadow:var(--dsw-shadow-lv2);overflow:hidden}.wb-chat-progress-head{width:100%;min-height:40px;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:8px;padding:7px 10px;border:0;background:transparent;color:var(--dsw-alias-label-primary);font:11px inherit;text-align:left;cursor:pointer}.wb-chat-progress-head strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wb-chat-progress-head small{color:var(--dsw-alias-label-tertiary)}.wb-chat-progress-track{height:3px;background:var(--dsw-alias-bg-base)}.wb-chat-progress-track span{display:block;height:100%;background:var(--dsw-alias-accent-fill);transition:width .35s ease}.wb-chat-progress-body{max-height:230px;overflow:auto;padding:9px 10px;border-top:1px solid var(--dsw-alias-border-l1);display:grid;gap:7px}.wb-chat-agent-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:6px 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:7px;background:var(--dsw-alias-bg-layer-1);font-size:10px}.wb-chat-agent-row span{color:var(--dsw-alias-label-secondary)}.wb-chat-agent-row small{grid-column:1/-1;color:var(--dsw-alias-label-tertiary)}.wb-chat-report{max-height:120px;overflow:auto;margin:0;padding:8px;border-radius:7px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:10px/1.6 inherit;white-space:pre-wrap}.wb-chat-probe{font-size:10px;color:var(--dsw-alias-label-secondary)}",
+      ".wb-chat-compose{position:relative;padding:8px 10px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:color-mix(in srgb,var(--dsw-specific-input-major,var(--dsw-alias-bg-layer-2)) 97%,transparent);box-shadow:var(--dsw-shadow-lv2)}.wb-chat-compose textarea{width:100%;min-height:54px;max-height:150px;box-sizing:border-box;padding:2px 3px 7px;border:0;outline:0;resize:none;background:transparent;color:var(--dsw-alias-label-primary);font:14px/1.55 inherit}.wb-chat-compose-tools{display:flex;align-items:center;gap:6px}.wb-chat-compose-tools button{height:28px;min-width:28px;padding:0 8px;border:0;border-radius:7px;background:transparent;color:var(--dsw-alias-label-secondary);font:11px inherit;cursor:pointer}.wb-chat-compose-tools button:hover{background:var(--dsw-alias-interactive-bg-hover)}.wb-chat-compose-tools .wb-chat-send{margin-left:auto;background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-button-primary-label,#fff)}.wb-chat-compose-tools button:disabled{cursor:not-allowed;opacity:.45}.wb-chat-meta{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-tertiary);font-size:10px}.wb-chat-ref-pop{position:absolute;left:8px;right:8px;bottom:calc(100% + 7px);z-index:4;max-height:260px;overflow:auto;padding:7px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-layer-2);box-shadow:var(--dsw-shadow-lv2)}.wb-chat-ref-search{width:100%;height:30px;box-sizing:border-box;margin-bottom:5px;padding:0 9px;border:1px solid var(--dsw-alias-border-l1);border-radius:7px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:11px inherit}.wb-chat-ref-item{width:100%;height:32px;display:flex;align-items:center;gap:7px;padding:0 8px;border:0;border-radius:6px;background:transparent;color:var(--dsw-alias-label-primary);font:11px inherit;text-align:left;cursor:pointer}.wb-chat-ref-item:hover{background:var(--dsw-alias-interactive-bg-hover)}.wb-chat-ref-item small{margin-left:auto;color:var(--dsw-alias-label-tertiary)}.wb-chat-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}.wb-chat-chip{display:inline-flex;align-items:center;gap:5px;max-width:220px;padding:3px 7px;border:1px solid var(--dsw-alias-border-l1);border-radius:7px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-secondary);font-size:10px}.wb-chat-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wb-chat-chip button{border:0;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer}",
+      ".wb-chat-context-overlay{position:fixed;inset:0;z-index:190;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.28)}.wb-chat-context-dialog{width:min(560px,100%);padding:16px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-layer-2);box-shadow:var(--dsw-shadow-lv3);display:grid;gap:10px}.wb-chat-context-dialog h3{margin:0;font-size:15px;color:var(--dsw-alias-label-primary)}.wb-chat-context-dialog label{display:grid;gap:4px;color:var(--dsw-alias-label-secondary);font-size:10px}.wb-chat-context-dialog textarea,.wb-chat-context-dialog input{width:100%;box-sizing:border-box;padding:8px 9px;border:1px solid var(--dsw-alias-border-l2);border-radius:7px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:11px/1.5 inherit}.wb-chat-context-dialog textarea{min-height:76px;resize:vertical}.wb-chat-context-actions{display:flex;justify-content:flex-end;gap:7px}",
       ".wb-task-detail{flex:0 0 390px;min-width:0;display:flex;flex-direction:column;border-left:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2);animation:wb-task-detail-in .16s ease-out}",
       "@keyframes wb-task-detail-in{from{transform:translateX(18px);opacity:.5}to{transform:none;opacity:1}}",
       ".wb-task-detail-head{display:flex;align-items:center;justify-content:space-between;min-height:62px;padding:0 16px;border-bottom:1px solid var(--dsw-alias-border-l1)}",
@@ -2037,14 +2041,14 @@ window.__ModuleLoader__.load({
       ] });
     }
 
-    function WorkbenchTaskCenter({ store, workspaceItems, selectedId, onSelectedId, initialView, onClose }) {
+    function WorkbenchTaskCenter({ store, workspaceItems, selectedId, onSelectedId, initialView, initialOrchestrationId, onClose }) {
       const [view, setView] = React.useState(() => { try { return initialView || localStorage.getItem("wb.taskCenterView") || "today"; } catch (e) { return initialView || "today"; } });
       const [scope, setScope] = React.useState(() => { try { return localStorage.getItem("wb.taskScope") || "current"; } catch (e) { return "current"; } });
       const [viewProjectPath, setViewProjectPath] = React.useState(store.projectPath || "");
       const [query, setQuery] = React.useState("");
       const [draft, setDraft] = React.useState("");
       const [dragOver, setDragOver] = React.useState(null);
-      const [collaborationInitialId, setCollaborationInitialId] = React.useState(null);
+      const [collaborationInitialId, setCollaborationInitialId] = React.useState(initialOrchestrationId || null);
       const searchRef = React.useRef(null);
       const createRef = React.useRef(null);
       React.useEffect(() => { store.refresh(); }, [store.refresh]);
@@ -2057,6 +2061,7 @@ window.__ModuleLoader__.load({
         try { localStorage.setItem("wb.taskCenterView", next); } catch (e) {}
       };
       React.useEffect(() => { if (initialView) chooseView(initialView); }, [initialView]);
+      React.useEffect(() => { if (initialOrchestrationId) setCollaborationInitialId(initialOrchestrationId); }, [initialOrchestrationId]);
       const chooseScope = (id) => { setScope(id); try { localStorage.setItem("wb.taskScope", id); } catch (e) {} };
       const projectOptions = [];
       const projectKeys = new Set();
@@ -2676,11 +2681,207 @@ window.__ModuleLoader__.load({
       ] });
     }
 
+    function wbChatProgress(orchestration) {
+      if (!orchestration) return 0;
+      if (["review", "accepted", "failed", "cancelled"].includes(orchestration.phase)) return 100;
+      if (orchestration.phase === "idea") return 5;
+      if (orchestration.phase === "planning") return 15;
+      if (orchestration.phase === "planned") return 25;
+      const workers = Array.isArray(orchestration.workers) ? orchestration.workers : [];
+      if (!workers.length) return 30;
+      const done = workers.filter((entry) => ["completed", "failed", "cancelled"].includes(entry.status)).length;
+      return Math.min(92, 30 + Math.round(done / workers.length * 58));
+    }
+
+    function ProjectContextDialog({ projectPath, onClose }) {
+      const [note, setNote] = React.useState("");
+      const [techStack, setTechStack] = React.useState("");
+      const [paths, setPaths] = React.useState("");
+      const [busy, setBusy] = React.useState(true);
+      const [error, setError] = React.useState("");
+      React.useEffect(() => {
+        let alive = true;
+        wbFetchJson("/api/dsh-workbench/project-context?projectPath=" + encodeURIComponent(projectPath || ""))
+          .then(({ data }) => { if (alive) { setNote(data.note || ""); setTechStack(data.techStack || ""); setPaths((data.injectionPaths || []).join("\n")); } })
+          .catch((err) => { if (alive) setError(String((err && err.message) || err)); })
+          .finally(() => { if (alive) setBusy(false); });
+        return () => { alive = false; };
+      }, [projectPath]);
+      const save = () => {
+        setBusy(true); setError("");
+        const injectionPaths = paths.split(/[\n,，]+/).map((entry) => entry.trim()).filter(Boolean);
+        wbFetchJson("/api/dsh-workbench/project-context", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ projectPath, note, techStack, injectionPaths }) }, 60000)
+          .then(() => onClose())
+          .catch((err) => setError(String((err && err.message) || err)))
+          .finally(() => setBusy(false));
+      };
+      return jsxRuntime.jsx("div", { className: "wb-chat-context-overlay", role: "dialog", "aria-modal": true, "aria-label": "项目上下文设置", onMouseDown: (event) => { if (event.target === event.currentTarget) onClose(); }, children: jsxRuntime.jsxs("div", { className: "wb-chat-context-dialog", children: [
+        jsxRuntime.jsx("h3", { children: "项目上下文设置" }),
+        jsxRuntime.jsx("small", { className: "wb-chat-meta", title: projectPath, children: projectPath || "当前会话没有绑定项目" }),
+        error && jsxRuntime.jsx(WbErrNote, { message: error }),
+        jsxRuntime.jsxs("label", { children: ["项目备注", jsxRuntime.jsx("textarea", { value: note, disabled: busy, placeholder: "项目目标、约束、当前阶段", onChange: (event) => setNote(event.target.value) })] }),
+        jsxRuntime.jsxs("label", { children: ["技术栈覆盖", jsxRuntime.jsx("textarea", { value: techStack, disabled: busy, placeholder: "仅填写自动识别不出的框架、版本或运行环境", onChange: (event) => setTechStack(event.target.value) })] }),
+        jsxRuntime.jsxs("label", { children: ["注入目录", jsxRuntime.jsx("input", { value: paths, disabled: busy, placeholder: "src, docs（项目内相对子目录）", onChange: (event) => setPaths(event.target.value) })] }),
+        jsxRuntime.jsxs("div", { className: "wb-chat-context-actions", children: [
+          jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: busy, onClick: onClose, children: "取消" }),
+          jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy || !projectPath, onClick: save, children: busy ? "处理中…" : "保存" })
+        ] })
+      ] }) });
+    }
+
+    function MultiAiConversationShell({ sessionId, projectPath, children }) {
+      const store = useWorkbenchTasks(sessionId, projectPath);
+      const modeKey = "wb.chatMode." + (sessionId || "none");
+      const strategyKey = "wb.chatStrategy." + (sessionId || "none");
+      const activeKey = "wb.chatActive." + (sessionId || "none");
+      const autoStartKey = "wb.chatAutoStart." + (sessionId || "none");
+      const [mode, setMode] = React.useState("single");
+      const [strategy, setStrategy] = React.useState("auto");
+      const [draft, setDraft] = React.useState("");
+      const [activeId, setActiveId] = React.useState("");
+      const [expanded, setExpanded] = React.useState(false);
+      const [files, setFiles] = React.useState([]);
+      const [references, setReferences] = React.useState([]);
+      const [attachments, setAttachments] = React.useState([]);
+      const [refOpen, setRefOpen] = React.useState(false);
+      const [refQuery, setRefQuery] = React.useState("");
+      const [dragOver, setDragOver] = React.useState(false);
+      const [contextOpen, setContextOpen] = React.useState(false);
+      const [submitting, setSubmitting] = React.useState(false);
+      const fileInputRef = React.useRef(null);
+      const autoStartRef = React.useRef(new Set());
+      const startingRef = React.useRef(new Set());
+
+      React.useEffect(() => {
+        let nextMode = "single"; let nextStrategy = "auto"; let nextActive = ""; let nextAutoStart = "";
+        try { nextMode = localStorage.getItem(modeKey) === "multi" ? "multi" : "single"; nextStrategy = localStorage.getItem(strategyKey) === "always" ? "always" : "auto"; nextActive = localStorage.getItem(activeKey) || ""; nextAutoStart = localStorage.getItem(autoStartKey) || ""; } catch (e) { /* defaults */ }
+        autoStartRef.current = new Set(nextAutoStart ? [nextAutoStart] : []);
+        setMode(nextMode); setStrategy(nextStrategy); setActiveId(nextActive); setDraft(""); setReferences([]); setAttachments([]); setExpanded(false);
+      }, [modeKey, strategyKey, activeKey, autoStartKey]);
+      React.useEffect(() => {
+        if (!refOpen || !projectPath) { setFiles([]); return; }
+        let alive = true;
+        wbListProjectFiles(projectPath).then((items) => { if (alive) setFiles(items); }).catch(() => {});
+        return () => { alive = false; };
+      }, [refOpen, projectPath]);
+
+      const sessionItems = store.orchestrations.filter((item) => item.sourceSessionId === sessionId);
+      const active = sessionItems.find((item) => item.id === activeId) || null;
+      const activeBusy = active && ["planning", "running", "refining"].includes(active.phase);
+      React.useEffect(() => {
+        if (!activeBusy) return;
+        const timer = window.setInterval(() => store.refresh(), 1500);
+        return () => window.clearInterval(timer);
+      }, [activeBusy, store.refresh]);
+      React.useEffect(() => {
+        if (!active || active.phase !== "planned" || !autoStartRef.current.has(active.id) || startingRef.current.has(active.id)) return;
+        startingRef.current.add(active.id);
+        store.mutate("orchestration_start", { id: active.id }).then(() => {
+          autoStartRef.current.delete(active.id);
+          try { localStorage.removeItem(autoStartKey); } catch (e) {}
+        }).catch((error) => store.setErr(String((error && error.message) || error))).finally(() => startingRef.current.delete(active.id));
+      }, [active && active.id, active && active.phase]);
+
+      const selectMode = (next) => { setMode(next); try { localStorage.setItem(modeKey, next); } catch (e) {} };
+      const selectStrategy = (next) => { setStrategy(next); try { localStorage.setItem(strategyKey, next); } catch (e) {} };
+      const rememberActive = (id) => { setActiveId(id); try { localStorage.setItem(activeKey, id); } catch (e) {} };
+      const rememberAutoStart = (id) => { autoStartRef.current.add(id); try { localStorage.setItem(autoStartKey, id); } catch (e) {} };
+      const uploadFiles = (selected) => {
+        const input = Array.from(selected || []).slice(0, Math.max(0, 6 - attachments.length));
+        if (!input.length) return;
+        setSubmitting(true);
+        Promise.all(input.map(wbUploadAttachment)).then((uploaded) => setAttachments((current) => [...current, ...uploaded.map((entry) => ({ id: entry.id, name: entry.name, mime: entry.mime, size: entry.size }))].slice(-6))).catch((error) => store.setErr(String((error && error.message) || error))).finally(() => setSubmitting(false));
+      };
+      const addReference = (entry) => {
+        setReferences((current) => current.some((item) => item.kind === entry.kind && item.title === entry.title) ? current : [...current, entry].slice(-8));
+        setRefOpen(false); setRefQuery("");
+      };
+      const query = refQuery.trim().toLocaleLowerCase();
+      const refItems = [
+        ...store.ideas.filter((item) => !query || String(item.title || "").toLocaleLowerCase().includes(query)).map((item) => ({ kind: "idea", title: item.title, content: item.body || item.aiSummary || "", meta: "想法" })),
+        ...files.filter((item) => !item.isDir).filter((item) => !query || item.name.toLocaleLowerCase().includes(query)).map((item) => ({ kind: "file", title: item.name, content: "项目文件：" + item.name, meta: "文件" }))
+      ].slice(0, 14);
+      const complexity = wbEstimateComplexity(draft);
+      const quick = strategy === "auto" && complexity.score < WB_COMPLEXITY_THRESHOLD;
+      const submit = () => {
+        const text = draft.trim();
+        if (!text || !sessionId || submitting || activeBusy) return;
+        const sourceRefs = references.map((entry) => ({ kind: entry.kind, title: entry.title, content: entry.content }));
+        setSubmitting(true); store.setErr("");
+        store.mutate("orchestration_create", { title: text.split(/\r?\n/)[0].slice(0, 120), idea: text, quick, attachments: attachments.map((entry) => entry.id), sourceRefs })
+          .then((data) => {
+            const created = (data.orchestrations || []).filter((item) => item.sourceSessionId === sessionId && item.idea === text).sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))[0];
+            if (!created) throw new Error("任务已创建，但未找到对应的协作记录");
+            rememberActive(created.id); rememberAutoStart(created.id); setExpanded(true);
+            setDraft(""); setReferences([]); setAttachments([]);
+            return store.mutate("orchestration_plan", { id: created.id, modelPolicy: "balanced", probeModels: true });
+          })
+          .catch((error) => store.setErr(String((error && error.message) || error)))
+          .finally(() => setSubmitting(false));
+      };
+      const progress = wbChatProgress(active);
+      const phaseLabel = active ? (WB_ORCHESTRATION_PHASE[active.phase] || active.phase) : "";
+      const probe = active && active.modelProbe;
+      const agents = active ? [active.mainAgent, ...(active.workers || [])].filter(Boolean) : [];
+
+      return jsxRuntime.jsxs("div", { className: "wb-chat-shell" + (mode === "multi" ? " wb-chat-shell-multi" : ""), children: [
+        jsxRuntime.jsx("div", { className: "wb-chat-native", children }),
+        jsxRuntime.jsxs("div", { className: "wb-chat-modebar", role: "group", "aria-label": "对话模式", children: [
+          jsxRuntime.jsx("button", { type: "button", "aria-pressed": mode === "single", onClick: () => selectMode("single"), children: "单 AI" }),
+          jsxRuntime.jsx("button", { type: "button", "aria-pressed": mode === "multi", disabled: !sessionId, onClick: () => selectMode("multi"), children: "多 AI" }),
+          jsxRuntime.jsx("button", { type: "button", className: "wb-chat-icon-btn", title: "项目上下文设置", disabled: !projectPath, onClick: () => setContextOpen(true), children: jsxRuntime.jsx(primitives.IconEditOutline16, { size: 14 }) })
+        ] }),
+        mode === "multi" && sessionId && jsxRuntime.jsxs("div", { className: "wb-chat-multi-stack", children: [
+          active && jsxRuntime.jsxs("section", { className: "wb-chat-progress", children: [
+            jsxRuntime.jsxs("button", { type: "button", className: "wb-chat-progress-head", "aria-expanded": expanded, onClick: () => setExpanded((value) => !value), children: [
+              jsxRuntime.jsx("span", { className: "wb-sp-dot " + (activeBusy ? "wb-st-run" : active.phase === "failed" ? "wb-st-inter" : "wb-st-idle") }),
+              jsxRuntime.jsx("strong", { children: active.title }),
+              jsxRuntime.jsx("small", { children: phaseLabel + " · " + progress + "%" }),
+              jsxRuntime.jsx(primitives.IconChevronRightOutline14, { size: 12 })
+            ] }),
+            jsxRuntime.jsx("div", { className: "wb-chat-progress-track", children: jsxRuntime.jsx("span", { style: { width: progress + "%" } }) }),
+            expanded && jsxRuntime.jsxs("div", { className: "wb-chat-progress-body", children: [
+              probe && jsxRuntime.jsx("div", { className: "wb-chat-probe", children: probe.totalCount ? "模型实测：" + probe.availableCount + "/" + probe.totalCount + " 可用" + (probe.skippedCount ? " · 目录共 " + probe.catalogCount + " 个，本次跳过 " + probe.skippedCount + " 个" : "") + (probe.results.some((entry) => entry.cached) ? " · 10 分钟缓存" : "") : "未发现可测试模型，代理继承主会话模型" }),
+              agents.map((agent, index) => jsxRuntime.jsxs("div", { className: "wb-chat-agent-row", children: [
+                jsxRuntime.jsx("span", { children: (index === 0 ? "主 · " : "") + agent.name }),
+                jsxRuntime.jsx("strong", { children: WB_ORCHESTRATION_AGENT_STATUS[agent.status] || agent.status }),
+                jsxRuntime.jsx("small", { children: (agent.usedModel || agent.model || "继承主会话模型") + (agent.modelReason ? " · " + agent.modelReason : "") })
+              ] }, agent.id || index)),
+              active.finalReport && jsxRuntime.jsx("pre", { className: "wb-chat-report", children: active.finalReport }),
+              active.runtimeError && jsxRuntime.jsx(WbErrNote, { message: active.runtimeError }),
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => window.dispatchEvent(new CustomEvent("wb:open-task-center", { detail: { view: "orchestrate", id: active.id } })), children: "在任务中心查看完整记录" })
+            ] })
+          ] }),
+          jsxRuntime.jsxs("div", { className: "wb-chat-compose" + (dragOver ? " wb-collab-drop-over" : ""), onDragOver: (event) => { event.preventDefault(); setDragOver(true); }, onDragLeave: () => setDragOver(false), onDrop: (event) => { event.preventDefault(); setDragOver(false); uploadFiles(event.dataTransfer && event.dataTransfer.files); }, children: [
+            refOpen && jsxRuntime.jsxs("div", { className: "wb-chat-ref-pop", children: [
+              jsxRuntime.jsx("input", { className: "wb-chat-ref-search", autoFocus: true, value: refQuery, placeholder: "搜索想法或项目文件", onChange: (event) => setRefQuery(event.target.value) }),
+              refItems.length ? refItems.map((entry, index) => jsxRuntime.jsxs("button", { type: "button", className: "wb-chat-ref-item", onClick: () => addReference(entry), children: [jsxRuntime.jsx("span", { children: entry.title }), jsxRuntime.jsx("small", { children: entry.meta })] }, entry.kind + "-" + index)) : jsxRuntime.jsx("div", { className: "wb-collab-at-empty", children: "没有匹配结果" })
+            ] }),
+            (references.length > 0 || attachments.length > 0) && jsxRuntime.jsx("div", { className: "wb-chat-chips", children: [...references.map((entry, index) => jsxRuntime.jsxs("span", { className: "wb-chat-chip", children: [jsxRuntime.jsx("span", { children: "@" + entry.title }), jsxRuntime.jsx("button", { type: "button", title: "移除引用", onClick: () => setReferences((current) => current.filter((_, itemIndex) => itemIndex !== index)), children: "×" })] }, "r-" + index)), ...attachments.map((entry, index) => jsxRuntime.jsxs("span", { className: "wb-chat-chip", children: [jsxRuntime.jsx("span", { children: entry.name }), jsxRuntime.jsx("button", { type: "button", title: "移除附件", onClick: () => setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index)), children: "×" })] }, "a-" + index))] }),
+            jsxRuntime.jsx("textarea", { value: draft, placeholder: quick ? "输入问题，主代理会直接回答" : "描述目标，主代理会自动拆解并调度", onChange: (event) => { const next = event.target.value; setDraft(next); if (next.endsWith("@")) setRefOpen(true); }, onKeyDown: (event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); submit(); } } }),
+            jsxRuntime.jsxs("div", { className: "wb-chat-compose-tools", children: [
+              jsxRuntime.jsx("button", { type: "button", title: "引用想法或文件", onClick: () => setRefOpen((value) => !value), children: "@" }),
+              jsxRuntime.jsx("button", { type: "button", title: "添加附件", onClick: () => fileInputRef.current && fileInputRef.current.click(), children: jsxRuntime.jsx(primitives.IconPlusOutline16, { size: 14 }) }),
+              jsxRuntime.jsx("input", { ref: fileInputRef, type: "file", multiple: true, style: { display: "none" }, onChange: (event) => { uploadFiles(event.target.files); event.target.value = ""; } }),
+              jsxRuntime.jsx("button", { type: "button", title: strategy === "auto" ? "当前：自动判断简单问答或完整编排" : "当前：始终完整编排", onClick: () => selectStrategy(strategy === "auto" ? "always" : "auto"), children: strategy === "auto" ? "自动" : "始终编排" }),
+              jsxRuntime.jsx("span", { className: "wb-chat-meta", title: complexity.reasons.join("；"), children: "复杂度 " + complexity.score + " · " + (quick ? "快速回答" : "多代理编排") }),
+              jsxRuntime.jsx("button", { type: "button", className: "wb-chat-send", disabled: submitting || activeBusy || !draft.trim(), onClick: submit, title: activeBusy ? "当前任务完成后再发送" : "发送", children: submitting ? "处理中" : "发送" })
+            ] }),
+            store.err && jsxRuntime.jsx(WbErrNote, { message: store.err })
+          ] })
+        ] }),
+        contextOpen && jsxRuntime.jsx(ProjectContextDialog, { projectPath, onClose: () => setContextOpen(false) })
+      ] });
+    }
+
     // ---- agent workspace: sessions column | conversation | toolbar ----
     function AgentWorkspace(props) {
       const { useStore, useSessions, useWorkspaces, actions, renderSlot, onToggleSessions } = props;
       const panels = useStore((s) => s);
       const currentId = useSessions((s) => (s.current === void 0 ? void 0 : s.byId[s.current] ? s.current : void 0));
+      const sessionsState = useSessions((s) => s);
+      const summary = currentId === void 0 ? void 0 : sessionsState.byId[currentId];
+      const projectPath = summary && summary.cwd ? summary.cwd : "";
       const frameRef = React.useRef(null);
       const [viewport, setViewport] = React.useState(() => window.innerWidth);
       React.useEffect(() => {
@@ -2706,7 +2907,7 @@ window.__ModuleLoader__.load({
         jsxRuntime.jsxs("div", { ref: frameRef, className: "wb-agent-frame", style: { gridTemplateColumns: sidebarW + "px minmax(0, 1fr) " + d + "px" }, children: [
           sidebarW > 0 && jsxRuntime.jsx("div", { className: "wb-sp-col", style: { gridColumn: 1 }, children: jsxRuntime.jsx(SessionPanel, { useSessions, useWorkspaces, onClose: onToggleSessions }) }),
           sidebarW > 0 && jsxRuntime.jsx(DragHandle, { side: "sidebar", left: sidebarW, onStart: () => { sidebarBase.current = panels.sidebar; }, onDrag: (delta) => actions.setSidebar(sidebarBase.current + delta), onEnd: () => {} }),
-          jsxRuntime.jsx(CenterColumn, { children: renderSlot("conversation", {}) }),
+          jsxRuntime.jsx(CenterColumn, { children: jsxRuntime.jsx(MultiAiConversationShell, { sessionId: currentId, projectPath, children: renderSlot("conversation", {}) }) }),
           d > 0 && jsxRuntime.jsx("div", { className: "wb-tb-col", style: { gridColumn: 3 }, children: jsxRuntime.jsx(WbToolbar, { useSessions, onClose: () => actions.closeDetails() }) }),
           d > 0 && jsxRuntime.jsx(DragHandle, { side: "details", left: viewport - d, onStart: () => { detailsBase.current = panels.details; }, onDrag: (delta) => actions.setDetails(detailsBase.current - delta), onEnd: () => {} })
         ] }),
@@ -2739,6 +2940,7 @@ window.__ModuleLoader__.load({
       const store = useWorkbenchTasks(currentId, projectPath);
       const [taskCenterOpen, setTaskCenterOpen] = React.useState(false);
       const [taskCenterView, setTaskCenterView] = React.useState("today");
+      const [taskCenterOrchestrationId, setTaskCenterOrchestrationId] = React.useState(null);
       const [selectedTaskId, setSelectedTaskId] = React.useState(null);
       const ideaScope = projectPath ? "current" : "global";
       const projectIdeas = wbTasksForScope(store.ideas, projectPath, ideaScope);
@@ -2748,13 +2950,15 @@ window.__ModuleLoader__.load({
         const next = view || "today";
         setTaskCenterView(next);
         setTaskCenterOpen(true);
+        setTaskCenterOrchestrationId(null);
         setSelectedTaskId(null);
         try { localStorage.setItem("wb.taskCenterView", next); } catch (e) {}
       };
       React.useEffect(() => {
         const handleOpenTaskCenter = (event) => {
           const next = event && event.detail && event.detail.view ? event.detail.view : "today";
-          setTaskCenterView(next); setTaskCenterOpen(true); setSelectedTaskId(null);
+          const orchestrationId = next === "orchestrate" && event && event.detail ? event.detail.id || null : null;
+          setTaskCenterView(next); setTaskCenterOpen(true); setTaskCenterOrchestrationId(orchestrationId); setSelectedTaskId(null);
           try { localStorage.setItem("wb.taskCenterView", next); } catch (e) {}
         };
         window.addEventListener("wb:open-task-center", handleOpenTaskCenter);
@@ -2776,7 +2980,7 @@ window.__ModuleLoader__.load({
           p.id === "monitor" && navAlert && jsxRuntime.jsx("span", { className: "wb-nav-alert-dot" })
         ]
       }, p.id);
-      const taskCenter = taskCenterOpen && jsxRuntime.jsx(WorkbenchTaskCenter, { store, workspaceItems: workspacesState.items || [], selectedId: selectedTaskId, onSelectedId: setSelectedTaskId, initialView: taskCenterView, onClose: () => { setTaskCenterOpen(false); setSelectedTaskId(null); } });
+      const taskCenter = taskCenterOpen && jsxRuntime.jsx(WorkbenchTaskCenter, { store, workspaceItems: workspacesState.items || [], selectedId: selectedTaskId, onSelectedId: setSelectedTaskId, initialView: taskCenterView, initialOrchestrationId: taskCenterOrchestrationId, onClose: () => { setTaskCenterOpen(false); setTaskCenterOrchestrationId(null); setSelectedTaskId(null); } });
       return jsxRuntime.jsxs(React.Fragment, { children: [
         jsxRuntime.jsxs("aside", {
           className: "wb-nav " + (expanded ? "wb-nav-expanded" : "wb-nav-collapsed"),
