@@ -588,7 +588,7 @@ window.__ModuleLoader__.load({
       ".wb-collab-files{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.wb-collab-file-chip{display:inline-flex;align-items:center;gap:6px;max-width:220px;padding:3px 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);font-size:10px}.wb-collab-file-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wb-collab-file-chip button{border:0;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer;font-size:11px}.wb-collab-file-hint{color:var(--dsw-alias-label-tertiary);font-size:10px}.wb-collab-command-hint{color:var(--dsw-alias-accent-fill);font-size:10px}",
       ".wb-collab-attachments{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:4px 0 8px}",
       ".wb-collab-order{margin:10px 0}.wb-collab-order>strong{display:block;margin-bottom:8px;font-size:11px;color:var(--dsw-alias-label-secondary)}.wb-collab-order-flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.wb-collab-order-group{display:flex;gap:6px;flex-wrap:wrap}.wb-collab-order-node{padding:4px 9px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);font-size:10px}.wb-collab-order-arrow{color:var(--dsw-alias-label-tertiary);font-size:11px}",
-      ".wb-collab-log-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}.wb-collab-log-toolbar input{flex:1;min-width:120px;height:28px;padding:0 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:11px inherit}.wb-collab-log-filter{height:26px;padding:0 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);font:10px inherit;cursor:pointer}.wb-collab-log-filter-active{border-color:var(--dsw-alias-accent-fill);color:var(--dsw-alias-label-primary)}.wb-collab-log-list{display:grid;gap:4px;max-height:360px;overflow:auto}.wb-collab-log-row{display:grid;grid-template-columns:52px 1fr;gap:8px;padding:5px 7px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:var(--dsw-alias-bg-layer-2);font-size:10px;line-height:1.5}.wb-collab-log-row small{color:var(--dsw-alias-label-tertiary)}.wb-collab-log-info{border-left:2px solid #30b650}.wb-collab-log-warn{border-left:2px solid #ff9f0a}.wb-collab-log-error{border-left:2px solid #ff453a}.wb-orch-agents-editor{width:100%;box-sizing:border-box;min-height:120px;margin-top:8px;padding:8px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;resize:vertical;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:10px/1.5 monospace}.wb-orch-agent-ref{display:block;margin:2px 0;color:var(--dsw-alias-label-tertiary);font-size:10px}.wb-collab-memory-actions{margin-bottom:10px}.wb-collab-memory-card{padding:9px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-2);display:grid;gap:6px}.wb-collab-memory-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.wb-collab-memory-head strong{font-size:12px;color:var(--dsw-alias-label-primary)}.wb-collab-memory-head small{font-size:10px;color:var(--dsw-alias-label-tertiary)}.wb-collab-memory-card p{margin:0;font-size:11px;line-height:1.6;color:var(--dsw-alias-label-secondary)}.wb-collab-memory-list{display:grid;gap:3px}.wb-collab-memory-finding{font-size:10px;color:var(--dsw-alias-label-secondary);line-height:1.5}.wb-monitor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}.wb-monitor-card{padding:12px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-2);display:grid;gap:8px;align-content:start}.wb-monitor-card h3{margin:0;font-size:12px;color:var(--dsw-alias-label-secondary);font-weight:600}.wb-monitor-big{font-size:20px;color:var(--dsw-alias-label-primary)}.wb-monitor-card small{color:var(--dsw-alias-label-tertiary);font-size:10px}.wb-monitor-wide{grid-column:1/-1}.wb-monitor-bars{display:flex;align-items:flex-end;gap:8px;height:96px}.wb-monitor-bar-col{flex:1;display:grid;gap:4px;align-items:end;justify-items:center;min-width:0}.wb-monitor-bar{width:100%;max-width:42px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--dsw-alias-accent-fill),color-mix(in srgb,var(--dsw-alias-accent-fill) 45%,var(--dsw-alias-bg-layer-2)))}.wb-monitor-bar-col small{font-size:9px;color:var(--dsw-alias-label-tertiary)}.wb-monitor-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}.wb-monitor-rows{display:grid;gap:6px}.wb-monitor-table{display:grid;gap:4px}.wb-monitor-table-row{display:grid;grid-template-columns:minmax(120px,2fr) repeat(4,minmax(60px,1fr));gap:8px;padding:6px 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-1);font-size:10px;color:var(--dsw-alias-label-secondary)}.wb-monitor-sessions{display:grid;gap:10px}.wb-alert-banner{padding:8px 12px;border:1px solid #ff9f0a;border-radius:10px;background:color-mix(in srgb,#ff9f0a 12%,transparent);color:var(--dsw-alias-label-primary);font-size:12px}.wb-alert-banner-global{margin:8px 16px 0}.wb-nav-btn{position:relative}.wb-nav-alert-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#ff453a}",
+      ".wb-collab-log-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}.wb-collab-log-toolbar input{flex:1;min-width:120px;height:28px;padding:0 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:11px inherit}.wb-collab-log-filter{height:26px;padding:0 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);font:10px inherit;cursor:pointer}.wb-collab-log-filter-active{border-color:var(--dsw-alias-accent-fill);color:var(--dsw-alias-label-primary)}.wb-collab-log-list{display:grid;gap:4px;max-height:360px;overflow:auto}.wb-collab-log-row{display:grid;grid-template-columns:52px 1fr;gap:8px;padding:5px 7px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:var(--dsw-alias-bg-layer-2);font-size:10px;line-height:1.5}.wb-collab-log-row small{color:var(--dsw-alias-label-tertiary)}.wb-collab-log-info{border-left:2px solid #30b650}.wb-collab-log-warn{border-left:2px solid #ff9f0a}.wb-collab-log-error{border-left:2px solid #ff453a}.wb-orch-agents-editor{width:100%;box-sizing:border-box;min-height:120px;margin-top:8px;padding:8px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;resize:vertical;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:10px/1.5 monospace}.wb-orch-agent-ref{display:block;margin:2px 0;color:var(--dsw-alias-label-tertiary);font-size:10px}.wb-collab-memory-actions{margin-bottom:10px}.wb-collab-memory-card{padding:9px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-2);display:grid;gap:6px}.wb-collab-memory-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.wb-collab-memory-head strong{font-size:12px;color:var(--dsw-alias-label-primary)}.wb-collab-memory-head small{font-size:10px;color:var(--dsw-alias-label-tertiary)}.wb-collab-memory-card p{margin:0;font-size:11px;line-height:1.6;color:var(--dsw-alias-label-secondary)}.wb-collab-memory-list{display:grid;gap:3px}.wb-collab-memory-finding{font-size:10px;color:var(--dsw-alias-label-secondary);line-height:1.5}.wb-monitor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}.wb-monitor-card{padding:12px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-2);display:grid;gap:8px;align-content:start}.wb-monitor-card h3{margin:0;font-size:12px;color:var(--dsw-alias-label-secondary);font-weight:600}.wb-monitor-big{font-size:20px;color:var(--dsw-alias-label-primary)}.wb-monitor-card small{color:var(--dsw-alias-label-tertiary);font-size:10px}.wb-monitor-wide{grid-column:1/-1}.wb-monitor-bars{display:flex;align-items:flex-end;gap:8px;height:96px}.wb-monitor-bar-col{flex:1;display:grid;gap:4px;align-items:end;justify-items:center;min-width:0}.wb-monitor-bar{width:100%;max-width:42px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--dsw-alias-accent-fill),color-mix(in srgb,var(--dsw-alias-accent-fill) 45%,var(--dsw-alias-bg-layer-2)))}.wb-monitor-bar-col small{font-size:9px;color:var(--dsw-alias-label-tertiary)}.wb-monitor-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}.wb-monitor-rows{display:grid;gap:6px}.wb-monitor-table{display:grid;gap:4px}.wb-monitor-table-row{display:grid;grid-template-columns:minmax(120px,2fr) repeat(4,minmax(60px,1fr));gap:8px;padding:6px 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-1);font-size:10px;color:var(--dsw-alias-label-secondary)}.wb-monitor-sessions{display:grid;gap:10px}.wb-alert-banner{padding:8px 12px;border:1px solid #ff9f0a;border-radius:10px;background:color-mix(in srgb,#ff9f0a 12%,transparent);color:var(--dsw-alias-label-primary);font-size:12px}.wb-alert-banner-global{margin:8px 16px 0}.wb-nav-btn{position:relative}.wb-nav-alert-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#ff453a}.wb-workflow-editor{display:grid;gap:8px}.wb-workflow-editor input,.wb-workflow-editor select{height:32px;padding:0 10px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:12px inherit}.wb-workflow-editor .wb-orch-agents-editor{margin-top:0}",
       ".wb-orch-main p,.wb-orch-worker p{margin:8px 0 0;font-size:10px;line-height:1.55;color:var(--dsw-alias-label-secondary);white-space:pre-wrap}",
       ".wb-orch-workers{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px;margin-top:8px}.wb-orch-deps,.wb-orch-acceptance{margin-top:7px;font-size:9px;line-height:1.5;color:var(--dsw-alias-label-tertiary)}.wb-orch-acceptance{padding-top:7px;border-top:1px dashed var(--dsw-alias-border-l1)}",
       ".wb-orch-criteria,.wb-orch-report{margin-top:10px;padding:11px 12px;border:1px solid var(--dsw-alias-border-l1);border-radius:11px;background:var(--dsw-alias-bg-base)}.wb-orch-criteria>strong,.wb-orch-report>strong{font-size:11px;color:var(--dsw-alias-label-primary)}.wb-orch-criteria ol{margin:7px 0 0;padding-left:20px;font-size:10px;line-height:1.7;color:var(--dsw-alias-label-secondary)}",
@@ -723,7 +723,7 @@ window.__ModuleLoader__.load({
       experts: { title: "专家", desc: "切换 Agent 的对话风格与专长。每位专家 = 一套预设（人格 + 工具 + 专属技能）。首批：健身专家、AI 产品架构师（P2）。" },
       style: { title: "风格", desc: "工作台外貌：主题模式、强调色、壁纸透明度、字体密度、风格预设，以及可叠加在专家上的「对话风格」层（P3）。" },
       monitor: { title: "监控", desc: "账户总览、用量统计、会话洞察、实时面板与页面内告警（P3）。" },
-      workflows: { title: "工作流", desc: "把重复性多步骤任务固化成模板：日报汇总、会议纪要、调研写作流水线……一键运行 + 定时调度（P5）。" }
+      workflows: { title: "工作流", desc: "把重复性多步骤任务固化成模板：日报汇总、会议纪要、调研写作流水线……一键运行 + 定时调度（P4）。" }
     };
 
     var WB_STYLE_DEFAULTS = {
@@ -3136,6 +3136,136 @@ window.__ModuleLoader__.load({
       ] });
     }
 
+    function WorkflowPage({ useSessions, useWorkbenchTasks }) {
+      const sessionsState = useSessions((s) => s);
+      const currentId = sessionsState.current;
+      const currentSession = currentId && sessionsState.byId[currentId] ? sessionsState.byId[currentId] : null;
+      const projectPath = currentSession && currentSession.cwd ? currentSession.cwd : "";
+      const store = useWorkbenchTasks(currentId, projectPath);
+      const [tab, setTab] = React.useState("templates");
+      const [templates, setTemplates] = React.useState([]);
+      const [schedules, setSchedules] = React.useState([]);
+      const [runs, setRuns] = React.useState([]);
+      const [busy, setBusy] = React.useState(false);
+      const [error, setError] = React.useState("");
+      const [editing, setEditing] = React.useState(null);
+      const [draft, setDraft] = React.useState({ title: "", description: "", steps: "" });
+      const [draftSchedule, setDraftSchedule] = React.useState({ templateId: "", intervalMinutes: 60 });
+      const load = React.useCallback(() => {
+        setBusy(true);
+        setError("");
+        wbFetchJson("/api/dsh-workbench/workflows/list").then(({ data }) => {
+          setTemplates(data.templates || []);
+          setSchedules(data.schedules || []);
+          setRuns(data.runs || []);
+        }).catch((e) => setError(String((e && e.message) || e))).finally(() => setBusy(false));
+      }, []);
+      React.useEffect(() => { load(); }, [load]);
+      const beginEdit = (template) => {
+        setEditing(template || {});
+        setDraft({ title: (template && template.title) || "", description: (template && template.description) || "", steps: (template && template.steps || []).map((step) => step.title).join("\n") });
+      };
+      const saveTemplate = () => {
+        const title = draft.title.trim();
+        const steps = draft.steps.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+        if (!title || steps.length === 0) { setError("模板需要标题和至少一个步骤"); return; }
+        const body = { title, description: draft.description.trim(), steps };
+        const action = editing && editing.id ? "template_update" : "template_create";
+        store.mutate(action, editing && editing.id ? { ...body, templateId: editing.id } : body).then(() => {
+          setEditing(null);
+          setDraft({ title: "", description: "", steps: "" });
+          load();
+        }).catch((e) => setError(String((e && e.message) || e)));
+      };
+      const removeTemplate = (templateId) => {
+        if (!window.confirm("确定删除这个模板吗？")) return;
+        store.mutate("template_remove", { templateId }).then(load).catch((e) => setError(String((e && e.message) || e)));
+      };
+      const runTemplate = (templateId) => {
+        if (!projectPath) { setError("请先打开一个项目会话，再运行工作流。"); return; }
+        wbFetchJson("/api/dsh-workbench/workflows/run", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ templateId, projectPath }) })
+          .then(() => { load(); setTab("runs"); }).catch((e) => setError(String((e && e.message) || e)));
+      };
+      const addSchedule = () => {
+        if (!draftSchedule.templateId || !projectPath) { setError("请选择模板并打开项目会话。"); return; }
+        wbFetchJson("/api/dsh-workbench/workflows/schedule", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ templateId: draftSchedule.templateId, projectPath, intervalMinutes: Number(draftSchedule.intervalMinutes) || 60 }) })
+          .then(load).catch((e) => setError(String((e && e.message) || e)));
+      };
+      const toggleSchedule = (schedule) => {
+        wbFetchJson("/api/dsh-workbench/workflows/schedule", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: schedule.id, templateId: schedule.templateId, projectPath: schedule.projectPath, intervalMinutes: schedule.intervalMinutes, enabled: !schedule.enabled }) })
+          .then(load).catch((e) => setError(String((e && e.message) || e)));
+      };
+      const removeSchedule = (id) => {
+        wbFetchJson("/api/dsh-workbench/workflows/remove", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "schedule", id }) })
+          .then(load).catch((e) => setError(String((e && e.message) || e)));
+      };
+      const removeRun = (id) => {
+        wbFetchJson("/api/dsh-workbench/workflows/remove", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "run", id }) })
+          .then(load).catch((e) => setError(String((e && e.message) || e)));
+      };
+      const tabs = [{ id: "templates", label: "模板" }, { id: "schedules", label: "调度" }, { id: "runs", label: "运行记录" }];
+      return jsxRuntime.jsxs("div", { className: "wb-page wb-workflows", children: [
+        jsxRuntime.jsxs("div", { className: "wb-page-inner", children: [
+          jsxRuntime.jsxs("div", { className: "wb-style-head", children: [jsxRuntime.jsx("h1", { className: "wb-page-title", children: "工作流" }), jsxRuntime.jsxs("div", { className: "wb-style-actions", children: [jsxRuntime.jsx("span", { className: "wb-style-status", children: busy ? "刷新中…" : "已更新" }), jsxRuntime.jsx("button", { type: "button", className: "wb-style-button", disabled: busy, onClick: load, children: "刷新" })] })] }),
+          error && jsxRuntime.jsx(WbErrNote, { message: error }),
+          jsxRuntime.jsx("div", { className: "wb-style-tabs", role: "tablist", children: tabs.map((item) => jsxRuntime.jsx("button", { type: "button", role: "tab", className: "wb-style-tab" + (tab === item.id ? " wb-style-tab-active" : ""), onClick: () => setTab(item.id), children: item.label }, item.id)) }),
+          tab === "templates" && jsxRuntime.jsxs("div", { children: [
+            jsxRuntime.jsxs("div", { className: "wb-monitor-toolbar", children: [
+              jsxRuntime.jsx("span", { children: projectPath ? "运行目标：" + projectPath : "未打开项目会话" }),
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", onClick: () => beginEdit(null), children: "新建模板" })
+            ] }),
+            editing !== null && jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-workflow-editor", children: [
+              jsxRuntime.jsx("h3", { children: editing && editing.id ? "编辑模板：" + editing.title : "新建模板" }),
+              jsxRuntime.jsx("input", { value: draft.title, placeholder: "模板名称", onChange: (e) => setDraft((cur) => ({ ...cur, title: e.target.value })) }),
+              jsxRuntime.jsx("input", { value: draft.description, placeholder: "用途说明", onChange: (e) => setDraft((cur) => ({ ...cur, description: e.target.value })) }),
+              jsxRuntime.jsx("textarea", { className: "wb-orch-agents-editor", value: draft.steps, rows: 6, placeholder: "每个步骤一行，例如：\n汇总昨日进展\n整理今日计划\n标记阻塞与风险", onChange: (e) => setDraft((cur) => ({ ...cur, steps: e.target.value })) }),
+              jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [
+                jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => { setEditing(null); setDraft({ title: "", description: "", steps: "" }); }, children: "取消" }),
+                jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy, onClick: saveTemplate, children: editing && editing.id ? "保存修改" : "创建模板" })
+              ] })
+            ] }),
+            jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: templates.map((template) => jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
+              jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: template.title }), jsxRuntime.jsx("small", { children: (template.steps || []).length + " 个步骤" })] }),
+              template.description && jsxRuntime.jsx("p", { className: "wb-collab-memory-finding", children: template.description }),
+              jsxRuntime.jsx("div", { className: "wb-collab-memory-list", children: template.steps.slice(0, 4).map((step, index) => jsxRuntime.jsx("div", { className: "wb-collab-memory-finding", children: (index + 1) + ". " + step.title }, index)) }),
+              jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [
+                jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: !projectPath, title: projectPath ? "应用到当前项目" : "请先打开项目会话", onClick: () => runTemplate(template.id), children: "运行" }),
+                jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => beginEdit(template), children: "编辑" }),
+                jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => removeTemplate(template.id), children: "删除" })
+              ] })
+            ] }, template.id)) })
+          ] }),
+          tab === "schedules" && jsxRuntime.jsxs("div", { children: [
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-workflow-editor", children: [
+              jsxRuntime.jsx("h3", { children: "新增定时调度" }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "模板" }), jsxRuntime.jsx("select", { value: draftSchedule.templateId, onChange: (e) => setDraftSchedule((cur) => ({ ...cur, templateId: e.target.value })), children: [jsxRuntime.jsx("option", { value: "", children: "选择模板…" }, "empty"), templates.map((template) => jsxRuntime.jsx("option", { value: template.id, children: template.title }, template.id))] })] }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "间隔（分钟）" }), jsxRuntime.jsx("input", { type: "number", min: 1, max: 10080, value: draftSchedule.intervalMinutes, onChange: (e) => setDraftSchedule((cur) => ({ ...cur, intervalMinutes: e.target.value })) })] }),
+              jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "调度仅在桌面端运行时触发（应用开启期间检查）。目标项目：" + (projectPath || "未打开项目会话") }),
+              jsxRuntime.jsx("div", { className: "wb-orch-actions", children: [jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: !draftSchedule.templateId || !projectPath, onClick: addSchedule, children: "添加调度" })] })
+            ] }),
+            schedules.length ? jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: schedules.map((schedule) => jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
+              jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: (templates.find((t) => t.id === schedule.templateId) || {}).title || schedule.templateId }), jsxRuntime.jsx("small", { children: schedule.enabled ? "已启用" : "已暂停" })] }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "间隔" }), jsxRuntime.jsx("strong", { children: schedule.intervalMinutes + " 分钟" })] }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "上次运行" }), jsxRuntime.jsx("strong", { children: schedule.lastRunAt ? new Date(schedule.lastRunAt).toLocaleString() : "从未" })] }),
+              jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [
+                jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => toggleSchedule(schedule), children: schedule.enabled ? "暂停" : "启用" }),
+                jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => removeSchedule(schedule.id), children: "删除" })
+              ] })
+            ] }, schedule.id)) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "还没有定时调度。设置后应用运行期间会按间隔自动执行模板。" })
+          ] }),
+          tab === "runs" && jsxRuntime.jsxs("div", { className: "wb-monitor-sessions", children: [
+            runs.length ? runs.slice().reverse().map((run) => jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
+              jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: run.templateTitle }), jsxRuntime.jsx("small", { className: "wb-orch-agent-status wb-orch-agent-status-" + (run.status === "done" ? "completed" : run.status === "failed" ? "failed" : "running"), children: run.status })] }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "项目" }), jsxRuntime.jsx("strong", { children: run.projectPath || "全局" })] }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "任务" }), jsxRuntime.jsx("strong", { children: run.taskCount + " 个 · " + (run.startedAt ? new Date(run.startedAt).toLocaleString() : "—") })] }),
+              run.error && jsxRuntime.jsx("div", { className: "wb-tb-err", children: run.error }),
+              jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => removeRun(run.id), children: "删除记录" })] })
+            ] }, run.id)) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "还没有运行记录。点模板上的“运行”即可把步骤生成到当前项目的任务板。" })
+          ] })
+        ] })
+      ] });
+    }
+
     function WorkbenchPage({ id }) {
       const meta = PAGE_META[id] || { title: id, desc: "" };
       return jsxRuntime.jsx("div", { className: "wb-page", children: jsxRuntime.jsxs("div", { className: "wb-page-inner", children: [
@@ -3381,6 +3511,8 @@ window.__ModuleLoader__.load({
               ? jsxRuntime.jsx(StylePage, {})
             : page === "monitor"
               ? jsxRuntime.jsx(MonitorPage, { useSessions, useWorkbenchTasks })
+            : page === "workflows"
+              ? jsxRuntime.jsx(WorkflowPage, { useSessions, useWorkbenchTasks })
             : jsxRuntime.jsx(WorkbenchPage, { id: page })
         })
       ] }) });

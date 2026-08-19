@@ -59,6 +59,9 @@ const MAX_AGENT_POOL_SIZE = 30;
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 const ATTACHMENT_SUMMARY_BYTES = 64 * 1024;
 const ATTACHMENT_SUMMARY_CHARS = 4000;
+const WORKFLOW_STORE = join(DSH_ROOT, 'dsh-workbench-workflows.json');
+const MAX_WORKFLOW_STORE_BYTES = 2 * 1024 * 1024;
+const WORKFLOW_SCHEDULE_POLL_MS = 30000;
 const TODO_STATUSES = ['pending', 'in_progress', 'completed'];
 const TASK_STATUSES = ['inbox', 'pending', 'in_progress', 'blocked', 'completed'];
 const TASK_PRIORITIES = ['low', 'medium', 'high'];
@@ -85,6 +88,28 @@ const AGENT_POOL_DEFAULTS = [
   { id: 'data-analyst', name: '数据分析专家', role: '处理数据与生成报表', model: '', capabilities: ['data', 'report', 'analysis'], prompt: '你是数据分析专家，核对数据来源并输出可验证的结论。' },
   { id: 'frontend-dev', name: '前端专家', role: 'React/Vue 等前端开发', model: '', capabilities: ['frontend', 'react', 'ui'], prompt: '你是前端专家，兼顾实现质量、可访问性与视觉一致性。' },
   { id: 'backend-dev', name: '后端专家', role: 'API 设计与数据库优化', model: '', capabilities: ['backend', 'api', 'database'], prompt: '你是后端专家，关注接口契约、性能与数据安全。' }
+];
+const WORKFLOW_DEFAULT_TEMPLATES = [
+  { id: 'wf-daily-report', title: '日报/晨报汇总', description: '汇总昨日进展、今日计划与阻塞项，输出一份晨报。', steps: [
+    { title: '汇总昨日工作进展', priority: 'medium', owner: 'agent', notes: '列出完成项、关键数字与结论', durationMinutes: 10, labels: ['日报'] },
+    { title: '整理今日计划', priority: 'medium', owner: 'agent', notes: '按优先级列出今日要事', durationMinutes: 10, labels: ['日报'] },
+    { title: '标记阻塞与风险', priority: 'high', owner: 'agent', notes: '说明需要协调或无法推进的事项', durationMinutes: 5, labels: ['日报'] }
+  ] },
+  { id: 'wf-meeting-notes', title: '会议纪要整理', description: '把会议记录整理成结论、待办与负责人。', steps: [
+    { title: '提炼会议结论', priority: 'medium', owner: 'agent', notes: '从原始记录中提取确定事项', durationMinutes: 10, labels: ['会议'] },
+    { title: '整理待办与负责人', priority: 'medium', owner: 'agent', notes: '逐条列出任务、负责人与截止时间', durationMinutes: 10, labels: ['会议'] }
+  ] },
+  { id: 'wf-research-writing', title: '调研写作流水线', description: '调研 → 大纲 → 成稿 → 校对。', steps: [
+    { title: '调研与资料收集', priority: 'medium', owner: 'agent', notes: '列出关键来源与事实', durationMinutes: 20, labels: ['调研'] },
+    { title: '生成文章大纲', priority: 'medium', owner: 'agent', notes: '结构清晰、论点明确', durationMinutes: 15, labels: ['调研'] },
+    { title: '撰写初稿', priority: 'medium', owner: 'agent', notes: '按大纲展开，引用来源', durationMinutes: 30, labels: ['调研'] },
+    { title: '校对与定稿', priority: 'medium', owner: 'agent', notes: '检查事实、错别字与格式', durationMinutes: 10, labels: ['调研'] }
+  ] },
+  { id: 'wf-table-cleaning', title: '表格数据清洗', description: '检查字段、去重、补全与汇总。', steps: [
+    { title: '字段与格式检查', priority: 'medium', owner: 'agent', notes: '核对表头、类型与缺失值', durationMinutes: 10, labels: ['数据'] },
+    { title: '去重与补全', priority: 'medium', owner: 'agent', notes: '清理重复行，标记无法补全项', durationMinutes: 10, labels: ['数据'] },
+    { title: '生成汇总说明', priority: 'medium', owner: 'agent', notes: '输出清洗前后对比与结论', durationMinutes: 10, labels: ['数据'] }
+  ] }
 ];
 let taskMutationQueue = Promise.resolve();
 let styleMutationQueue = Promise.resolve();
@@ -464,6 +489,168 @@ async function resolveAttachments(input) {
     }));
   }
   return out;
+}
+
+let workflowState = { version: 1, revision: 0, schedules: [], runs: [] };
+let workflowTimer = null;
+let workflowInFlight = new Set();
+
+function cleanWorkflowSchedule(raw, index) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  const intervalMinutes = Number(value.intervalMinutes);
+  return {
+    id: cleanTaskText(value.id, 120) || ('schedule-' + (index + 1) + '-' + randomUUID().slice(0, 8)),
+    templateId: cleanTaskText(value.templateId, 120),
+    projectPath: String(value.projectPath || ''),
+    intervalMinutes: Number.isFinite(intervalMinutes) ? Math.max(1, Math.min(10080, Math.round(intervalMinutes))) : 60,
+    enabled: value.enabled !== false,
+    lastRunAt: typeof value.lastRunAt === 'string' ? value.lastRunAt : '',
+    createdAt: typeof value.createdAt === 'string' ? value.createdAt : new Date().toISOString()
+  };
+}
+
+function cleanWorkflowRun(raw, index) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  return {
+    id: cleanTaskText(value.id, 120) || ('run-' + (index + 1) + '-' + randomUUID().slice(0, 8)),
+    templateId: cleanTaskText(value.templateId, 120),
+    templateTitle: cleanTaskText(value.templateTitle, 200),
+    projectPath: String(value.projectPath || ''),
+    status: ['running', 'done', 'failed'].includes(value.status) ? value.status : 'done',
+    startedAt: typeof value.startedAt === 'string' ? value.startedAt : new Date().toISOString(),
+    completedAt: typeof value.completedAt === 'string' ? value.completedAt : '',
+    error: cleanTaskText(value.error, 4000),
+    taskCount: Number.isSafeInteger(value.taskCount) ? value.taskCount : 0
+  };
+}
+
+async function readWorkflowStore() {
+  try {
+    const info = await lstat(WORKFLOW_STORE);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('workflow store must be a regular non-symbolic file');
+    if (info.size > MAX_WORKFLOW_STORE_BYTES) throw new Error(`workflow store exceeds ${MAX_WORKFLOW_STORE_BYTES} bytes`);
+    const parsed = JSON.parse(await readFile(WORKFLOW_STORE, 'utf8'));
+    workflowState = {
+      version: 1,
+      revision: Number.isSafeInteger(parsed.revision) && parsed.revision >= 0 ? parsed.revision : 0,
+      schedules: Array.isArray(parsed.schedules) ? parsed.schedules.map(cleanWorkflowSchedule) : [],
+      runs: Array.isArray(parsed.runs) ? parsed.runs.map(cleanWorkflowRun).slice(-100) : []
+    };
+  } catch (error) {
+    if (error && error.code === 'ENOENT') workflowState = { version: 1, revision: 0, schedules: [], runs: [] };
+    else throw error;
+  }
+  return workflowState;
+}
+
+async function writeWorkflowStore(store) {
+  await mkdir(DSH_ROOT, { recursive: true });
+  const next = { version: 1, revision: store.revision, schedules: store.schedules || [], runs: (store.runs || []).slice(-100) };
+  const temp = WORKFLOW_STORE + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, JSON.stringify(next, null, 2) + '\n', 'utf8');
+  let lastError = null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      await rename(temp, WORKFLOW_STORE);
+      workflowState = next;
+      return next;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 4) await new Promise((resolvePromise) => setTimeout(resolvePromise, 25 * (attempt + 1)));
+    }
+  }
+  try { await rm(temp, { force: true }); } catch (e) { /* keep temp for inspection */ }
+  throw lastError;
+}
+
+async function ensureDefaultTemplates() {
+  const store = await readTaskStore();
+  let changed = false;
+  for (const template of WORKFLOW_DEFAULT_TEMPLATES) {
+    if (!store.templates.some((item) => item.id === template.id)) {
+      store.templates.push(cleanTemplate({ ...template, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }));
+      changed = true;
+    }
+  }
+  if (changed) {
+    store.revision += 1;
+    await writeTaskStore(store);
+  }
+  return store.templates;
+}
+
+function applyTemplateToStore(store, template, projectPath, sourceSessionId) {
+  const groupId = randomUUID();
+  const groupTitle = template.title;
+  const now = new Date().toISOString();
+  for (const step of template.steps) {
+    store.tasks.push(cleanTask({
+      title: step.title,
+      status: 'pending',
+      priority: step.priority,
+      owner: step.owner,
+      notes: step.notes,
+      durationMinutes: step.durationMinutes,
+      labels: step.labels,
+      groupId,
+      groupTitle,
+      groupOrder: step.order,
+      projectPath,
+      sourceSessionId: sourceSessionId || template.sourceSessionId,
+      createdAt: now,
+      updatedAt: now
+    }));
+  }
+  return groupId;
+}
+
+async function runWorkflow(templateId, projectPath, sourceSessionId, trigger) {
+  const startedAt = new Date().toISOString();
+  const workflows = await readWorkflowStore();
+  const runId = randomUUID();
+  const store = await readTaskStore();
+  const template = store.templates.find((item) => item.id === templateId);
+  if (!template) throw new Error('template not found: ' + templateId);
+  const record = cleanWorkflowRun({ id: runId, templateId, templateTitle: template.title, projectPath, status: 'running', startedAt });
+  workflows.runs = [...workflows.runs, record];
+  workflows.revision += 1;
+  await writeWorkflowStore(workflows);
+  try {
+    applyTemplateToStore(store, template, projectPath, sourceSessionId);
+    store.revision += 1;
+    await writeTaskStore(store);
+    const completedAt = new Date().toISOString();
+    const final = await readWorkflowStore();
+    final.revision += 1;
+    final.runs = final.runs.map((item) => item.id === runId ? cleanWorkflowRun({ ...item, status: 'done', completedAt, taskCount: template.steps.length }) : item);
+    await writeWorkflowStore(final);
+    return final.runs.find((item) => item.id === runId);
+  } catch (error) {
+    const completedAt = new Date().toISOString();
+    const final = await readWorkflowStore();
+    final.revision += 1;
+    final.runs = final.runs.map((item) => item.id === runId ? cleanWorkflowRun({ ...item, status: 'failed', completedAt, error: String((error && error.message) || error) }) : item);
+    await writeWorkflowStore(final);
+    return final.runs.find((item) => item.id === runId);
+  }
+}
+
+async function pollWorkflowSchedules() {
+  try {
+    const workflows = await readWorkflowStore();
+    const now = Date.now();
+    for (const schedule of workflows.schedules) {
+      if (!schedule.enabled || workflowInFlight.has(schedule.id)) continue;
+      const last = schedule.lastRunAt ? new Date(schedule.lastRunAt).getTime() : 0;
+      if (now - last < schedule.intervalMinutes * 60000) continue;
+      workflowInFlight.add(schedule.id);
+      const next = await readWorkflowStore();
+      next.revision += 1;
+      next.schedules = next.schedules.map((item) => item.id === schedule.id ? { ...item, lastRunAt: new Date().toISOString() } : item);
+      await writeWorkflowStore(next);
+      runWorkflow(schedule.templateId, schedule.projectPath, '', 'schedule').catch(() => {}).finally(() => workflowInFlight.delete(schedule.id));
+    }
+  } catch (e) { /* scheduler is best effort */ }
 }
 
 function conversationStylePrompt() {
@@ -1031,6 +1218,28 @@ async function mutateTasks(body) {
         updatedAt: now
       }));
     }
+  } else if (action === 'template_create') {
+    const template = cleanTemplate({
+      id: randomUUID(),
+      title: body.title,
+      description: body.description,
+      steps: (Array.isArray(body.steps) ? body.steps : []).map((title, index) => ({ title: String(title || '').trim(), priority: 'medium', owner: 'agent', notes: '', durationMinutes: 0, labels: [], order: index })),
+      sourceSessionId: body.sourceSessionId,
+      createdAt: now,
+      updatedAt: now
+    });
+    store.templates.push(template);
+  } else if (action === 'template_update') {
+    const index = store.templates.findIndex((item) => item.id === body.templateId);
+    if (index < 0) throw new Error('template not found');
+    const current = store.templates[index];
+    store.templates[index] = cleanTemplate({
+      ...current,
+      title: body.title !== undefined && body.title !== null ? body.title : current.title,
+      description: body.description !== undefined ? body.description : current.description,
+      steps: Array.isArray(body.steps) ? body.steps.map((title, stepIndex) => ({ title: String(title || '').trim(), priority: 'medium', owner: 'agent', notes: '', durationMinutes: 0, labels: [], order: stepIndex })) : current.steps,
+      updatedAt: now
+    });
   } else if (action === 'template_remove') {
     const before = store.templates.length;
     store.templates = store.templates.filter((item) => item.id !== body.templateId);
@@ -2376,6 +2585,77 @@ function makeRoutes() {
         } catch (error) { fail(res, error); }
       }
     },
+    // ---- workflows: template library + schedules + runs ----
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/workflows/list',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        try {
+          const templates = await ensureDefaultTemplates();
+          const workflows = await readWorkflowStore();
+          writeJson(res, 200, { templates, schedules: workflows.schedules, runs: workflows.runs });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/workflows/schedule',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        try {
+          const templates = await ensureDefaultTemplates();
+          if (!templates.some((item) => item.id === body.templateId)) return bad(res, 'template-not-found', 'template not found');
+          const workflows = await readWorkflowStore();
+          workflows.revision += 1;
+          if (body.id && workflows.schedules.some((item) => item.id === body.id)) {
+            workflows.schedules = workflows.schedules.map((item) => item.id === body.id ? cleanWorkflowSchedule({ ...item, templateId: body.templateId, projectPath: body.projectPath, intervalMinutes: body.intervalMinutes, enabled: body.enabled !== false }) : item);
+          } else {
+            workflows.schedules.push(cleanWorkflowSchedule({ templateId: body.templateId, projectPath: body.projectPath, intervalMinutes: body.intervalMinutes, enabled: body.enabled !== false }));
+          }
+          await writeWorkflowStore(workflows);
+          writeJson(res, 200, { schedules: workflows.schedules });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/workflows/run',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        try {
+          const run = await runWorkflow(body.templateId, String(body.projectPath || ''), body.sourceSessionId, 'manual');
+          writeJson(res, 200, { run });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/workflows/remove',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        try {
+          const workflows = await readWorkflowStore();
+          const before = workflows.schedules.length + workflows.runs.length;
+          if (body.kind === 'schedule') workflows.schedules = workflows.schedules.filter((item) => item.id !== body.id);
+          else if (body.kind === 'run') workflows.runs = workflows.runs.filter((item) => item.id !== body.id);
+          else return bad(res, 'bad-kind', 'kind must be schedule or run');
+          if (workflows.schedules.length + workflows.runs.length === before) return bad(res, 'not-found', 'record not found');
+          workflows.revision += 1;
+          await writeWorkflowStore(workflows);
+          writeJson(res, 200, { schedules: workflows.schedules, runs: workflows.runs });
+        } catch (error) { fail(res, error); }
+      }
+    },
     // ---- attachments: loopback-only upload for orchestration inputs ----
     {
       kind: 'exact',
@@ -2458,7 +2738,12 @@ function apply(ctx) {
       diag('todo command register failed: ' + String((error && error.stack) || error));
     }
   });
+  workflowTimer = setInterval(() => { void pollWorkflowSchedules(); }, WORKFLOW_SCHEDULE_POLL_MS);
+  if (workflowTimer && typeof workflowTimer.unref === 'function') workflowTimer.unref();
   ctx.on('dispose', () => {
+    if (workflowTimer !== null) clearInterval(workflowTimer);
+    workflowTimer = null;
+    workflowInFlight.clear();
     for (const controller of orchestrationControllers.values()) controller.abort('host disposed');
     orchestrationControllers.clear();
     orchestrationSubagents = null;

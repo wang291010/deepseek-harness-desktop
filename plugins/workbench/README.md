@@ -158,6 +158,28 @@ powershell -ExecutionPolicy Bypass -File .\tools\enable-workbench.ps1    # 恢�
 - 会话：当前会话中消耗最高的前 8 个（费用/Token/轮次/最近请求时间）。
 - 实时：当前会话实时用量（含本轮进行中消耗、最近模型）、协作任务运行状态，每 10 秒刷新。
 - 告警：余额/日预算/区间预算阈值（本机 localStorage），触发后监控页横幅 + 导航栏红点。
+
+## 工作流页（P4）
+
+- 模板库：默认 4 个（日报/晨报、会议纪要、调研写作、表格清洗），可新建/编辑/删除（任务库
+  `template_create|update|remove`）；每个模板含名称、用途说明与步骤列表。
+- 一键运行：把模板步骤生成到当前项目的任务板（分组），记录运行状态/任务数/耗时。
+- 定时调度：按间隔分钟（1–10080）自动执行模板，可启用/暂停；调度仅在桌面端运行期间触发。
+- 运行记录：手动与定时运行的历史、状态与错误，可删除。
+- 接口：`GET /api/dsh-workbench/workflows/list`、`POST .../workflows/schedule`、
+  `POST .../workflows/run`、`POST .../workflows/remove`；存储 `DSH_HOME/dsh-workbench-workflows.json`。
+- Host 冒烟测试：`node tools/smoke-workflow.mjs`。
+
+## 工作流页（P4）
+
+- 模板库：默认 4 个（日报/晨报、会议纪要、调研写作、表格清洗），可新建/编辑/删除（任务库
+  `template_create|update|remove`）；每个模板含名称、用途说明与步骤列表。
+- 一键运行：把模板步骤生成到当前项目的任务板（分组），记录运行状态/任务数/耗时。
+- 定时调度：按间隔分钟（1–10080）自动执行模板，可启用/暂停；调度仅在桌面端运行期间触发。
+- 运行记录：手动与定时运行的历史、状态与错误，可删除。
+- 接口：`GET /api/dsh-workbench/workflows/list`、`POST .../workflows/schedule`、
+  `POST .../workflows/run`、`POST .../workflows/remove`；存储 `DSH_HOME/dsh-workbench-workflows.json`。
+- Host 冒烟测试：`node tools/smoke-workflow.mjs`。
 - 项目上下文自动注入：生成方案时自动携带项目文件结构（≤60 项）、技术栈线索（常见清单文件
   头部）与近期协作记录；仅限注册工作区内的项目路径（复用 `authorizeWorkspacePath`），越界或
   未注册路径自动跳过，不泄露。
