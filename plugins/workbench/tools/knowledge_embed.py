@@ -66,7 +66,8 @@ def ensure_model(model_dir):
             "pip install huggingface_hub onnxruntime tokenizers numpy\n" % exc
         )
         sys.exit(2)
-    repo = "BAAI/bge-small-zh-v1.5"
+    # Xenova repo ships ONNX + tokenizer.json; BAAI repo is PyTorch-only.
+    repo = "Xenova/bge-small-zh-v1.5"
     snapshot_download(repo, local_dir=str(model_dir))
     if not (find_onnx(model_dir) and find_tokenizer(model_dir)):
         sys.stderr.write("model download finished but onnx/tokenizer files not found in %s\n" % model_dir)
@@ -89,10 +90,12 @@ def main():
     for index in range(len(args) - 1):
         if args[index] == "--model":
             model = args[index + 1]
-    payload = json.loads(sys.stdin.read() or '{"texts": []}')
+    raw_in = sys.stdin.buffer.read() if hasattr(sys.stdin, 'buffer') else sys.stdin.read().encode('utf-8', 'replace')
+    payload = json.loads(raw_in.decode('utf-8', 'replace') or '{"texts": []}')
     texts = [str(text) for text in (payload.get("texts") or [])]
     if not texts:
-        sys.stdout.write(json.dumps({"dims": 0, "vectors": []}, ensure_ascii=False))
+        out_bytes = (json.dumps({"dims": 0, "vectors": []}, ensure_ascii=False) + '\n').encode('utf-8')
+        (sys.stdout.buffer.write(out_bytes) if hasattr(sys.stdout, 'buffer') else sys.stdout.write(out_bytes.decode('utf-8')))
         return
     try:
         import numpy as np  # noqa: F401
@@ -116,17 +119,20 @@ def main():
     for ids, mask in zip(input_ids, attention):
         padded_ids.append(ids + [0] * (max_len - len(ids)))
         padded_attention.append(mask + [0] * (max_len - len(mask)))
+    attention_np = np.array(padded_attention, dtype=np.int64)
     outputs = session.run(None, {
         "input_ids": np.array(padded_ids, dtype=np.int64),
-        "attention_mask": np.array(padded_attention, dtype=np.int64),
+        "attention_mask": attention_np,
+        "token_type_ids": np.zeros_like(attention_np),
     })
-    pooled = mean_pooling(outputs, np.array(padded_attention, dtype=np.int64))
+    pooled = mean_pooling(outputs, attention_np)
     norms = np.linalg.norm(pooled, axis=1, keepdims=True)
     normalized = pooled / np.clip(norms, a_min=1e-9, a_max=None)
-    sys.stdout.write(json.dumps({
+    out_bytes = (json.dumps({
         "dims": int(normalized.shape[1]),
         "vectors": normalized.tolist(),
-    }, ensure_ascii=False))
+    }, ensure_ascii=False) + '\n').encode('utf-8')
+    (sys.stdout.buffer.write(out_bytes) if hasattr(sys.stdout, 'buffer') else sys.stdout.write(out_bytes.decode('utf-8')))
 
 
 if __name__ == "__main__":

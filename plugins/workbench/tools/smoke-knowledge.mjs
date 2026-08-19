@@ -58,6 +58,9 @@ const fastapiContent = [
   'title: 订单中台为什么用 FastAPI',
   'tags: [架构, 订单, fastapi]',
   'confidence: high',
+  'status: published',
+  'claimType: fact',
+  'staleness: STABLE',
   'related: "[[订单中台]] [[异步消息]]"',
   'summary: 异步解耦与高性能是关键。',
   'source: 会话',
@@ -127,17 +130,29 @@ try {
   assert.equal(initial.entries.length, 1, 'template is scanned on first list');
   assert.equal(initial.stats.documents, 1);
   assert.equal(initial.stats.trend.length, 7);
-  assert.equal(initial.vector.provider, 'none');
+  assert.equal(initial.vector.provider, 'bge-local', 'v4 default vector provider is local BGE');
+  assert.equal(initial.vector.model, 'bge-small-zh-v1.5');
   const vaultRoot = initial.vaultRoot;
   await stat(join(vaultRoot, 'Dashboard.md'));
   await stat(join(vaultRoot, 'README.md'));
   await stat(join(vaultRoot, '.obsidian', 'app.json'));
   await stat(join(vaultRoot, '99-Templates', '默认条目模板.md'));
+  await stat(join(vaultRoot, '00-Raw'));
+  await stat(join(vaultRoot, '05-Archive'));
+
+  // v4: disable vector for deterministic local tests (custom mock provider used later)
+  await call('/api/dsh-workbench/knowledge/vector', 'POST', { config: { provider: 'none' } });
 
   const written = await call('/api/dsh-workbench/knowledge/write', 'POST', { folder: 'inbox', name: '订单中台-FastAPI', content: fastapiContent });
   assert.equal(written.entry.title, '订单中台为什么用 FastAPI');
   assert.deepEqual(written.entry.tags, ['架构', '订单', 'fastapi']);
   assert.equal(written.entry.confidence, 'high');
+  assert.equal(written.entry.status, 'published', 'explicit published status should be kept');
+  assert.equal(written.entry.claimType, 'fact');
+  assert.ok(written.entry.confidenceBasis, 'confidence basis should be computed at scan');
+  assert.ok(written.entry.confidenceBasis.reasons.length >= 1);
+  assert.ok(written.precheck, 'write should return a precheck report');
+  assert.equal(written.precheck.exactTitle, null);
   assert.ok(written.entry.related.includes('订单中台'));
   assert.equal(written.entry.project, 'D:\\order');
   assert.ok(written.entry.createdAt);
@@ -164,8 +179,13 @@ try {
   assert.ok(search.results[0].snippet.length > 0);
   assert.ok(search.routes.includes('bm25'));
   assert.ok(search.routes.includes('graph'));
+  assert.ok(search.routing && search.routing.mode, 'search should include routing classification');
+  assert.ok('selfCheck' in search, 'search should include self-check gate');
   assert.ok(search.estimatedTokens > 0);
   assert.ok(search.results[0].confidence);
+  assert.ok(search.results[0].computedConfidence);
+  assert.ok(search.results[0].retrievalScore > 0, 'result should carry fused retrieval score');
+  assert.equal(search.results[0].status, 'published');
   assert.equal(search.profile.topK, 5, 'default profile topK when no project profile saved');
   assert.ok(search.results.length <= 3, 'topK cap should apply');
 
@@ -173,7 +193,7 @@ try {
   assert.equal(profile.profile.topK, 5);
   const savedProfile = await call('/api/dsh-workbench/knowledge/profile', 'POST', {
     project: 'D:\\proj',
-    profile: { topK: 7, rerank: 'none', routes: { bm25: true, graph: true, vector: true, hyde: false } }
+    profile: { mode: 'vector', topK: 7, rerank: 'none', routes: { bm25: true, graph: true, vector: true, hyde: false } }
   });
   assert.equal(savedProfile.profile.topK, 7);
   const vectorEnabledSearch = await call('/api/dsh-workbench/knowledge/search', 'POST', { query: 'FastAPI', project: 'D:\\proj' });
@@ -191,6 +211,9 @@ try {
   const vectorSearch = await call('/api/dsh-workbench/knowledge/search', 'POST', { query: 'FastAPI', project: 'D:\\proj' });
   assert.equal(vectorSearch.vectorStatus, 'ok');
   assert.ok(vectorSearch.routes.includes('vector'));
+  const backToNone = await call('/api/dsh-workbench/knowledge/vector', 'POST', { config: { provider: 'none' } });
+  assert.equal(backToNone.saved, true);
+  assert.equal(backToNone.config.provider, 'none');
 
   const distilled = await call('/api/dsh-workbench/knowledge/distill', 'POST', {
     title: '部署经验',
@@ -199,6 +222,9 @@ try {
   });
   assert.equal(distilled.fallback, true);
   assert.equal(distilled.entry.confidence, 'low');
+  assert.equal(distilled.entry.status, 'review', 'distilled entries land as review in inbox');
+  assert.ok(distilled.precheck, 'distill should carry a precheck report');
+  assert.equal(distilled.autoPublished, false, 'manual review mode should not auto-publish');
   assert.ok(distilled.entry.path.startsWith('inbox/'));
   assert.ok(distilled.entry.path.includes('部署经验'));
 
@@ -283,6 +309,7 @@ try {
     'title: 标签检索测试',
     'tags: [xyzabc]',
     'confidence: medium',
+    'status: published',
     'related: ""',
     'summary: 关键词只出现在标签里。',
     'created: 2026-08-19T00:00:00.000Z',
@@ -300,6 +327,7 @@ try {
     'title: 直接写入条目',
     'tags: []',
     'confidence: medium',
+    'status: published',
     'related: ""',
     'summary: stalecheck123 用于验证自动重建。',
     'created: 2026-08-19T00:00:00.000Z',
@@ -322,12 +350,89 @@ try {
   const badVector = await call('/api/dsh-workbench/knowledge/vector', 'POST', { config: { provider: 'openai', model: 'text-embedding-3-small', apiKey: '', baseUrl: '' } });
   assert.equal(badVector.saved, false);
   assert.ok(badVector.status.error);
-  const backToNone = await call('/api/dsh-workbench/knowledge/vector', 'POST', { config: { provider: 'none' } });
-  assert.equal(backToNone.saved, true);
-  assert.equal(backToNone.config.provider, 'none');
-
   const finalSync = await call('/api/dsh-workbench/knowledge/sync', 'POST');
   assert.equal(finalSync.entries.length, 10, 'existing 5 + skill/project/workflow/tag-only/direct-write after removing fastapi');
+
+  // ---- v4 quality gate: precheck / publish / quality / raw / archive / routing ----
+  const precheckDup = await call('/api/dsh-workbench/knowledge/precheck', 'POST', {
+    title: '技能-代码审查',
+    content: skillContent,
+    source: '手册'
+  });
+  assert.ok(precheckDup.exactTitle, 'precheck should detect an existing title');
+  assert.ok(precheckDup.blocks.length >= 1);
+
+  const qualityConfig = await call('/api/dsh-workbench/knowledge/quality', 'POST', {
+    reviewMode: 'auto',
+    autoPublishLowRisk: true,
+    forgetMode: 'prompt',
+    forgetAutoArchive: false
+  });
+  assert.equal(qualityConfig.reviewMode, 'auto');
+  assert.equal(qualityConfig.forgetMode, 'prompt');
+
+  const rawCaptured = await call('/api/dsh-workbench/knowledge/raw', 'POST', {
+    name: '源材料-订单讨论',
+    source: '会话原文',
+    content: '某次讨论订单中台选型的完整记录……'
+  });
+  assert.ok(rawCaptured.path.startsWith('raw/'));
+  assert.equal(rawCaptured.entry.status, 'draft');
+  const rawSearch = await call('/api/dsh-workbench/knowledge/search', 'POST', { query: '订单中台选型', topK: 5 });
+  assert.ok(!rawSearch.results.some((item) => item.path.startsWith('raw/')), 'raw layer should be excluded from default retrieval');
+
+  const draftBefore = await call('/api/dsh-workbench/knowledge/write', 'POST', {
+    folder: 'inbox',
+    name: '待发布条目',
+    content: [
+      '---',
+      'title: 待发布条目',
+      'tags: []',
+      'confidence: medium',
+      'status: review',
+      'source: 思考',
+      'related: ""',
+      'summary: 待发布条目用于验证发布流转。',
+      'created: 2026-08-19T00:00:00.000Z',
+      '---',
+      '# 待发布条目',
+      '这条内容在发布前不应被默认检索到。'
+    ].join('\n')
+  });
+  const reviewSearch = await call('/api/dsh-workbench/knowledge/search', 'POST', { query: '待发布条目', topK: 5 });
+  assert.ok(!reviewSearch.results.some((item) => item.path === draftBefore.entry.path), 'review entries should not pollute default retrieval');
+
+  const published = await call('/api/dsh-workbench/knowledge/publish', 'POST', {
+    path: draftBefore.entry.path,
+    moveToAtomic: true,
+    verifiedBy: 'smoke'
+  });
+  assert.equal(published.entry.status, 'published');
+  assert.equal(published.entry.verifiedBy, 'smoke');
+  assert.equal(published.moved, true);
+  assert.ok(published.path.startsWith('atomic/'));
+  const publishedSearch = await call('/api/dsh-workbench/knowledge/search', 'POST', { query: '待发布条目', topK: 5 });
+  assert.ok(publishedSearch.results.some((item) => item.path === published.path), 'published entry should be retrievable');
+
+  const archived = await call('/api/dsh-workbench/knowledge/archive', 'POST', { path: published.path, restore: false });
+  assert.equal(archived.archived, true);
+  assert.ok(archived.path.startsWith('archive/'));
+  assert.equal(archived.entry.status, 'deprecated');
+  const archivedSearch = await call('/api/dsh-workbench/knowledge/search', 'POST', { query: '待发布条目', topK: 5 });
+  assert.ok(!archivedSearch.results.some((item) => item.path === archived.path), 'archived entries should not be retrieved by default');
+  const restored = await call('/api/dsh-workbench/knowledge/archive', 'POST', { path: archived.path, restore: true });
+  assert.equal(restored.restored, true);
+  assert.equal(restored.entry.status, 'published');
+
+  const vectorRouteSearch = await call('/api/dsh-workbench/knowledge/search', 'POST', { query: '订单中台为什么选择 FastAPI 异步消息架构', topK: 5 });
+  assert.ok(['bm25-graph', 'graph', 'vector', 'hybrid'].includes(vectorRouteSearch.mode), 'mode should be one of the route profiles');
+  const relationSearch = await call('/api/dsh-workbench/knowledge/search', 'POST', { query: 'FastAPI 和 异步消息之间是什么关系', topK: 5 });
+  assert.equal(relationSearch.mode, 'graph', 'relation-style query should route to graph');
+
+  const maintainReport = await call('/api/dsh-workbench/knowledge/maintain', 'POST');
+  assert.ok(Array.isArray(maintainReport.archived), 'maintain should report archived list');
+  assert.ok(maintainReport.stale.every((item) => item && typeof item === 'object'), 'stale items should carry suggestion metadata');
+
   console.log('knowledge smoke test passed');
   smokePassed = true;
 } finally {

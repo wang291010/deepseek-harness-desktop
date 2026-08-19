@@ -162,7 +162,7 @@ try {
     return {
       cardCount: cards.length,
       hasCitation: [...cards].some((card) => card.innerText.includes('溯源：')),
-      hasRoute: document.body.innerText.includes('路由：'),
+      hasRoute: document.body.innerText.includes('路由模式：'),
       snippet: cards.length ? cards[0].innerText.slice(0, 300) : document.body.innerText.slice(0, 300)
     };
   })()`);

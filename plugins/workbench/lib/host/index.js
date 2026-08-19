@@ -69,28 +69,36 @@ const KNOWLEDGE_ATOMIC = join(KNOWLEDGE_ROOT, '02-Atomic');
 const KNOWLEDGE_MOCS = join(KNOWLEDGE_ROOT, '03-MOCs');
 const KNOWLEDGE_PROJECTS = join(KNOWLEDGE_ROOT, '04-Projects');
 const KNOWLEDGE_TEMPLATES = join(KNOWLEDGE_ROOT, '99-Templates');
+const KNOWLEDGE_RAW = join(KNOWLEDGE_ROOT, '00-Raw');
+const KNOWLEDGE_ARCHIVE = join(KNOWLEDGE_ROOT, '05-Archive');
 const KNOWLEDGE_INDEX_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-index.json');
 const KNOWLEDGE_VECTOR_CONFIG_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-vector.json');
 const KNOWLEDGE_VECTOR_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-vectors.json');
 const KNOWLEDGE_PROFILE_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-profiles.json');
 const KNOWLEDGE_EVAL_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-eval.json');
+const KNOWLEDGE_QUALITY_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-quality.json');
 const MAX_KNOWLEDGE_INDEX_BYTES = 32 * 1024 * 1024;
 const MAX_KNOWLEDGE_EVAL_BYTES = 2 * 1024 * 1024;
 const KNOWLEDGE_FOLDER_DIRS = {
-  inbox: KNOWLEDGE_INBOX, atomic: KNOWLEDGE_ATOMIC, mocs: KNOWLEDGE_MOCS,
-  projects: KNOWLEDGE_PROJECTS, templates: KNOWLEDGE_TEMPLATES
+  raw: KNOWLEDGE_RAW, inbox: KNOWLEDGE_INBOX, atomic: KNOWLEDGE_ATOMIC, mocs: KNOWLEDGE_MOCS,
+  projects: KNOWLEDGE_PROJECTS, templates: KNOWLEDGE_TEMPLATES, archive: KNOWLEDGE_ARCHIVE
 };
 const KNOWLEDGE_FOLDER_IDS = Object.keys(KNOWLEDGE_FOLDER_DIRS);
 const KNOWLEDGE_CONFIDENCES = ['high', 'medium', 'low'];
 const KNOWLEDGE_TYPES = ['note', 'skill', 'project', 'workflow'];
+const KNOWLEDGE_STATUSES = ['draft', 'review', 'published', 'deprecated'];
+const KNOWLEDGE_CLAIM_TYPES = ['fact', 'hypothesis'];
+const KNOWLEDGE_STALENESS = ['STABLE', 'CHECK', 'VOLATILE'];
 const KNOWLEDGE_MAX_ENTRY_BYTES = 512 * 1024;
 const KNOWLEDGE_MAX_QUERY_CHARS = 1000;
 const KNOWLEDGE_MAX_TOPK = 20;
 const KNOWLEDGE_MAX_TOKEN_BUDGET = 8000;
 const KNOWLEDGE_VECTOR_PROVIDERS = ['none', 'bge-local', 'openai', 'custom'];
+const KNOWLEDGE_DEFAULT_VECTOR_CONFIG = { provider: 'bge-local', model: 'bge-small-zh-v1.5', apiKey: '', baseUrl: '', python: '' };
 const KNOWLEDGE_EMBED_SCRIPT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'tools', 'knowledge_embed.py');
 const KNOWLEDGE_DEFAULT_PROFILE = {
-  routes: { bm25: true, graph: true, vector: false, hyde: false },
+  mode: 'auto',
+  routes: { bm25: true, graph: true, vector: true, hyde: false },
   weights: { bm25: 1, graph: 0.7, vector: 1 },
   topK: 5,
   tokenBudget: 1500,
@@ -694,6 +702,134 @@ let knowledgeVectors = { version: 1, updatedAt: '', dims: 0, vectors: {} };
 let vectorConfigCache = null;
 let knowledgeProfiles = null;
 let knowledgeEvalCache = null;
+let knowledgeQualityCache = null;
+
+async function readKnowledgeQuality() {
+  if (knowledgeQualityCache) return knowledgeQualityCache;
+  try {
+    const info = await lstat(KNOWLEDGE_QUALITY_STORE);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('quality store must be a regular non-symbolic file');
+    if (info.size > 1024 * 1024) throw new Error('quality store exceeds size limit');
+    const parsed = JSON.parse(await readFile(KNOWLEDGE_QUALITY_STORE, 'utf8'));
+    knowledgeQualityCache = {
+      reviewMode: parsed.reviewMode === 'auto' ? 'auto' : 'manual',
+      autoPublishLowRisk: parsed.autoPublishLowRisk !== false,
+      forgetMode: parsed.forgetMode === 'auto' ? 'auto' : 'prompt',
+      forgetAutoArchive: parsed.forgetAutoArchive === true,
+      conflicts: parsed.conflicts && typeof parsed.conflicts === 'object' ? parsed.conflicts : {},
+      usage: parsed.usage && typeof parsed.usage === 'object' ? parsed.usage : {}
+    };
+  } catch (error) {
+    if (error && error.code === 'ENOENT') {
+      knowledgeQualityCache = { reviewMode: 'manual', autoPublishLowRisk: true, forgetMode: 'prompt', forgetAutoArchive: false, conflicts: {}, usage: {} };
+    } else throw error;
+  }
+  return knowledgeQualityCache;
+}
+
+async function writeKnowledgeQuality(store) {
+  await mkdir(DSH_ROOT, { recursive: true });
+  const temp = KNOWLEDGE_QUALITY_STORE + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, JSON.stringify(store, null, 2) + '\n', 'utf8');
+  await rename(temp, KNOWLEDGE_QUALITY_STORE);
+  knowledgeQualityCache = store;
+  return store;
+}
+
+async function recordKnowledgeUsage(paths) {
+  const list = Array.isArray(paths) ? paths.filter(Boolean) : [];
+  if (!list.length) return;
+  const quality = await readKnowledgeQuality();
+  quality.usage = quality.usage || {};
+  let changed = false;
+  for (const path of list) {
+    const current = quality.usage[path] || { hits: 0, lastHitAt: '' };
+    const next = { hits: (Number(current.hits) || 0) + 1, lastHitAt: new Date().toISOString() };
+    if (next.hits !== current.hits || next.lastHitAt !== current.lastHitAt) changed = true;
+    quality.usage[path] = next;
+  }
+  if (changed) await writeKnowledgeQuality(quality);
+}
+
+function knowledgeSourceCredibility(source) {
+  const text = String(source || '').toLowerCase();
+  if (/实验|实测|验证|手册|官方|spec|标准|docs|manual/.test(text)) return 0.9;
+  if (/文档|设计|architecture|设计文档/.test(text)) return 0.75;
+  if (/会话|讨论|session|对话/.test(text)) return 0.65;
+  if (/思考|想法|text|文本|蒸馏/.test(text)) return 0.55;
+  return 0.6;
+}
+
+function computeKnowledgeConfidenceBasis(entry, quality) {
+  const sourceCred = knowledgeSourceCredibility(entry.source);
+  let verification = 1.0;
+  const verifyReasons = [];
+  if (entry.status === 'published') {
+    verification = entry.verifiedBy || entry.verifiedAt ? 1.0 : 0.9;
+    verifyReasons.push(entry.verifiedBy ? '已人工验证（' + entry.verifiedBy + '）' : '已发布（建议补 verifiedBy/At）');
+  } else if (entry.status === 'review') {
+    verification = 0.5;
+    verifyReasons.push('待人工审核（review）');
+  } else if (entry.status === 'draft') {
+    verification = 0.3;
+    verifyReasons.push('草稿（draft）');
+  } else {
+    verification = 0.15;
+    verifyReasons.push('已归档/弃用（deprecated）');
+  }
+  const conflictHits = (quality.conflicts && quality.conflicts[entry.path]) || [];
+  const consistency = conflictHits && conflictHits.length ? 0.6 : 1.0;
+  const consistencyReasons = conflictHits && conflictHits.length
+    ? ['存在同主题冲突 ' + conflictHits.length + ' 处（维护器标记）'] : [];
+  const ageDays = Math.max(0, (Date.now() - new Date(entry.updatedAt || entry.createdAt || Date.now()).getTime()) / 86400000);
+  let freshness = 1.0;
+  const freshnessReasons = [];
+  if (entry.staleness === 'VOLATILE') {
+    freshness = Math.max(0.5, Math.exp(-ageDays / 30));
+    if (ageDays > 30) freshnessReasons.push('易变信息已 ' + Math.round(ageDays) + ' 天未更新');
+  } else if (entry.staleness === 'CHECK') {
+    freshness = Math.max(0.5, Math.exp(-ageDays / 90));
+    if (ageDays > 90) freshnessReasons.push('需复查信息已 ' + Math.round(ageDays) + ' 天未更新');
+  } else if (ageDays > 180) {
+    freshness = 0.85;
+    freshnessReasons.push('稳定信息超过 180 天未更新');
+  }
+  const usageRecord = (quality.usage || {})[entry.path];
+  let usage = 1.0;
+  const usageReasons = [];
+  if (usageRecord) {
+    const hits = Number(usageRecord.hits) || 0;
+    const lastHit = usageRecord.lastHitAt ? Date.parse(usageRecord.lastHitAt) : 0;
+    if (hits >= 3) { usage = 1.1; usageReasons.push('被命中 ' + hits + ' 次（使用强化）'); }
+    else if (hits >= 1) { usage = 1.05; usageReasons.push('被命中 ' + hits + ' 次'); }
+    if (Number.isFinite(lastHit) && lastHit > 0 && Date.now() - lastHit > 90 * 86400000) {
+      usage = Math.max(0.9, usage - 0.05);
+      usageReasons.push('超过 90 天未被使用');
+    }
+  } else if (ageDays > 180) {
+    usage = 0.9;
+    usageReasons.push('从未被使用且超过 180 天');
+  }
+  const score = Math.max(0, Math.min(1, sourceCred * verification * consistency * freshness * usage));
+  const label = score >= 0.72 ? 'high' : score >= 0.45 ? 'medium' : 'low';
+  const reasons = [
+    '来源可信度 ' + Math.round(sourceCred * 100) + '%',
+    ...verifyReasons,
+    ...consistencyReasons,
+    ...freshnessReasons,
+    ...usageReasons
+  ].slice(0, 8);
+  return {
+    score: Math.round(score * 1000) / 1000,
+    label,
+    reasons,
+    sourceCred: Math.round(sourceCred * 1000) / 1000,
+    verification: Math.round(verification * 1000) / 1000,
+    consistency: Math.round(consistency * 1000) / 1000,
+    freshness: Math.round(freshness * 1000) / 1000,
+    usage: Math.round(usage * 1000) / 1000
+  };
+}
 
 function clampInt(value, min, max, fallback) {
   const n = Number(value);
@@ -701,16 +837,43 @@ function clampInt(value, min, max, fallback) {
   return Math.min(max, Math.max(min, Math.round(n)));
 }
 
+function defaultKnowledgeStatus(folder) {
+  if (folder === 'raw' || folder === 'templates') return 'draft';
+  if (folder === 'inbox') return 'review';
+  if (folder === 'archive') return 'deprecated';
+  return 'published';
+}
+
 function cleanKnowledgeEntry(raw) {
   const value = raw && typeof raw === 'object' ? raw : {};
+  const folder = KNOWLEDGE_FOLDER_IDS.includes(value.folder) ? value.folder : 'inbox';
   return {
     path: cleanTaskText(value.path, 500),
-    folder: KNOWLEDGE_FOLDER_IDS.includes(value.folder) ? value.folder : 'inbox',
+    folder,
     name: cleanTaskText(value.name, 200),
     title: cleanTaskText(value.title, 300),
     type: KNOWLEDGE_TYPES.includes(value.type) ? value.type : 'note',
     tags: Array.isArray(value.tags) ? value.tags.map((item) => cleanTaskText(item, 80)).filter(Boolean).slice(0, 20) : [],
     confidence: KNOWLEDGE_CONFIDENCES.includes(value.confidence) ? value.confidence : 'medium',
+    status: KNOWLEDGE_STATUSES.includes(value.status) ? value.status : defaultKnowledgeStatus(folder),
+    claimType: KNOWLEDGE_CLAIM_TYPES.includes(value.claimType) ? value.claimType : 'fact',
+    assumptions: Array.isArray(value.assumptions) ? value.assumptions.map((item) => cleanTaskText(item, 300)).filter(Boolean).slice(0, 10) : [],
+    verifiedBy: cleanTaskText(value.verifiedBy, 80),
+    verifiedAt: typeof value.verifiedAt === 'string' ? value.verifiedAt : '',
+    staleness: KNOWLEDGE_STALENESS.includes(value.staleness) ? value.staleness : 'STABLE',
+    computedConfidence: KNOWLEDGE_CONFIDENCES.includes(value.computedConfidence) ? value.computedConfidence : '',
+    confidenceBasis: value.confidenceBasis && typeof value.confidenceBasis === 'object' && !Array.isArray(value.confidenceBasis)
+      ? {
+          score: Number.isFinite(Number(value.confidenceBasis.score)) ? Number(value.confidenceBasis.score) : 0,
+          label: KNOWLEDGE_CONFIDENCES.includes(value.confidenceBasis.label) ? value.confidenceBasis.label : 'low',
+          reasons: Array.isArray(value.confidenceBasis.reasons) ? value.confidenceBasis.reasons.map((item) => cleanTaskText(item, 200)).filter(Boolean).slice(0, 8) : [],
+          sourceCred: Number.isFinite(Number(value.confidenceBasis.sourceCred)) ? Number(value.confidenceBasis.sourceCred) : 0,
+          verification: Number.isFinite(Number(value.confidenceBasis.verification)) ? Number(value.confidenceBasis.verification) : 0,
+          consistency: Number.isFinite(Number(value.confidenceBasis.consistency)) ? Number(value.confidenceBasis.consistency) : 0,
+          freshness: Number.isFinite(Number(value.confidenceBasis.freshness)) ? Number(value.confidenceBasis.freshness) : 0,
+          usage: Number.isFinite(Number(value.confidenceBasis.usage)) ? Number(value.confidenceBasis.usage) : 0
+        }
+      : null,
     related: Array.isArray(value.related) ? value.related.map((item) => cleanTaskText(item, 200)).filter(Boolean).slice(0, 30) : [],
     summary: cleanTaskText(value.summary, 2000),
     source: cleanTaskText(value.source, 80),
@@ -728,7 +891,10 @@ function cleanKnowledgeEntry(raw) {
 }
 
 function parseFrontmatter(text) {
-  const entry = { title: '', type: 'note', tags: [], confidence: 'medium', related: [], summary: '', source: '', project: '', created: '', body: String(text || '') };
+  const entry = {
+    title: '', type: 'note', tags: [], confidence: 'medium', status: '', claimType: '', assumptions: [],
+    verifiedBy: '', verifiedAt: '', staleness: '', related: [], summary: '', source: '', project: '', created: '', body: String(text || '')
+  };
   const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(entry.body);
   if (!match) {
     entry.title = entry.body.split(/\r?\n/)[0].replace(/^#\s*/, '').slice(0, 300);
@@ -740,6 +906,23 @@ function parseFrontmatter(text) {
   entry.title = line('title') || entry.body.split(/\r?\n/)[0].replace(/^#\s*/, '').slice(0, 300);
   entry.type = KNOWLEDGE_TYPES.includes(line('type')) ? line('type') : 'note';
   entry.confidence = KNOWLEDGE_CONFIDENCES.includes(line('confidence')) ? line('confidence') : 'medium';
+  entry.status = KNOWLEDGE_STATUSES.includes(line('status')) ? line('status') : '';
+  entry.claimType = KNOWLEDGE_CLAIM_TYPES.includes(line('claimType')) ? line('claimType') : '';
+  entry.staleness = KNOWLEDGE_STALENESS.includes(line('staleness')) ? line('staleness') : '';
+  entry.verifiedBy = line('verifiedBy');
+  entry.verifiedAt = line('verifiedAt');
+  const assumptionLines = [];
+  const metaLines = String(match[1] || '').split(/\r?\n/);
+  for (let i = 0; i < metaLines.length; i += 1) {
+    if (!/^assumptions:\s*$/i.test(metaLines[i])) continue;
+    for (let j = i + 1; j < metaLines.length; j += 1) {
+      const hit = /^\s*-\s+(.+)$/.exec(metaLines[j]);
+      if (!hit) break;
+      assumptionLines.push(hit[1].trim());
+    }
+    break;
+  }
+  entry.assumptions = assumptionLines.slice(0, 10);
   entry.tags = line('tags').replace(/^\[|\]$/g, '').split(/[,\s]+/).map((item) => item.trim()).filter(Boolean).slice(0, 20);
   entry.related = [...line('related').matchAll(/\[\[([^\]]+)\]\]/g)].map((hit) => hit[1].trim().replace(/\.md$/i, '')).filter(Boolean).slice(0, 30);
   entry.summary = line('summary') || entry.body.replace(/\s+/g, ' ').slice(0, 2000);
@@ -872,17 +1055,20 @@ async function ensureKnowledgeVault() {
       '',
       '## 目录结构',
       '',
+      '- `00-Raw/`：源材料层（对话/文档原文），默认不进检索，蒸馏前可先捕获到这里。',
       '- `01-Inbox/`：AI 写入区，蒸馏产物先进这里，人工确认后再移动。',
       '- `02-Atomic/`：人类审核区，核心资产，检索默认优先。',
       '- `03-MOCs/`：地图索引，由维护器自动更新。',
       '- `04-Projects/`：按项目沉淀的知识。',
+      '- `05-Archive/`：遗忘归档层，默认只提示、需授权归档。',
       '- `99-Templates/`：条目模板。',
       '',
       '## 使用建议',
       '',
       '1. 用 Obsidian 打开本目录即可浏览与编辑；图谱视图看知识关联。',
-      '2. 每篇文档带 frontmatter：title / tags / related / confidence / summary / source / project / created。',
-      '3. 检索结果强制溯源（文件路径 + 置信度），需要时再到原始文档核对。',
+      '2. 每篇文档带 frontmatter：title / type / tags / confidence / status / claimType / staleness / assumptions / related / summary / source / project / verifiedBy / verifiedAt / created。',
+      '3. 入库六步：捕获（00-Raw）→ 预检 → 蒸馏 → 验证 → 发布 → 入索引；只有 published 条目参与默认检索。',
+      '4. 检索结果强制溯源（文件路径 + 推导置信度 + 依据 + 检索分 + 来源），需要时再到原始文档核对。',
       ''
     ].join('\n'), 'utf8');
   }
@@ -898,10 +1084,17 @@ async function ensureKnowledgeVault() {
       'title: 默认条目模板',
       'tags: []',
       'confidence: medium',
+      'status: published',
+      'claimType: fact',
+      'staleness: STABLE',
+      'assumptions:',
+      '  - 示例假设',
       'related: ""',
       'summary: 新知识条目的默认骨架。',
-      'source: ',
+      'source: 手册',
       'project: ',
+      'verifiedBy: ',
+      'verifiedAt: ',
       'created: ' + new Date().toISOString(),
       '---',
       '',
@@ -946,6 +1139,12 @@ async function scanKnowledgeVault() {
           type: parsed.type,
           tags: parsed.tags,
           confidence: parsed.confidence,
+          status: parsed.status,
+          claimType: parsed.claimType,
+          assumptions: parsed.assumptions,
+          verifiedBy: parsed.verifiedBy,
+          verifiedAt: parsed.verifiedAt,
+          staleness: parsed.staleness,
           related: parsed.related,
           summary: parsed.summary,
           source: parsed.source,
@@ -960,6 +1159,11 @@ async function scanKnowledgeVault() {
         }));
       } catch (e) { /* skip unreadable */ }
     }
+  }
+  const quality = await readKnowledgeQuality();
+  for (const entry of entries) {
+    entry.confidenceBasis = computeKnowledgeConfidenceBasis(entry, quality);
+    entry.computedConfidence = entry.confidenceBasis.label;
   }
   entries.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
   const index = { version: 2, updatedAt: new Date().toISOString(), stats: computeKnowledgeStats(entries), entries };
@@ -1166,8 +1370,8 @@ function knowledgeRrf(rankedLists, weights) {
 function cleanVectorConfig(raw) {
   const value = raw && typeof raw === 'object' ? raw : {};
   return {
-    provider: KNOWLEDGE_VECTOR_PROVIDERS.includes(value.provider) ? value.provider : 'none',
-    model: cleanTaskText(value.model, 120),
+    provider: KNOWLEDGE_VECTOR_PROVIDERS.includes(value.provider) ? value.provider : KNOWLEDGE_DEFAULT_VECTOR_CONFIG.provider,
+    model: cleanTaskText(value.model, 120) || (value.provider === 'bge-local' || !value.provider ? KNOWLEDGE_DEFAULT_VECTOR_CONFIG.model : ''),
     apiKey: cleanTaskText(value.apiKey, 500),
     baseUrl: cleanTaskText(value.baseUrl, 500),
     python: cleanTaskText(value.python, 300)
@@ -1187,7 +1391,7 @@ async function readVectorConfig() {
     if (info.size > 1024 * 1024) throw new Error('vector config exceeds size limit');
     vectorConfigCache = cleanVectorConfig(JSON.parse(await readFile(KNOWLEDGE_VECTOR_CONFIG_STORE, 'utf8')));
   } catch (error) {
-    if (error && error.code === 'ENOENT') vectorConfigCache = { provider: 'none', model: '', apiKey: '', baseUrl: '', python: '' };
+    if (error && error.code === 'ENOENT') vectorConfigCache = { ...KNOWLEDGE_DEFAULT_VECTOR_CONFIG };
     else throw error;
   }
   return vectorConfigCache;
@@ -1337,6 +1541,29 @@ async function rebuildKnowledgeVectors() {
   return { rebuilt: true, count: index.entries.length, dims: embedded.dims };
 }
 
+async function updateKnowledgeVectorsFor(entries) {
+  const config = await readVectorConfig();
+  if (config.provider === 'none') return { updated: 0 };
+  const list = Array.isArray(entries) ? entries.filter(Boolean) : [];
+  if (!list.length) return { updated: 0 };
+  const vectors = await readKnowledgeVectors();
+  const texts = list.map((entry) => entry.title + '\n' + entry.summary);
+  const embedded = await embedKnowledgeTexts(config, texts);
+  let updated = 0;
+  list.forEach((entry, index) => {
+    if (embedded && embedded.vectors[index] && embedded.vectors[index].length) {
+      vectors.vectors[entry.path] = embedded.vectors[index];
+      updated += 1;
+    }
+  });
+  if (updated) {
+    vectors.dims = embedded ? embedded.dims : vectors.dims;
+    vectors.updatedAt = new Date().toISOString();
+    await writeKnowledgeVectors(vectors);
+  }
+  return { updated, dims: embedded ? embedded.dims : 0 };
+}
+
 async function readKnowledgeProfiles() {
   if (knowledgeProfiles) return knowledgeProfiles;
   try {
@@ -1365,6 +1592,7 @@ function mergeKnowledgeProfile(profile, project) {
   const stored = profile && typeof profile === 'object' ? profile : {};
   const base = JSON.parse(JSON.stringify(KNOWLEDGE_DEFAULT_PROFILE));
   return {
+    mode: ['auto', 'bm25-graph', 'graph', 'vector', 'hybrid'].includes(stored.mode) ? stored.mode : 'auto',
     routes: { ...base.routes, ...(stored.routes || {}) },
     weights: { ...base.weights, ...(stored.weights || {}) },
     topK: clampInt(stored.topK, 1, KNOWLEDGE_MAX_TOPK, base.topK),
@@ -1435,6 +1663,86 @@ async function knowledgeSnippet(entry, queryTokens, maxChars = 240) {
   } catch { return { heading: '', snippet: String(entry.summary || '').slice(0, maxChars) }; }
 }
 
+function knowledgeClassifyQuery(query, queryTokens, entries) {
+  const relationHits = /关联|关系|区别|差异|依赖|影响|联系|图谱|对比|类似|谁/.test(String(query || ''));
+  const termSet = new Set();
+  const knownSet = new Set();
+  for (const entry of entries) {
+    for (const term of Object.keys(entry.terms || {})) termSet.add(term);
+    knownSet.add(String(entry.title || '').toLowerCase());
+    for (const tag of entry.tags || []) knownSet.add(String(tag).toLowerCase());
+  }
+  let covered = 0;
+  for (const token of queryTokens) {
+    if (termSet.has(token) || knownSet.has(token)) covered += 1;
+  }
+  const coverage = queryTokens.length ? covered / queryTokens.length : 0;
+  const longQuery = queryTokens.length >= 6 || String(query || '').length >= 14;
+  let mode = 'hybrid';
+  let reason = '';
+  if (relationHits && coverage < 0.55) {
+    mode = 'graph';
+    reason = '关系类提问且精确词覆盖低，优先图谱';
+  } else if (coverage >= 0.6 && queryTokens.length <= 10) {
+    mode = 'bm25-graph';
+    reason = '精确术语覆盖 ' + Math.round(coverage * 100) + '%，走关键词+图谱';
+  } else if (longQuery && coverage < 0.5) {
+    mode = 'vector';
+    reason = '语义模糊长问题（覆盖 ' + Math.round(coverage * 100) + '%），优先向量';
+  } else {
+    reason = '综合场景，混合多路召回';
+  }
+  return { mode, reason, coverage: Math.round(coverage * 1000) / 1000 };
+}
+
+async function precheckKnowledgeEntry({ title, content, source, excludePath }) {
+  let index = knowledgeIndex;
+  if (!index.entries || !index.entries.length) {
+    index = await readKnowledgeIndex();
+    if (!index.entries || !index.entries.length) index = await scanKnowledgeVault();
+  } else if (await knowledgeIndexStale()) {
+    index = await scanKnowledgeVault();
+  }
+  const parsed = parseFrontmatter(String(content || ''));
+  const probe = String(title || '') + '\n' + parsed.summary + '\n' + parsed.body + '\n' + String(source || '');
+  const keySet = new Set(tokenizeKnowledgeText(probe));
+  const similar = [];
+  for (const entry of index.entries || []) {
+    if (excludePath && entry.path === excludePath) continue;
+    const entryTerms = Object.keys(entry.terms || {});
+    if (!entryTerms.length) continue;
+    let inter = 0;
+    for (const term of entryTerms) if (keySet.has(term)) inter += 1;
+    const union = keySet.size + entryTerms.length - inter;
+    if (union > 0 && inter / union > 0.45) {
+      similar.push({ path: entry.path, title: entry.title, similarity: Math.round((inter / union) * 100) / 100 });
+    }
+  }
+  similar.sort((a, b) => b.similarity - a.similarity);
+  const byTitle = new Map((index.entries || []).map((entry) => [String(entry.title || '').toLowerCase(), entry]));
+  const exactTitle = (() => {
+    const hit = byTitle.get(String(title || '').toLowerCase()) || null;
+    return hit && !(excludePath && hit.path === excludePath) ? hit : null;
+  })();
+  const warnings = [];
+  if (exactTitle) warnings.push('与已有条目重名：' + exactTitle.path);
+  if (!String(source || '').trim()) warnings.push('source 必填（来源），缺失会降低推导置信度');
+  if (!String(parsed.summary || '').trim()) warnings.push('缺少 summary 摘要');
+  if (String(parsed.body || '').trim().length < 50) warnings.push('正文过短（<50 字），建议补充结论与方法');
+  const blocks = [];
+  if (exactTitle) blocks.push('存在重名条目：' + exactTitle.path);
+  if (similar.some((item) => item.similarity >= 0.8)) blocks.push('存在高相似条目（相似度 ≥0.8），需人工确认是否重复');
+  if (!String(source || '').trim()) blocks.push('缺少 source（来源必填）');
+  return {
+    exactTitle: exactTitle ? { path: exactTitle.path, title: exactTitle.title } : null,
+    duplicates: similar.filter((item) => item.similarity >= 0.8).slice(0, 8),
+    similar: similar.slice(0, 8),
+    warnings: warnings.slice(0, 10),
+    blocks: blocks.slice(0, 8),
+    ok: blocks.length === 0
+  };
+}
+
 async function runKnowledgeSearch(query, project, options = {}) {
   const q = cleanTaskText(query, KNOWLEDGE_MAX_QUERY_CHARS);
   if (!q) return { error: 'query required' };
@@ -1448,25 +1756,32 @@ async function runKnowledgeSearch(query, project, options = {}) {
   const profiles = await readKnowledgeProfiles();
   const profile = mergeKnowledgeProfile(profiles[project || ''], project);
   const folders = new Set(profile.folders);
-  const entries = (index.entries || []).filter((entry) => folders.has(entry.folder));
+  const entries = (index.entries || []).filter((entry) => folders.has(entry.folder) && entry.status === 'published');
   const topK = clampInt(options.topK || profile.topK, 1, KNOWLEDGE_MAX_TOPK, profile.topK);
   const tokenBudget = clampInt(options.tokenBudget || profile.tokenBudget, 200, KNOWLEDGE_MAX_TOKEN_BUDGET, profile.tokenBudget);
   const queryTokens = tokenizeKnowledgeText(q);
+  const routing = knowledgeClassifyQuery(q, queryTokens, entries);
+  const mode = profile.mode === 'auto' ? routing.mode : profile.mode;
+  const want = (route) => profile.routes[route] !== false;
+  const useBm25 = (mode === 'bm25-graph' || mode === 'hybrid') && want('bm25');
+  const useGraph = (mode === 'bm25-graph' || mode === 'graph' || mode === 'hybrid') && want('graph');
+  const useVector = (mode === 'vector' || mode === 'hybrid') && want('vector');
+  const useHyde = profile.routes.hyde === true && (mode === 'hybrid' || mode === 'vector');
   const rankedLists = [];
   const weights = [];
   const routesUsed = [];
-  if (profile.routes.bm25 !== false) {
+  if (useBm25) {
     rankedLists.push(knowledgeBm25(entries, queryTokens, Math.max(40, topK * 4)));
     weights.push(profile.weights.bm25 || 1);
     routesUsed.push('bm25');
   }
   const seeds = rankedLists.length ? rankedLists[0].map((item) => item.id) : [];
-  if (profile.routes.graph !== false) {
+  if (useGraph) {
     rankedLists.push(knowledgeGraphSearch(entries, queryTokens, seeds, Math.max(40, topK * 4)));
     weights.push(profile.weights.graph || 0.7);
     routesUsed.push('graph');
   }
-  if (profile.routes.hyde === true) {
+  if (useHyde) {
     const hydeText = await knowledgeHydeQuery(q);
     if (hydeText) {
       rankedLists.push(knowledgeBm25(entries, tokenizeKnowledgeText(hydeText), Math.max(40, topK * 4)));
@@ -1475,7 +1790,7 @@ async function runKnowledgeSearch(query, project, options = {}) {
     }
   }
   let vector = { ranked: [], status: 'disabled' };
-  if (profile.routes.vector === true) {
+  if (useVector) {
     try {
       vector = await knowledgeVectorSearch(entries, q, Math.max(40, topK * 4));
       if (vector.ranked.length) {
@@ -1489,6 +1804,7 @@ async function runKnowledgeSearch(query, project, options = {}) {
   }
   const fused = rankedLists.length ? knowledgeRrf(rankedLists, weights) : [];
   const byPath = new Map(entries.map((entry) => [entry.path, entry]));
+  const scoreMap = new Map(fused.map((item) => [item.id, item.score]));
   const candidates = fused.slice(0, Math.max(topK * 3, 12)).map((item) => byPath.get(item.id)).filter(Boolean);
   let reranked = candidates;
   if (profile.rerank === 'llm' && chatLlm !== null && candidates.length > 1) {
@@ -1513,6 +1829,15 @@ async function runKnowledgeSearch(query, project, options = {}) {
       tags: entry.tags,
       related: entry.related,
       confidence: entry.confidence,
+      computedConfidence: entry.computedConfidence || entry.confidenceBasis && entry.confidenceBasis.label || entry.confidence,
+      confidenceBasis: entry.confidenceBasis,
+      status: entry.status,
+      claimType: entry.claimType,
+      staleness: entry.staleness,
+      verifiedBy: entry.verifiedBy,
+      verifiedAt: entry.verifiedAt,
+      assumptions: entry.assumptions,
+      retrievalScore: Math.round((scoreMap.get(entry.path) || 0) * 1000) / 1000,
       summary: entry.summary,
       heading,
       snippet,
@@ -1521,16 +1846,32 @@ async function runKnowledgeSearch(query, project, options = {}) {
       source: entry.source
     });
   }
+  const selfCheck = { caution: false, reasons: [] };
+  if (vector.status === 'error') {
+    selfCheck.caution = true;
+    selfCheck.reasons.push('向量路异常：' + String(vector.error || '未知错误'));
+  }
+  if (!results.length) {
+    selfCheck.caution = true;
+    selfCheck.reasons.push('无召回结果，已自动记入评测候选池');
+  } else if (results[0].computedConfidence === 'low') {
+    selfCheck.caution = true;
+    selfCheck.reasons.push('最高分结果推导置信度为低，建议人工核对');
+  }
+  if (results.length) recordKnowledgeUsage(results.map((item) => item.path)).catch(() => {});
   return {
     query: q,
     project: project || '',
     profile,
+    routing,
+    mode,
     topK,
     tokenBudget,
     routes: routesUsed,
     vectorStatus: vector.status || 'n/a',
     vectorError: vector.error || '',
     estimatedTokens,
+    selfCheck,
     results
   };
 }
@@ -1538,6 +1879,32 @@ async function runKnowledgeSearch(query, project, options = {}) {
 function safeKnowledgeName(title) {
   const base = cleanTaskText(title, 60).replace(/[\\/:*?"<>|\r\n]+/g, '-').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   return base || 'untitled';
+}
+
+function knowledgeFrontmatter(meta) {
+  const lines = [
+    '---',
+    'title: ' + cleanTaskText(meta.title, 300),
+    'type: ' + (KNOWLEDGE_TYPES.includes(meta.type) ? meta.type : 'note'),
+    'tags: [' + (Array.isArray(meta.tags) ? meta.tags.join(', ') : '') + ']',
+    'confidence: ' + (KNOWLEDGE_CONFIDENCES.includes(meta.confidence) ? meta.confidence : 'medium'),
+    'status: ' + (KNOWLEDGE_STATUSES.includes(meta.status) ? meta.status : 'review'),
+    'claimType: ' + (KNOWLEDGE_CLAIM_TYPES.includes(meta.claimType) ? meta.claimType : 'fact'),
+    'staleness: ' + (KNOWLEDGE_STALENESS.includes(meta.staleness) ? meta.staleness : 'CHECK'),
+    'source: ' + cleanTaskText(meta.source, 80),
+    'project: ' + cleanTaskText(meta.project, 300)
+  ];
+  if (meta.verifiedBy) lines.push('verifiedBy: ' + cleanTaskText(meta.verifiedBy, 80));
+  if (meta.verifiedAt) lines.push('verifiedAt: ' + String(meta.verifiedAt));
+  if (Array.isArray(meta.assumptions) && meta.assumptions.length) {
+    lines.push('assumptions:');
+    meta.assumptions.slice(0, 10).forEach((item) => lines.push('  - ' + cleanTaskText(item, 300)));
+  }
+  lines.push('related: "' + (Array.isArray(meta.related) ? meta.related.map((item) => '[[' + cleanTaskText(item, 200) + ']]').join(' ') : '') + '"');
+  lines.push('summary: ' + cleanTaskText(meta.summary, 2000));
+  lines.push('created: ' + (meta.created || new Date().toISOString()));
+  lines.push('---');
+  return lines.join('\n');
 }
 
 async function distillKnowledge({ title, source, content, project }) {
@@ -1551,59 +1918,156 @@ async function distillKnowledge({ title, source, content, project }) {
     try {
       const system = [
         '你是一个知识蒸馏器。把输入内容提炼为一条结构化 Markdown 知识条目，只输出 JSON：',
-        '{"title":"简短标题","tags":["标签"],"confidence":"high|medium|low","related":["建议关联的已有条目标题（没有则空数组）"],"summary":"一句话核心","body":"完整 Markdown 正文（含 ## 结论 / ## 方法 / ## 决策 / ## 待办 等小节，压缩至 800 字内）"}'
+        '{"title":"简短标题","tags":["标签"],"confidence":"high|medium|low","claimType":"fact|hypothesis","staleness":"STABLE|CHECK|VOLATILE","assumptions":["关键假设，没有则空数组"],"related":["建议关联的已有条目标题（没有则空数组）"],"summary":"一句话核心","body":"完整 Markdown 正文（含 ## 结论 / ## 方法 / ## 决策 / ## 待办 等小节，压缩至 800 字内）"}'
       ].join('\n');
       const prompt = ['来源：' + rawSource, '关联项目：' + rawProject, '原始内容：\n' + String(content || '').slice(0, 50000)].join('\n\n');
       const text = await streamLlmText(system, prompt, { maxTokens: 2500, temperature: 0.3 });
       const parsed = parseJsonObject(text);
       if (parsed && (parsed.title || parsed.body)) {
         const titleText = cleanTaskText(parsed.title || rawTitle || '未命名', 120).replace(/[\r\n:]+/g, ' ');
-        const related = Array.isArray(parsed.related) ? parsed.related.map((item) => ' [[' + cleanTaskText(item, 200) + ']]').join('') : '';
         const tags = Array.isArray(parsed.tags) ? parsed.tags.map((item) => cleanTaskText(item, 60)).filter(Boolean).slice(0, 10) : [];
-        markdown = [
-          '---',
-          'title: ' + titleText,
-          'tags: [' + tags.join(', ') + ']',
-          'confidence: ' + (KNOWLEDGE_CONFIDENCES.includes(parsed.confidence) ? parsed.confidence : 'medium'),
-          'related: "' + related.trim() + '"',
-          'summary: ' + cleanTaskText(parsed.summary, 2000),
-          'source: ' + rawSource,
-          'project: ' + rawProject,
-          'created: ' + new Date().toISOString(),
-          '---',
-          '',
-          String(parsed.body || '').trim()
-        ].join('\n');
+        const meta = {
+          title: titleText,
+          type: 'note',
+          tags,
+          confidence: KNOWLEDGE_CONFIDENCES.includes(parsed.confidence) ? parsed.confidence : 'medium',
+          status: 'review',
+          claimType: KNOWLEDGE_CLAIM_TYPES.includes(parsed.claimType) ? parsed.claimType : 'fact',
+          staleness: KNOWLEDGE_STALENESS.includes(parsed.staleness) ? parsed.staleness : 'CHECK',
+          source: rawSource,
+          project: rawProject,
+          related: Array.isArray(parsed.related) ? parsed.related.map((item) => cleanTaskText(item, 200)).filter(Boolean).slice(0, 10) : [],
+          summary: cleanTaskText(parsed.summary, 2000),
+          assumptions: Array.isArray(parsed.assumptions) ? parsed.assumptions.map((item) => cleanTaskText(item, 300)).filter(Boolean).slice(0, 10) : [],
+          created: new Date().toISOString()
+        };
+        markdown = knowledgeFrontmatter(meta) + '\n\n' + String(parsed.body || '').trim();
       }
     } catch (error) { markdown = ''; }
   }
   if (!markdown) {
     fallback = true;
     const body = String(content || '').replace(/\r?\n/g, ' ').replace(/\s+/g, ' ').slice(0, 2000);
-    markdown = [
-      '---',
-      'title: ' + (rawTitle || '未命名'),
-      'tags: []',
-      'confidence: low',
-      'related: ""',
-      'summary: ' + body.slice(0, 300),
-      'source: ' + rawSource,
-      'project: ' + rawProject,
-      'created: ' + new Date().toISOString(),
-      '---',
-      '',
-      '# ' + (rawTitle || '未命名'),
-      '',
-      body
-    ].join('\n');
+    markdown = knowledgeFrontmatter({
+      title: rawTitle || '未命名',
+      type: 'note',
+      tags: [],
+      confidence: 'low',
+      status: 'review',
+      claimType: 'fact',
+      staleness: 'CHECK',
+      source: rawSource,
+      project: rawProject,
+      related: [],
+      summary: body.slice(0, 300),
+      assumptions: [],
+      created: new Date().toISOString()
+    }) + '\n\n# ' + (rawTitle || '未命名') + '\n\n' + body;
   }
   const date = new Date().toISOString().slice(0, 10);
   const fileName = date + '_' + safeKnowledgeName(rawTitle || '');
   const file = join(KNOWLEDGE_INBOX, fileName + '.md');
   await writeFile(file, markdown, 'utf8');
+  const precheck = await precheckKnowledgeEntry({ title: rawTitle, content: markdown, source: rawSource, excludePath: 'inbox/' + fileName + '.md' });
+  const quality = await readKnowledgeQuality();
+  const autoPublish = quality.reviewMode === 'auto' && quality.autoPublishLowRisk && precheck.ok && precheckOkConfidence(markdown);
   const index = await scanKnowledgeVault();
-  const entry = index.entries.find((item) => item.path === 'inbox/' + fileName + '.md') || null;
-  return { entry, fallback, path: 'inbox/' + fileName + '.md' };
+  let entry = index.entries.find((item) => item.path === 'inbox/' + fileName + '.md') || null;
+  let finalPath = 'inbox/' + fileName + '.md';
+  let autoPublished = false;
+  if (autoPublish && entry) {
+    const published = await publishKnowledgeEntry({ path: finalPath, moveToAtomic: true, verifiedBy: 'auto' });
+    entry = published.entry;
+    finalPath = published.path;
+    autoPublished = true;
+  }
+  return { entry, fallback, path: finalPath, autoPublished, precheck };
+}
+
+function precheckOkConfidence(markdown) {
+  const parsed = parseFrontmatter(markdown);
+  return parsed.confidence !== 'low';
+}
+
+async function publishKnowledgeEntry({ path, moveToAtomic, verifiedBy, reject }) {
+  const target = knowledgeResolve(path);
+  if (!target) throw new Error('invalid knowledge path');
+  const content = await readFile(target.full, 'utf8');
+  const parsed = parseFrontmatter(content);
+  const nextStatus = reject ? 'draft' : 'published';
+  const next = {
+    ...parsed,
+    status: nextStatus,
+    verifiedBy: reject ? '' : cleanTaskText(verifiedBy, 80) || 'human',
+    verifiedAt: reject ? '' : new Date().toISOString()
+  };
+  const markdown = knowledgeFrontmatter(next) + '\n' + parsed.body;
+  const destFolder = reject ? target.folder : (moveToAtomic ? 'atomic' : target.folder);
+  const dest = knowledgeWritePath(destFolder, target.file.replace(/\.md$/i, ''));
+  if (!dest) throw new Error('invalid destination folder');
+  if (dest.relPath === target.relPath) {
+    await writeFile(target.full, markdown, 'utf8');
+  } else {
+    await writeFile(dest.full, markdown, 'utf8');
+    await rm(target.full, { force: true });
+  }
+  const index = await scanKnowledgeVault();
+  const entry = index.entries.find((item) => item.path === dest.relPath) || null;
+  try {
+    const config = await readVectorConfig();
+    if (config.provider !== 'none' && entry) await updateKnowledgeVectorsFor([entry]);
+  } catch (e) { /* vector update best effort */ }
+  return { entry, path: dest.relPath, moved: dest.relPath !== target.relPath, reject: !!reject };
+}
+
+async function archiveKnowledgeEntry({ path, restore }) {
+  const target = knowledgeResolve(path);
+  if (!target) throw new Error('invalid knowledge path');
+  const content = await readFile(target.full, 'utf8');
+  const parsed = parseFrontmatter(content);
+  const destFolder = restore ? 'atomic' : 'archive';
+  const nextStatus = restore ? 'published' : 'deprecated';
+  const markdown = knowledgeFrontmatter({ ...parsed, status: nextStatus }) + '\n' + parsed.body;
+  const dest = knowledgeWritePath(destFolder, target.file.replace(/\.md$/i, ''));
+  if (!dest) throw new Error('invalid destination folder');
+  if (dest.relPath === target.relPath) {
+    await writeFile(target.full, markdown, 'utf8');
+  } else {
+    await writeFile(dest.full, markdown, 'utf8');
+    await rm(target.full, { force: true });
+  }
+  const index = await scanKnowledgeVault();
+  const entry = index.entries.find((item) => item.path === dest.relPath) || null;
+  return { entry, path: dest.relPath, archived: !restore, restored: !!restore };
+}
+
+async function captureKnowledgeRaw({ name, source, content }) {
+  await ensureKnowledgeVault();
+  const rawTitle = cleanTaskText(name, 120) || ('源材料-' + new Date().toISOString().slice(0, 10));
+  const rawSource = cleanTaskText(source, 80) || 'raw';
+  const body = String(content || '').slice(0, KNOWLEDGE_MAX_ENTRY_BYTES);
+  const date = new Date().toISOString().slice(0, 10);
+  const fileName = date + '_' + safeKnowledgeName(rawTitle);
+  const markdown = knowledgeFrontmatter({
+    title: rawTitle,
+    type: 'note',
+    tags: [],
+    confidence: 'low',
+    status: 'draft',
+    claimType: 'hypothesis',
+    staleness: 'CHECK',
+    source: rawSource,
+    project: '',
+    related: [],
+    summary: String(body).replace(/\s+/g, ' ').slice(0, 300),
+    assumptions: [],
+    created: new Date().toISOString()
+  }) + '\n\n' + body;
+  const file = join(KNOWLEDGE_RAW, fileName + '.md');
+  await writeFile(file, markdown, 'utf8');
+  const index = await scanKnowledgeVault();
+  const entry = index.entries.find((item) => item.path === 'raw/' + fileName + '.md') || null;
+  return { entry, path: 'raw/' + fileName + '.md' };
 }
 
 async function maintainKnowledgeVault() {
@@ -1642,7 +2106,34 @@ async function maintainKnowledgeVault() {
   const stale = entries.filter((entry) => {
     const t = new Date(entry.updatedAt || entry.createdAt).getTime();
     return Number.isFinite(t) && now.getTime() - t > 180 * 24 * 3600 * 1000 && entry.confidence === 'high';
-  }).map((entry) => entry.path);
+  }).map((entry) => {
+    const t = new Date(entry.updatedAt || entry.createdAt).getTime();
+    return { path: entry.path, days: Math.round((now.getTime() - t) / 86400000), suggestion: 'archive' };
+  });
+  const quality = await readKnowledgeQuality();
+  const conflictMap = {};
+  for (const dup of duplicates) {
+    conflictMap[dup.a] = conflictMap[dup.a] || [];
+    conflictMap[dup.a].push({ with: dup.b, similarity: dup.similarity });
+    conflictMap[dup.b] = conflictMap[dup.b] || [];
+    conflictMap[dup.b].push({ with: dup.a, similarity: dup.similarity });
+  }
+  const conflictsChanged = JSON.stringify(quality.conflicts || {}) !== JSON.stringify(conflictMap);
+  if (conflictsChanged) {
+    quality.conflicts = conflictMap;
+    await writeKnowledgeQuality(quality);
+  }
+  let indexAfter = index;
+  const archived = [];
+  if (quality.forgetMode === 'auto' && quality.forgetAutoArchive && stale.length) {
+    for (const item of stale.slice(0, 20)) {
+      try {
+        await archiveKnowledgeEntry({ path: item.path, restore: false });
+        archived.push(item.path);
+      } catch (e) { /* keep on failure */ }
+    }
+    indexAfter = await scanKnowledgeVault();
+  }
   const tagIndex = new Map();
   entries.forEach((entry) => entry.tags.forEach((tag) => {
     if (!tagIndex.has(tag)) tagIndex.set(tag, []);
@@ -1663,27 +2154,31 @@ async function maintainKnowledgeVault() {
     '',
     '## 目录结构',
     '',
+    '- 00-Raw：源材料层，默认不进检索',
     '- 01-Inbox：AI 写入区，待人工审核',
     '- 02-Atomic：人工审核后的核心资产',
     '- 03-MOCs：地图索引',
     '- 04-Projects：按项目沉淀',
+    '- 05-Archive：遗忘归档层',
     '- 99-Templates：模板',
     '',
     '## 最近新增',
     ''
   ];
-  entries.slice(0, 12).forEach((entry) => mocs.push('- [[' + entry.title + ']]（' + entry.folder + '）'));
+  entries.filter((entry) => ['atomic', 'projects', 'mocs'].includes(entry.folder)).slice(0, 12)
+    .forEach((entry) => mocs.push('- [[' + entry.title + ']]（' + entry.folder + '）'));
   mocs.push('', '## 标签索引', '');
   for (const [tag, tagged] of [...tagIndex.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 40)) {
     mocs.push('- #' + tag + '：' + tagged.map((entry) => '[[' + entry.title + ']]').join('、'));
   }
   await writeFile(join(KNOWLEDGE_MOCS, 'Index.md'), mocs.join('\n') + '\n', 'utf8');
-  const indexAfter = await scanKnowledgeVault();
+  indexAfter = await scanKnowledgeVault();
   return {
     duplicates: duplicates.slice(0, 20),
     brokenLinks: brokenLinks.slice(0, 50),
     orphans: orphans.slice(0, 50),
     stale: stale.slice(0, 50),
+    archived: archived.slice(0, 50),
     mocsUpdated: true,
     stats: indexAfter.stats
   };
@@ -3873,7 +4368,108 @@ function makeRoutes() {
           await writeFile(target.full, content, 'utf8');
           const index = await scanKnowledgeVault();
           const entry = index.entries.find((item) => item.path === target.relPath) || null;
-          writeJson(res, 200, { entry, entries: index.entries });
+          let precheck = null;
+          try {
+            precheck = await precheckKnowledgeEntry({
+              title: entry ? entry.title : name,
+              content,
+              source: entry ? entry.source : '',
+              excludePath: target.relPath
+            });
+          } catch (e) { /* best effort */ }
+          writeJson(res, 200, { entry, entries: index.entries, precheck });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/raw',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        if (!String(body.content || '').trim()) return bad(res, 'empty', 'content required');
+        try {
+          const result = await captureKnowledgeRaw({ name: body.name, source: body.source, content: body.content });
+          writeJson(res, 200, result);
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/precheck',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        try {
+          const result = await precheckKnowledgeEntry({
+            title: body.title,
+            content: body.content,
+            source: body.source,
+            excludePath: body.excludePath
+          });
+          writeJson(res, 200, result);
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/publish',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        try {
+          const result = await publishKnowledgeEntry({
+            path: body.path,
+            moveToAtomic: body.moveToAtomic !== false,
+            verifiedBy: body.verifiedBy,
+            reject: body.reject === true
+          });
+          writeJson(res, 200, result);
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/archive',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        try {
+          const result = await archiveKnowledgeEntry({ path: body.path, restore: body.restore === true });
+          writeJson(res, 200, result);
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/quality',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        try {
+          if (req.method === 'POST') {
+            let body;
+            try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+            const current = await readKnowledgeQuality();
+            const next = {
+              ...current,
+              reviewMode: body.reviewMode === 'auto' ? 'auto' : 'manual',
+              autoPublishLowRisk: body.autoPublishLowRisk !== false,
+              forgetMode: body.forgetMode === 'auto' ? 'auto' : 'prompt',
+              forgetAutoArchive: body.forgetAutoArchive === true
+            };
+            await writeKnowledgeQuality(next);
+            writeJson(res, 200, next);
+          } else {
+            writeJson(res, 200, await readKnowledgeQuality());
+          }
         } catch (error) { fail(res, error); }
       }
     },
