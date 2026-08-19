@@ -4058,6 +4058,15 @@ function withTimeout(promise, ms, message) {
   return Promise.race([promise, timeout]).finally(() => { if (timer) clearTimeout(timer); });
 }
 
+function orchestrationFailureDetail(result) {
+  if (!result || typeof result !== 'object') return '子代理未返回结果';
+  const parts = ['stopReason=' + String(result.stopReason || '')];
+  if (result.error) parts.push('error=' + String(result.error));
+  if (result.message) parts.push('message=' + String(result.message));
+  if (Array.isArray(result.errors) && result.errors.length) parts.push('errors=' + result.errors.slice(0, 3).map((entry) => String(entry && (entry.message || entry))).join(' | '));
+  return parts.join('；');
+}
+
 async function runOrchestrationWorker(orchestrationId, workerId, parent, controller) {
   const maxAttempts = 1 + ORCHESTRATION_WORKER_MAX_RETRIES;
   let run = null;
@@ -4107,16 +4116,17 @@ async function runOrchestrationWorker(orchestrationId, workerId, parent, control
       const completedAt = new Date().toISOString();
       const output = contentBlocksText(result.output);
       const successful = result.stopReason === 'completed';
+      const failureDetail = orchestrationFailureDetail(result);
       await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
         ...item,
-        workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: successful ? 'completed' : 'failed', output, error: successful ? '' : ('子代理结束原因：' + result.stopReason), completedAt, attempts: attempt } : entry),
+        workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: successful ? 'completed' : 'failed', output, error: successful ? '' : failureDetail, completedAt, attempts: attempt } : entry),
         updatedAt: completedAt
       }));
       if (successful) {
         await appendOrchestrationLog(orchestrationId, 'info', '子代理「' + worker.name + '」完成', worker.id);
         return;
       }
-      lastError = '子代理结束原因：' + result.stopReason;
+      lastError = failureDetail;
       finished = true;
     } catch (error) {
       lastError = String((error && error.message) || error);
