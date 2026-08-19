@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
@@ -124,8 +124,8 @@ try {
 
   const initial = await call('/api/dsh-workbench/knowledge/list', 'GET');
   assert.ok(initial.vaultRoot, 'vault root should be created');
-  assert.equal(initial.entries.length, 0);
-  assert.equal(initial.stats.documents, 0);
+  assert.equal(initial.entries.length, 1, 'template is scanned on first list');
+  assert.equal(initial.stats.documents, 1);
   assert.equal(initial.stats.trend.length, 7);
   assert.equal(initial.vector.provider, 'none');
   const vaultRoot = initial.vaultRoot;
@@ -227,6 +227,92 @@ try {
   const removed = await call('/api/dsh-workbench/knowledge/remove', 'POST', { path: readEntry.path });
   assert.equal(removed.ok, true);
 
+  // typed entries for the asset overview
+  const skillContent = [
+    '---',
+    'title: 技能-代码审查',
+    'type: skill',
+    'tags: [技能, 审查]',
+    'confidence: high',
+    'related: ""',
+    'summary: 代码审查检查清单。',
+    'created: 2026-08-19T00:00:00.000Z',
+    '---',
+    '# 技能-代码审查',
+    '逐项核对边界、可维护性与隐患。'
+  ].join('\n');
+  const projectContent = [
+    '---',
+    'title: 项目-工作台',
+    'type: project',
+    'tags: [项目]',
+    'confidence: medium',
+    'related: ""',
+    'summary: 工作台项目复盘。',
+    'created: 2026-08-19T00:00:00.000Z',
+    '---',
+    '# 项目-工作台',
+    '记录工作台项目的目标与进展。'
+  ].join('\n');
+  const workflowContent = [
+    '---',
+    'title: 工作流-发布',
+    'type: workflow',
+    'tags: [工作流, 发布]',
+    'confidence: high',
+    'related: ""',
+    'summary: 发布流程沉淀。',
+    'created: 2026-08-19T00:00:00.000Z',
+    '---',
+    '# 工作流-发布',
+    '备份 → 复制 → 重启 → 回归。'
+  ].join('\n');
+  await call('/api/dsh-workbench/knowledge/write', 'POST', { folder: 'atomic', name: '技能-代码审查', content: skillContent });
+  await call('/api/dsh-workbench/knowledge/write', 'POST', { folder: 'projects', name: '项目-工作台', content: projectContent });
+  await call('/api/dsh-workbench/knowledge/write', 'POST', { folder: 'inbox', name: '工作流-发布', content: workflowContent });
+
+  // tags participate in retrieval (keyword only in tags)
+  const tagOnlyContent = [
+    '---',
+    'title: 标签检索测试',
+    'tags: [xyzabc]',
+    'confidence: medium',
+    'related: ""',
+    'summary: 关键词只出现在标签里。',
+    'created: 2026-08-19T00:00:00.000Z',
+    '---',
+    '# 标签检索测试',
+    '正文不包含特殊关键词。'
+  ].join('\n');
+  await call('/api/dsh-workbench/knowledge/write', 'POST', { folder: 'inbox', name: '标签检索测试', content: tagOnlyContent });
+  const tagSearch = await call('/api/dsh-workbench/knowledge/search', 'POST', { query: 'xyzabc', topK: 3 });
+  assert.ok(tagSearch.results.some((item) => item.path === 'inbox/标签检索测试.md'), 'tags should be part of the index');
+
+  // directly-written file is picked up without a manual sync (stale index rescan)
+  await writeFile(join(vaultRoot, '01-Inbox', '直接写入条目.md'), [
+    '---',
+    'title: 直接写入条目',
+    'tags: []',
+    'confidence: medium',
+    'related: ""',
+    'summary: stalecheck123 用于验证自动重建。',
+    'created: 2026-08-19T00:00:00.000Z',
+    '---',
+    '# 直接写入条目',
+    '这是绕过接口直接写入 vault 的文件，搜索应自动索引到。'
+  ].join('\n'), 'utf8');
+  const staleSearch = await call('/api/dsh-workbench/knowledge/search', 'POST', { query: 'stalecheck123', topK: 3 });
+  assert.ok(staleSearch.results.some((item) => item.path === 'inbox/直接写入条目.md'), 'search should auto-rescan stale vault');
+
+  // asset overview groups typed entries + templates + experts
+  const overview = await call('/api/dsh-workbench/knowledge/overview', 'GET');
+  assert.ok(overview.skills.some((item) => item.title === '技能-代码审查'));
+  assert.ok(overview.projects.some((item) => item.title === '项目-工作台'));
+  assert.ok(overview.workflows.some((item) => item.title === '工作流-发布'));
+  assert.ok(overview.workflowTemplates.length >= 4, 'default workflow templates should be listed');
+  assert.ok(Array.isArray(overview.experts));
+  assert.ok(Array.isArray(overview.workspaceProjects));
+
   const badVector = await call('/api/dsh-workbench/knowledge/vector', 'POST', { config: { provider: 'openai', model: 'text-embedding-3-small', apiKey: '', baseUrl: '' } });
   assert.equal(badVector.saved, false);
   assert.ok(badVector.status.error);
@@ -235,7 +321,7 @@ try {
   assert.equal(backToNone.config.provider, 'none');
 
   const finalSync = await call('/api/dsh-workbench/knowledge/sync', 'POST');
-  assert.equal(finalSync.entries.length, 5, 'distilled + atomic + MOC + projects + template after removing fastapi');
+  assert.equal(finalSync.entries.length, 10, 'existing 5 + skill/project/workflow/tag-only/direct-write after removing fastapi');
   console.log('knowledge smoke test passed');
   smokePassed = true;
 } finally {

@@ -545,6 +545,19 @@
 - 部署：备份 `backups\workbench-p5-knowledge-deploy-20260819-154456`，运行端已替换并重启
   （本轮 API 端口 62713，带 --remote-debugging-port=9224）。
 
+第二迭代（2026-08-19，用户实机反馈后）：让本地知识库真正可用
+
+- 体验修复：新建条目表单全局可见（不再只在浏览 Tab 下）、改为结构化表单（标题/类型/标签/置信度/
+  关联/摘要/正文自动生成 frontmatter）；检索空结果给出目录范围提示。
+- 检索增强：标签（含相关标题）纳入索引；检索前自动检测 vault 变更（mtime 指纹），Obsidian/
+  直接改文件无需手动同步即可搜到。
+- 资产总览：新增"总览"Tab——知识库技能池（type: skill 或标签 技能）、项目（type: project 或
+  04-Projects + 注册工作区）、工作流（type: workflow 或标签 工作流 + 工作流页模板库）、
+  专家技能（preset.yml 的 skills: 列表，与知识库技能池统一）；条目 frontmatter 新增 type。
+- 验证：smoke 新增标签检索/直接写入自动重建/总览分组断言；CDP GUI 回归新增新建条目全流程与
+  总览 Tab 断言，全部通过；部署备份 `backups\workbench-p5-overview-deploy-20260819-161129`。
+- Obsidian：已下载 1.13.7 安装包 + Dataview 0.5.70 + Excalidraw 2.25.3，待安装并配置 vault。
+
 ### Phase 6：打磨与文档（P7）
 
 任务：

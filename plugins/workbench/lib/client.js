@@ -3142,11 +3142,12 @@ window.__ModuleLoader__.load({
       const [stats, setStats] = React.useState(null);
       const [entries, setEntries] = React.useState([]);
       const [vectorMeta, setVectorMeta] = React.useState(null);
+      const [overview, setOverview] = React.useState(null);
       const [busy, setBusy] = React.useState(false);
       const [error, setError] = React.useState("");
       const [tab, setTab] = React.useState("dash");
       const [showForm, setShowForm] = React.useState(false);
-      const [draft, setDraft] = React.useState({ folder: "inbox", name: "", content: "" });
+      const [draft, setDraft] = React.useState({ folder: "inbox", name: "", type: "note", tags: "", confidence: "medium", related: "", summary: "", content: "" });
       const [folderFilter, setFolderFilter] = React.useState("all");
       const [preview, setPreview] = React.useState(null);
       const [search, setSearch] = React.useState({ query: "", project: "", topK: 5 });
@@ -3174,6 +3175,10 @@ window.__ModuleLoader__.load({
         }).catch((e) => setError(String((e && e.message) || e))).finally(() => setBusy(false));
       }, []);
       React.useEffect(() => { load(); }, [load]);
+      const loadOverview = React.useCallback(() => {
+        wbFetchJson("/api/dsh-workbench/knowledge/overview").then(({ data }) => setOverview(data || null)).catch(() => {});
+      }, []);
+      React.useEffect(() => { if (tab === "overview") loadOverview(); }, [tab, loadOverview]);
       React.useEffect(() => { wbFetchJson("/api/dsh-workbench/knowledge/eval").then(({ data }) => setEvalStore(data || { items: [], candidates: [], lastRun: null })).catch(() => {}); }, []);
       const sync = () => {
         setBusy(true);
@@ -3185,9 +3190,26 @@ window.__ModuleLoader__.load({
       };
       const save = () => {
         const name = draft.name.trim();
-        if (!name || !draft.content.trim()) { setError("需要文件名和内容"); return; }
-        wbFetchJson("/api/dsh-workbench/knowledge/write", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ folder: draft.folder, name, content: draft.content }) })
-          .then(() => { setShowForm(false); setDraft({ folder: "inbox", name: "", content: "" }); load(); })
+        if (!name || !draft.content.trim()) { setError("需要标题和正文"); return; }
+        const tags = draft.tags.split(/[,，]/).map((item) => item.trim()).filter(Boolean);
+        const related = draft.related.split(/[,，]/).map((item) => item.trim()).filter(Boolean).map((item) => "[[" + item + "]]").join(" ");
+        const markdown = [
+          "---",
+          "title: " + name,
+          "type: " + draft.type,
+          "tags: [" + tags.join(", ") + "]",
+          "confidence: " + draft.confidence,
+          'related: "' + related + '"',
+          "summary: " + draft.summary.trim(),
+          "created: " + new Date().toISOString(),
+          "---",
+          "",
+          "# " + name,
+          "",
+          draft.content.trim()
+        ].join("\n");
+        wbFetchJson("/api/dsh-workbench/knowledge/write", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ folder: draft.folder, name, content: markdown }) })
+          .then(() => { setShowForm(false); setDraft({ folder: "inbox", name: "", type: "note", tags: "", confidence: "medium", related: "", summary: "", content: "" }); load(); loadOverview(); })
           .catch((e) => setError(String((e && e.message) || e)));
       };
       const openPreview = (entry) => {
@@ -3305,7 +3327,9 @@ window.__ModuleLoader__.load({
         { id: "templates", label: "99-Templates · 模板" }
       ];
       const confidenceLabel = { high: "高", medium: "中", low: "低" };
+      const typeLabel = { note: "笔记", skill: "技能", project: "项目", workflow: "工作流" };
       const TABS = [
+        { id: "overview", label: "总览" },
         { id: "dash", label: "增长与浏览" },
         { id: "search", label: "检索" },
         { id: "distill", label: "蒸馏" },
@@ -3319,7 +3343,10 @@ window.__ModuleLoader__.load({
       const entryCard = (entry) => jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
         jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [
           jsxRuntime.jsx("strong", { style: { cursor: "pointer" }, title: "点击预览/编辑", onClick: () => openPreview(entry), children: entry.title }),
-          jsxRuntime.jsx("small", { className: confBadge(entry.confidence), children: "置信度 " + confidenceLabel[entry.confidence] })
+          jsxRuntime.jsxs("div", { className: "wb-collab-files", children: [
+            entry.type && entry.type !== "note" && jsxRuntime.jsx("span", { className: "wb-collab-file-chip", children: typeLabel[entry.type] || entry.type }, "type"),
+            jsxRuntime.jsx("small", { className: confBadge(entry.confidence), children: "置信度 " + confidenceLabel[entry.confidence] })
+          ] })
         ] }),
         entry.summary && jsxRuntime.jsx("p", { className: "wb-collab-memory-finding", children: entry.summary }),
         entry.tags.length > 0 && jsxRuntime.jsx("div", { className: "wb-collab-files", children: entry.tags.map((tag) => jsxRuntime.jsx("span", { className: "wb-collab-file-chip", children: "#" + tag }, tag)) }),
@@ -3335,12 +3362,71 @@ window.__ModuleLoader__.load({
               jsxRuntime.jsx("button", { type: "button", className: "wb-style-button", disabled: busy, onClick: sync, children: "同步索引" }),
               jsxRuntime.jsx("button", { type: "button", className: "wb-style-button", disabled: !vaultRoot, onClick: openInObsidian, children: "在 Obsidian 中打开" }),
               jsxRuntime.jsx("button", { type: "button", className: "wb-style-button", disabled: !vaultRoot, onClick: copyVaultPath, children: "复制路径" }),
-              jsxRuntime.jsx("button", { type: "button", className: "wb-style-button wb-sp-btn-primary", disabled: busy, onClick: () => setShowForm((v) => !v), children: showForm ? "收起" : "新建条目" })
+              jsxRuntime.jsx("button", { type: "button", className: "wb-style-button wb-sp-btn-primary", disabled: busy, onClick: () => { setTab("dash"); setShowForm((v) => !v); }, children: showForm ? "收起" : "新建条目" })
             ] })
           ] }),
           error && jsxRuntime.jsx(WbErrNote, { message: error }),
           vaultRoot && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "Vault：" + vaultRoot + "（Obsidian 兼容；也可复制路径手动打开）" }),
           jsxRuntime.jsx("nav", { className: "wb-collab-panel-tabs", children: TABS.map((item) => jsxRuntime.jsx("button", { type: "button", className: "wb-collab-panel-tab" + (tab === item.id ? " wb-collab-panel-tab-active" : ""), onClick: () => setTab(item.id), children: item.label }, item.id)) }),
+
+          tab === "overview" && jsxRuntime.jsxs("div", { className: "wb-knowledge-group", children: [
+            jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: [
+              jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "技能" }), jsxRuntime.jsx("div", { className: "wb-monitor-big", children: (overview && overview.skills && overview.skills.length) || 0 })] }),
+              jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "项目" }), jsxRuntime.jsx("div", { className: "wb-monitor-big", children: ((overview && overview.projects && overview.projects.length) || 0) + ((overview && overview.workspaceProjects && overview.workspaceProjects.length) || 0) })] }),
+              jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "工作流" }), jsxRuntime.jsx("div", { className: "wb-monitor-big", children: ((overview && overview.workflows && overview.workflows.length) || 0) + ((overview && overview.workflowTemplates && overview.workflowTemplates.length) || 0) })] }),
+              jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [jsxRuntime.jsx("h3", { children: "专家" }), jsxRuntime.jsx("div", { className: "wb-monitor-big", children: (overview && overview.experts && overview.experts.length) || 0 })] })
+            ] }),
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-monitor-wide", children: [
+              jsxRuntime.jsx("h3", { children: "知识库技能池（全部技能，type: skill 或标签 技能/skill）" }),
+              overview && overview.skills && overview.skills.length ? jsxRuntime.jsx("div", { className: "wb-collab-memory-list", children: overview.skills.map((item) => jsxRuntime.jsxs("div", { className: "wb-collab-memory-card", children: [
+                jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: item.title }), jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: item.path })] }),
+                item.summary && jsxRuntime.jsx("p", { className: "wb-collab-memory-finding", children: item.summary }),
+                item.tags.length > 0 && jsxRuntime.jsx("div", { className: "wb-collab-files", children: item.tags.map((tag) => jsxRuntime.jsx("span", { className: "wb-collab-file-chip", children: "#" + tag }, tag)) })
+              ] }, item.path)) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "还没有技能条目。新建条目时类型选「技能」，或直接在 frontmatter 写 type: skill。" })
+            ] }),
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-monitor-wide", children: [
+              jsxRuntime.jsx("h3", { children: "项目（知识库 + 工作区）" }),
+              jsxRuntime.jsx("div", { className: "wb-collab-memory-list", children: [
+                (overview && overview.projects || []).map((item) => jsxRuntime.jsx("div", { className: "wb-collab-memory-finding", children: "📁 " + item.title + "（" + item.path + "）" }, item.path)),
+                (overview && overview.workspaceProjects || []).map((item) => jsxRuntime.jsx("div", { className: "wb-collab-memory-finding", children: "🖥 工作区：" + item.name + "（" + item.path + "）" }, item.path))
+              ] }),
+              jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "知识库项目用 type: project 或放入 04-Projects；工作区项目来自当前注册的项目列表。" })
+            ] }),
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-monitor-wide", children: [
+              jsxRuntime.jsx("h3", { children: "工作流（知识库 + 模板库）" }),
+              jsxRuntime.jsx("div", { className: "wb-collab-memory-list", children: [
+                (overview && overview.workflows || []).map((item) => jsxRuntime.jsx("div", { className: "wb-collab-memory-finding", children: "🔁 " + item.title + "（" + item.path + "）" }, item.path)),
+                (overview && overview.workflowTemplates || []).map((item) => jsxRuntime.jsx("div", { className: "wb-collab-memory-finding", children: "🧩 模板：" + item.title + "（工作流页）" }, item.id))
+              ] }),
+              jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "知识库工作流用 type: workflow 或标签 工作流；下方是工作流页现有的模板库，做过的流程建议蒸馏成工作流条目沉淀。" })
+            ] }),
+            jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-monitor-wide", children: [
+              jsxRuntime.jsx("h3", { children: "专家技能（每位专家独有的技能，与知识库技能池统一）" }),
+              overview && overview.experts && overview.experts.length ? jsxRuntime.jsx("div", { className: "wb-collab-memory-list", children: overview.experts.map((expert) => jsxRuntime.jsxs("div", { className: "wb-collab-memory-card", children: [
+                jsxRuntime.jsxs("div", { className: "wb-collab-memory-head", children: [jsxRuntime.jsx("strong", { children: expert.name }), jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: expert.id })] }),
+                expert.skills && expert.skills.length ? jsxRuntime.jsx("div", { className: "wb-collab-files", children: expert.skills.map((skill) => jsxRuntime.jsx("span", { className: "wb-collab-file-chip", children: skill }, skill)) }) : jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "未声明技能。在专家编辑里给 preset.yml 加 skills: [技能名]，技能名与知识库技能条目保持一致。" })
+              ] }, expert.id)) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "暂无专家预设" })
+            ] })
+          ] }),
+
+          showForm && jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-workflow-editor", children: [
+            jsxRuntime.jsx("h3", { children: "新建知识条目（自动生成 frontmatter）" }),
+            jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "目录" }), jsxRuntime.jsx("select", { value: draft.folder, onChange: (e) => setDraft((cur) => ({ ...cur, folder: e.target.value })), children: groups.map((g) => jsxRuntime.jsx("option", { value: g.id, children: g.label }, g.id)) })] }),
+            jsxRuntime.jsx("input", { value: draft.name, placeholder: "标题（同时作为文件名）", onChange: (e) => setDraft((cur) => ({ ...cur, name: e.target.value })) }),
+            jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [
+              jsxRuntime.jsx("span", { children: "类型" }),
+              jsxRuntime.jsx("select", { value: draft.type, onChange: (e) => setDraft((cur) => ({ ...cur, type: e.target.value })), children: [{ id: "note", label: "笔记" }, { id: "skill", label: "技能" }, { id: "project", label: "项目" }, { id: "workflow", label: "工作流" }].map((item) => jsxRuntime.jsx("option", { value: item.id, children: item.label }, item.id)) })
+            ] }),
+            jsxRuntime.jsx("input", { value: draft.tags, placeholder: "标签（逗号分隔）：技能, 上线, 检索", onChange: (e) => setDraft((cur) => ({ ...cur, tags: e.target.value })) }),
+            jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [
+              jsxRuntime.jsx("span", { children: "置信度" }),
+              jsxRuntime.jsx("select", { value: draft.confidence, onChange: (e) => setDraft((cur) => ({ ...cur, confidence: e.target.value })), children: [{ id: "high", label: "高" }, { id: "medium", label: "中" }, { id: "low", label: "低" }].map((item) => jsxRuntime.jsx("option", { value: item.id, children: item.label }, item.id)) })
+            ] }),
+            jsxRuntime.jsx("input", { value: draft.related, placeholder: "关联条目（逗号分隔，会生成 [[链接]]）", onChange: (e) => setDraft((cur) => ({ ...cur, related: e.target.value })) }),
+            jsxRuntime.jsx("input", { value: draft.summary, placeholder: "一句话摘要", onChange: (e) => setDraft((cur) => ({ ...cur, summary: e.target.value })) }),
+            jsxRuntime.jsx("textarea", { className: "wb-orch-agents-editor", value: draft.content, rows: 8, placeholder: "正文（结论/方法/决策/待办）…", onChange: (e) => setDraft((cur) => ({ ...cur, content: e.target.value })) }),
+            jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => setShowForm(false), children: "取消" }), jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy, onClick: save, children: "写入知识库" })] })
+          ] }),
 
           tab === "dash" && jsxRuntime.jsxs("div", { className: "wb-knowledge-group", children: [
             jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: [
@@ -3355,13 +3441,6 @@ window.__ModuleLoader__.load({
                   jsxRuntime.jsx("small", { children: item.date.slice(5) })
                 ] }, item.date)) })
               ] })
-            ] }),
-            showForm && jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-workflow-editor", children: [
-              jsxRuntime.jsx("h3", { children: "新建知识条目（Markdown + frontmatter）" }),
-              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "目录" }), jsxRuntime.jsx("select", { value: draft.folder, onChange: (e) => setDraft((cur) => ({ ...cur, folder: e.target.value })), children: groups.map((g) => jsxRuntime.jsx("option", { value: g.id, children: g.label }, g.id)) })] }),
-              jsxRuntime.jsx("input", { value: draft.name, placeholder: "文件名（不含 .md）", onChange: (e) => setDraft((cur) => ({ ...cur, name: e.target.value })) }),
-              jsxRuntime.jsx("textarea", { className: "wb-orch-agents-editor", value: draft.content, rows: 9, placeholder: "---\ntitle: 主题\ntags: [标签]\nconfidence: medium\nrelated: \"[[相关条目]]\"\nsummary: 一句话核心\n---\n\n正文…", onChange: (e) => setDraft((cur) => ({ ...cur, content: e.target.value })) }),
-              jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => setShowForm(false), children: "取消" }), jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy, onClick: save, children: "写入知识库" })] })
             ] }),
             jsxRuntime.jsx("div", { className: "wb-knowledge-filter", children: [{ id: "all", label: "全部" }, ...groups].map((item) => jsxRuntime.jsx("button", { type: "button", className: folderFilter === item.id ? "wb-knowledge-filter-active" : "", onClick: () => setFolderFilter(item.id), children: item.label }, item.id)) }),
             visibleEntries.length ? jsxRuntime.jsx("div", { className: "wb-monitor-grid", children: visibleEntries.map(entryCard) }) : jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "暂无条目" })
@@ -3383,7 +3462,7 @@ window.__ModuleLoader__.load({
               jsxRuntime.jsx("p", { className: "wb-knowledge-snippet", children: item.snippet || item.summary }),
               item.tags.length > 0 && jsxRuntime.jsx("div", { className: "wb-collab-files", children: item.tags.map((tag) => jsxRuntime.jsx("span", { className: "wb-collab-file-chip", children: "#" + tag }, tag)) }),
               jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "溯源：" + item.path + " · " + new Date(item.updatedAt).toLocaleString() })
-            ] }, item.path)) }) : results && jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "无匹配结果" }),
+            ] }, item.path)) }) : results && jsxRuntime.jsx("div", { className: "wb-task-empty-state", children: "无匹配结果。默认检索范围是 01-Inbox / 02-Atomic / 03-MOCs；04-Projects / 99-Templates 需在检索画像中开启对应目录。直接修改过的文件会自动重新索引，仍找不到可点右上角「同步索引」，或确认关键词出现在标题/标签/正文里。" }),
             results && jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-workflow-editor", children: [
               jsxRuntime.jsx("h3", { children: "反馈（没找到/不准 → 自动记入评测候选池）" }),
               jsxRuntime.jsx("input", { value: feedback.note, placeholder: "说明哪里不准或缺失（可选）", onChange: (e) => setFeedback((cur) => ({ ...cur, note: e.target.value })) }),

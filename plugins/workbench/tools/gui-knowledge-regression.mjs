@@ -213,13 +213,93 @@ try {
   }
   await shot('knowledge-distill.png');
 
+  // new entry form: click 新建条目 → form visible → fill → save → appears
+  console.log('step: new entry form');
+  await evaluate(`(() => {
+    const button = [...document.querySelectorAll('button')].find((item) => item.textContent.trim() === '新建条目');
+    if (!button) return false;
+    button.click();
+    return true;
+  })()`);
+  await wait(800);
+  const formVisible = await evaluate(`(() => !!document.querySelector('input[placeholder*="标题（同时作为文件名）"]'))()`);
+  if (!formVisible) throw new Error('new entry form did not appear after clicking 新建条目');
+  await evaluate(`(() => {
+    const setVal = (el, value) => { const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, value); el.dispatchEvent(new Event('input', { bubbles: true })); };
+    const title = document.querySelector('input[placeholder*="标题（同时作为文件名）"]');
+    const tags = [...document.querySelectorAll('input')].find((item) => (item.placeholder || '').includes('标签（逗号分隔）'));
+    const summary = [...document.querySelectorAll('input')].find((item) => (item.placeholder || '').includes('一句话摘要'));
+    const body = [...document.querySelectorAll('textarea')].find((item) => (item.placeholder || '').includes('正文'));
+    if (!title || !tags || !summary || !body) return false;
+    setVal(title, 'GUI新建条目');
+    setVal(tags, '回归, 新建');
+    setVal(summary, 'GUI 回归新建条目');
+    setVal(body, '这是 GUI 回归自动创建的新条目，验证后删除。');
+    return true;
+  })()`);
+  await wait(300);
+  await evaluate(`(() => {
+    const button = [...document.querySelectorAll('button')].find((item) => item.textContent.trim() === '写入知识库');
+    if (!button) return false;
+    button.click();
+    return true;
+  })()`);
+  await wait(2500);
+  const newEntryState = await evaluate(`(() => ({
+    visible: document.body.innerText.includes('GUI新建条目'),
+    hasSummary: document.body.innerText.includes('GUI 回归新建条目')
+  }))()`);
+  if (!newEntryState.visible) throw new Error('new entry was not saved: ' + JSON.stringify(newEntryState));
+  await shot('knowledge-new-entry.png');
+
+  // asset overview: seed typed entries, verify groups, then cleanup
+  console.log('step: overview tab');
+  const typedSeed = [
+    { folder: 'atomic', name: '技能-GUI示例', content: '---\ntitle: 技能-GUI示例\ntype: skill\ntags: [技能]\nconfidence: high\nrelated: ""\nsummary: 示例技能条目。\n---\n# 技能-GUI示例\n示例技能正文。' },
+    { folder: 'projects', name: '项目-GUI示例', content: '---\ntitle: 项目-GUI示例\ntype: project\ntags: [项目]\nconfidence: medium\nrelated: ""\nsummary: 示例项目条目。\n---\n# 项目-GUI示例\n示例项目正文。' },
+    { folder: 'inbox', name: '工作流-GUI示例', content: '---\ntitle: 工作流-GUI示例\ntype: workflow\ntags: [工作流]\nconfidence: high\nrelated: ""\nsummary: 示例工作流条目。\n---\n# 工作流-GUI示例\n示例工作流正文。' }
+  ];
+  for (const item of typedSeed) {
+    await pageApi('/api/dsh-workbench/knowledge/write', 'POST', item);
+  }
+  await evaluate(`(() => {
+    const tab = [...document.querySelectorAll('button')].find((item) => item.textContent.trim() === '检索');
+    if (tab) tab.click();
+    return true;
+  })()`);
+  await wait(500);
+  await evaluate(`(() => {
+    const tab = [...document.querySelectorAll('button')].find((item) => item.textContent.trim() === '总览');
+    if (tab) tab.click();
+    return true;
+  })()`);
+  await wait(2500);
+  const overviewState = await evaluate(`(() => {
+    const text = document.body.innerText;
+    return {
+      hasSkillPool: text.includes('知识库技能池'),
+      hasExpertSkills: text.includes('专家技能'),
+      hasProjects: text.includes('项目（知识库 + 工作区）'),
+      hasWorkflows: text.includes('工作流（知识库 + 模板库）'),
+      hasTyped: text.includes('技能-GUI示例') && text.includes('项目-GUI示例') && text.includes('工作流-GUI示例')
+    };
+  })()`);
+  if (!overviewState.hasSkillPool || !overviewState.hasExpertSkills || !overviewState.hasTyped) {
+    throw new Error('overview regression failed: ' + JSON.stringify(overviewState));
+  }
+  await shot('knowledge-overview.png');
+
   // cleanup seeded entries
   console.log('step: cleanup');
   await pageApi('/api/dsh-workbench/knowledge/remove', 'POST', { path: seeded.entry.path }).catch(() => {});
   await pageApi('/api/dsh-workbench/knowledge/remove', 'POST', { path: distillState.path }).catch(() => {});
+  await pageApi('/api/dsh-workbench/knowledge/remove', 'POST', { path: 'inbox/GUI新建条目.md' }).catch(() => {});
+  for (const item of typedSeed) {
+    await pageApi('/api/dsh-workbench/knowledge/remove', 'POST', { path: item.folder + '/' + item.name + '.md' }).catch(() => {});
+  }
   await pageApi('/api/dsh-workbench/knowledge/remove', 'POST', { path: 'inbox/NodeProbe条目.md' }).catch(() => {});
 
-  console.log(JSON.stringify({ dash: dashState, search: searchState, distill: distillState }, null, 2));
+  console.log(JSON.stringify({ dash: dashState, search: searchState, distill: distillState, newEntry: newEntryState, overview: overviewState }, null, 2));
   console.log('knowledge GUI regression passed');
   process.exit(0);
 } finally {

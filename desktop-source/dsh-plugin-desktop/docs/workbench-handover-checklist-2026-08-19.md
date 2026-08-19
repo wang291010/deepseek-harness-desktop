@@ -150,6 +150,16 @@
 - 部署：备份 `backups\workbench-p5-knowledge-deploy-20260819-154456`，运行端已替换并重启
   （本轮 API 端口 62713，带 --remote-debugging-port=9224）。
 
+### P5 第二迭代（2026-08-19，实机反馈）
+
+- 新建条目表单全局可用（结构化表单自动生成 frontmatter）；标签纳入检索词；检索前自动重建
+  过期索引（Obsidian/直接改文件免手动同步）；空结果提示检索目录范围。
+- 知识库页新增"总览"Tab：知识库技能池 / 项目（含注册工作区）/ 工作流（含模板库）/ 专家技能
+  （preset.yml skills 与知识库统一）；条目 frontmatter 新增 `type: note|skill|project|workflow`。
+- 部署：备份 `backups\workbench-p5-overview-deploy-20260819-161129`；smoke + CDP GUI 回归通过。
+- Obsidian 1.13.7 安装包与 Dataview/Excalidraw 插件已下载，待安装配置（见工作台知识库页
+  "在 Obsidian 中打开"）。
+
 ## 三、未完成与下一步
 
 1. P1B 剩余 GUI 回归（需用户实测）：文件视图（盘符面包屑/保存/大文件/越界提示）、外壳（置顶/拖拽/重命名归档/默认收起）、专家页（调用/编辑/复制/删除/重启保留）、任务中心存量（看板/`/todo`/想法流转）。

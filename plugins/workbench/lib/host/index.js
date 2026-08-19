@@ -31,7 +31,7 @@
  * paths owned by ctx.workspaceRegistry.
  */
 import { homedir } from 'node:os';
-import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
+import { basename, dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { readdir, readFile, writeFile, stat, lstat, realpath, mkdir, rename, rm } from 'node:fs/promises';
@@ -82,6 +82,7 @@ const KNOWLEDGE_FOLDER_DIRS = {
 };
 const KNOWLEDGE_FOLDER_IDS = Object.keys(KNOWLEDGE_FOLDER_DIRS);
 const KNOWLEDGE_CONFIDENCES = ['high', 'medium', 'low'];
+const KNOWLEDGE_TYPES = ['note', 'skill', 'project', 'workflow'];
 const KNOWLEDGE_MAX_ENTRY_BYTES = 512 * 1024;
 const KNOWLEDGE_MAX_QUERY_CHARS = 1000;
 const KNOWLEDGE_MAX_TOPK = 20;
@@ -707,6 +708,7 @@ function cleanKnowledgeEntry(raw) {
     folder: KNOWLEDGE_FOLDER_IDS.includes(value.folder) ? value.folder : 'inbox',
     name: cleanTaskText(value.name, 200),
     title: cleanTaskText(value.title, 300),
+    type: KNOWLEDGE_TYPES.includes(value.type) ? value.type : 'note',
     tags: Array.isArray(value.tags) ? value.tags.map((item) => cleanTaskText(item, 80)).filter(Boolean).slice(0, 20) : [],
     confidence: KNOWLEDGE_CONFIDENCES.includes(value.confidence) ? value.confidence : 'medium',
     related: Array.isArray(value.related) ? value.related.map((item) => cleanTaskText(item, 200)).filter(Boolean).slice(0, 30) : [],
@@ -716,6 +718,7 @@ function cleanKnowledgeEntry(raw) {
     createdAt: typeof value.createdAt === 'string' ? value.createdAt : '',
     updatedAt: typeof value.updatedAt === 'string' ? value.updatedAt : new Date().toISOString(),
     hash: cleanTaskText(value.hash, 64),
+    mtimeMs: Number.isFinite(Number(value.mtimeMs)) ? Number(value.mtimeMs) : 0,
     bodyChars: Number.isFinite(Number(value.bodyChars)) ? Math.max(1, Number(value.bodyChars)) : 1,
     headings: Array.isArray(value.headings) ? value.headings.map((item) => cleanTaskText(item, 200)).filter(Boolean).slice(0, 30) : [],
     terms: value.terms && typeof value.terms === 'object' && !Array.isArray(value.terms)
@@ -725,7 +728,7 @@ function cleanKnowledgeEntry(raw) {
 }
 
 function parseFrontmatter(text) {
-  const entry = { title: '', tags: [], confidence: 'medium', related: [], summary: '', source: '', project: '', created: '', body: String(text || '') };
+  const entry = { title: '', type: 'note', tags: [], confidence: 'medium', related: [], summary: '', source: '', project: '', created: '', body: String(text || '') };
   const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(entry.body);
   if (!match) {
     entry.title = entry.body.split(/\r?\n/)[0].replace(/^#\s*/, '').slice(0, 300);
@@ -735,6 +738,7 @@ function parseFrontmatter(text) {
   const meta = match[1];
   const line = (key) => { const hit = new RegExp('^' + key + ':[ \\t]*(.+)$', 'm').exec(meta); return hit ? hit[1].trim() : ''; };
   entry.title = line('title') || entry.body.split(/\r?\n/)[0].replace(/^#\s*/, '').slice(0, 300);
+  entry.type = KNOWLEDGE_TYPES.includes(line('type')) ? line('type') : 'note';
   entry.confidence = KNOWLEDGE_CONFIDENCES.includes(line('confidence')) ? line('confidence') : 'medium';
   entry.tags = line('tags').replace(/^\[|\]$/g, '').split(/[,\s]+/).map((item) => item.trim()).filter(Boolean).slice(0, 20);
   entry.related = [...line('related').matchAll(/\[\[([^\]]+)\]\]/g)].map((hit) => hit[1].trim().replace(/\.md$/i, '')).filter(Boolean).slice(0, 30);
@@ -934,11 +938,12 @@ async function scanKnowledgeVault() {
         const old = previous.get(path);
         if (old && old.hash === hash) { entries.push(cleanKnowledgeEntry(old)); continue; }
         const parsed = parseFrontmatter(content);
-        const tokens = tokenizeKnowledgeText(parsed.title + '\n' + parsed.summary + '\n' + parsed.body);
+        const tokens = tokenizeKnowledgeText(parsed.title + '\n' + parsed.summary + '\n' + parsed.tags.join('\n') + '\n' + parsed.body);
         const bodyChars = Math.max(1, parsed.body.length + parsed.summary.length);
         entries.push(cleanKnowledgeEntry({
           path, folder, name,
           title: parsed.title,
+          type: parsed.type,
           tags: parsed.tags,
           confidence: parsed.confidence,
           related: parsed.related,
@@ -948,6 +953,7 @@ async function scanKnowledgeVault() {
           createdAt: parsed.created || (old && old.createdAt) || info.mtime.toISOString(),
           updatedAt: info.mtime.toISOString(),
           hash,
+          mtimeMs: info.mtimeMs,
           bodyChars,
           headings: extractKnowledgeHeadings(parsed.body),
           terms: countKnowledgeTerms(tokens)
@@ -959,6 +965,101 @@ async function scanKnowledgeVault() {
   const index = { version: 2, updatedAt: new Date().toISOString(), stats: computeKnowledgeStats(entries), entries };
   await writeKnowledgeIndex(index);
   return index;
+}
+
+async function knowledgeIndexStale() {
+  try {
+    const index = knowledgeIndex;
+    if (!index || !index.entries || !index.entries.length) return true;
+    const byPath = new Map(index.entries.map((entry) => [entry.path, entry]));
+    for (const [folder, dir] of Object.entries(KNOWLEDGE_FOLDER_DIRS)) {
+      let names = [];
+      try { names = await readdir(dir); } catch (e) { return true; }
+      const seen = new Set();
+      for (const name of names.filter((item) => item.toLocaleLowerCase().endsWith('.md'))) {
+        const path = folder + '/' + name;
+        seen.add(path);
+        const entry = byPath.get(path);
+        let info = null;
+        try { info = await stat(join(dir, name)); } catch (e) { return true; }
+        if (!entry || entry.mtimeMs !== info.mtimeMs) return true;
+      }
+      for (const path of byPath.keys()) {
+        if (path.startsWith(folder + '/') && !seen.has(path)) return true;
+      }
+    }
+    return false;
+  } catch { return true; }
+}
+
+function parsePresetYamlSimple(text) {
+  const out = { name: '', skills: [] };
+  const lines = String(text || '').split(/\r?\n/);
+  let inSkills = false;
+  for (const line of lines) {
+    const nameHit = /^name:\s*(.+)$/.exec(line);
+    if (nameHit) out.name = nameHit[1].trim();
+    const inlineSkills = /^skills:\s*\[(.*)\]$/.exec(line);
+    if (inlineSkills) {
+      out.skills = inlineSkills[1].split(/[,，]/).map((item) => item.trim()).filter(Boolean);
+      inSkills = false;
+      continue;
+    }
+    if (/^skills:\s*$/.test(line)) { inSkills = true; continue; }
+    if (inSkills) {
+      const item = /^\s*-\s+(.+)$/.exec(line);
+      if (item) out.skills.push(item[1].trim());
+      else if (/^\S/.test(line)) inSkills = false;
+    }
+  }
+  return out;
+}
+
+async function knowledgeOverview() {
+  const index = await scanKnowledgeVault();
+  const entries = index.entries || [];
+  const byType = (type, tagHits) => entries.filter((entry) => entry.type === type || entry.tags.some((tag) => tagHits.includes(tag.toLowerCase())));
+  const pick = (entry) => ({ path: entry.path, title: entry.title, type: entry.type, tags: entry.tags, confidence: entry.confidence, summary: entry.summary, folder: entry.folder, updatedAt: entry.updatedAt });
+  const skills = byType('skill', ['技能', 'skill', 'skills']).map(pick);
+  const projects = byType('project', ['项目', 'project']).map(pick);
+  const workflows = byType('workflow', ['工作流', 'workflow']).map(pick);
+  let workspaceProjects = [];
+  try {
+    workspaceProjects = (workspaceRegistry ? workspaceRegistry.list() : []).map((workspace) => ({ path: String(workspace.path || ''), name: basename(String(workspace.path || '')) || String(workspace.path || '') }));
+  } catch (e) { workspaceProjects = []; }
+  let workflowTemplates = [];
+  try {
+    const templates = await ensureDefaultTemplates();
+    workflowTemplates = (templates || []).map((template) => ({ id: template.id, title: template.title, description: template.description }));
+  } catch (e) { workflowTemplates = []; }
+  let experts = [];
+  try {
+    await mkdir(PRESET_ROOT, { recursive: true });
+    const ids = await readdir(PRESET_ROOT);
+    for (const id of ids) {
+      const presetDir = join(PRESET_ROOT, id);
+      let info = null;
+      try { info = await stat(presetDir); } catch (e) { continue; }
+      if (!info.isDirectory()) continue;
+      const presetFile = join(presetDir, 'preset.yml');
+      try {
+        const linkInfo = await lstat(presetFile);
+        if (linkInfo.isSymbolicLink()) continue;
+        const parsed = parsePresetYamlSimple(await readFile(presetFile, 'utf8'));
+        experts.push({ id, name: parsed.name || id, skills: parsed.skills.slice(0, 30) });
+      } catch (e) { /* skip unreadable preset */ }
+    }
+  } catch (e) { experts = []; }
+  return {
+    stats: index.stats,
+    skills,
+    projects,
+    workspaceProjects,
+    workflows,
+    workflowTemplates,
+    experts,
+    folders: KNOWLEDGE_FOLDER_IDS
+  };
 }
 
 function knowledgeBm25(entries, queryTokens, topK) {
@@ -1338,7 +1439,12 @@ async function runKnowledgeSearch(query, project, options = {}) {
   const q = cleanTaskText(query, KNOWLEDGE_MAX_QUERY_CHARS);
   if (!q) return { error: 'query required' };
   let index = knowledgeIndex;
-  if (!index.entries || !index.entries.length) index = await scanKnowledgeVault();
+  if (!index.entries || !index.entries.length) {
+    index = await readKnowledgeIndex();
+    if (!index.entries || !index.entries.length) index = await scanKnowledgeVault();
+  } else if (await knowledgeIndexStale()) {
+    index = await scanKnowledgeVault();
+  }
   const profiles = await readKnowledgeProfiles();
   const profile = mergeKnowledgeProfile(profiles[project || ''], project);
   const folders = new Set(profile.folders);
@@ -3695,7 +3801,8 @@ function makeRoutes() {
         if (!fence(req, res)) return;
         try {
           const vaultRoot = await ensureKnowledgeVault();
-          const index = await readKnowledgeIndex();
+          let index = await readKnowledgeIndex();
+          if (await knowledgeIndexStale()) index = await scanKnowledgeVault();
           const vectorConfig = maskVectorConfig(await readVectorConfig());
           const profiles = await readKnowledgeProfiles();
           writeJson(res, 200, {
@@ -3706,6 +3813,16 @@ function makeRoutes() {
             profiles,
             vector: vectorConfig
           });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/overview',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        try {
+          writeJson(res, 200, await knowledgeOverview());
         } catch (error) { fail(res, error); }
       }
     },
