@@ -1086,8 +1086,26 @@ window.__ModuleLoader__.load({
     }
 
     // 详细信息: session status + expert + expandable tool list.
-    function ToolbarInfo({ summary, preset, st }) {
+    function ToolbarInfo({ summary, preset, st, sessionId }) {
       const tools = preset && preset.content ? parsePresetTools(preset.content) : [];
+      const [sessionStyle, setSessionStyle] = React.useState({ conversationStyle: "", customConversationStyle: "" });
+      const [styleBusy, setStyleBusy] = React.useState(false);
+      const [styleErr, setStyleErr] = React.useState("");
+      React.useEffect(() => {
+        let alive = true;
+        if (!sessionId) { setSessionStyle({ conversationStyle: "", customConversationStyle: "" }); return; }
+        wbFetchJson("/api/dsh-workbench/style/session?sessionId=" + encodeURIComponent(sessionId))
+          .then(({ data }) => { if (alive) setSessionStyle(data || { conversationStyle: "", customConversationStyle: "" }); })
+          .catch(() => {});
+        return () => { alive = false; };
+      }, [sessionId]);
+      const saveSessionStyle = () => {
+        if (!sessionId || styleBusy) return;
+        setStyleBusy(true); setStyleErr("");
+        wbFetchJson("/api/dsh-workbench/style/session", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId, conversationStyle: sessionStyle.conversationStyle, customConversationStyle: sessionStyle.customConversationStyle }) }, 30000)
+          .then(() => setStyleBusy(false))
+          .catch((e) => { setStyleErr(String((e && e.message) || e)); setStyleBusy(false); });
+      };
       return jsxRuntime.jsxs(React.Fragment, { children: [
         jsxRuntime.jsxs("div", { className: "wb-tb-card", children: [
           jsxRuntime.jsx("div", { className: "wb-tb-card-title", children: "会话状态" }),
@@ -1106,6 +1124,26 @@ window.__ModuleLoader__.load({
           !summary ? jsxRuntime.jsx("div", { className: "wb-tb-empty", children: "—" }) : jsxRuntime.jsxs(React.Fragment, { children: [
             jsxRuntime.jsx("div", { className: "wb-tb-session-title", children: (preset && preset.name) || summary.agentPreset || "默认" }),
             preset && preset.description ? jsxRuntime.jsx("div", { className: "wb-tb-meta", children: preset.description }) : null
+          ] })
+        ] }),
+        jsxRuntime.jsxs("div", { className: "wb-tb-card", children: [
+          jsxRuntime.jsx("div", { className: "wb-tb-card-title", children: "对话风格（本会话）" }),
+          !sessionId ? jsxRuntime.jsx("div", { className: "wb-tb-empty", children: "当前没有打开的会话" }) : jsxRuntime.jsxs(React.Fragment, { children: [
+            jsxRuntime.jsxs("div", { className: "wb-task-field-grid", children: [
+              jsxRuntime.jsxs("label", { className: "wb-task-field", children: [
+                jsxRuntime.jsx("span", { children: "风格" }),
+                jsxRuntime.jsx("select", { value: sessionStyle.conversationStyle || "", onChange: (e) => setSessionStyle((cur) => ({ ...cur, conversationStyle: e.target.value })), children: [
+                  jsxRuntime.jsx("option", { value: "", children: "跟随全局" }),
+                  jsxRuntime.jsx("option", { value: "concise", children: "简洁" }),
+                  jsxRuntime.jsx("option", { value: "detailed", children: "详细" }),
+                  jsxRuntime.jsx("option", { value: "socratic", children: "苏格拉底式" }),
+                  jsxRuntime.jsx("option", { value: "custom", children: "自定义" })
+                ] })
+              ] })
+            ] }),
+            sessionStyle.conversationStyle === "custom" && jsxRuntime.jsx("textarea", { className: "wb-orch-agents-editor", value: sessionStyle.customConversationStyle || "", placeholder: "自定义对话风格，例如：说话简洁、先给结论、少用术语…", onChange: (e) => setSessionStyle((cur) => ({ ...cur, customConversationStyle: e.target.value })) }),
+            styleErr && jsxRuntime.jsx(WbErrNote, { message: styleErr }),
+            jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: styleBusy, onClick: saveSessionStyle, children: styleBusy ? "保存中…" : "保存到本会话" })
           ] })
         ] }),
         jsxRuntime.jsxs("div", { className: "wb-tb-card", children: [
@@ -2797,7 +2835,7 @@ window.__ModuleLoader__.load({
           jsxRuntime.jsx("button", { type: "button", className: "wb-tb-close", title: "收起工具栏", onClick: onClose, children: jsxRuntime.jsx(primitives.IconChevronRightOutline14, { size: 14 }) })
         ] }),
         jsxRuntime.jsx("div", { className: "wb-tb-scroll", children: [
-          tab === "info" && jsxRuntime.jsx(ToolbarInfo, { summary, preset, st }),
+          tab === "info" && jsxRuntime.jsx(ToolbarInfo, { summary, preset, st, sessionId: currentId }),
           tab === "project" && jsxRuntime.jsx(ProjectConfigPanel, { sessionId: currentId, projectPath: summary && summary.cwd }),
           tab === "files" && jsxRuntime.jsx(ToolbarFiles, { cwd: summary && summary.cwd }),
           tab === "git" && jsxRuntime.jsx(ToolbarGit, { cwd: summary && summary.cwd }),

@@ -1040,6 +1040,13 @@ verifiedBy/At，可一键移入 02-Atomic）→ 入索引（文本 + 向量 + �
 - Host `probeOrchestrationModels(force, all)` 支持全量模式；smoke 断言全部目录 14 个全测、跳过 0；
   GUI 实测摘要与列表正常。
 
+**队列三 F3 对话风格按会话保存（2026-08-20，完成）**：
+
+- Host 风格存储新增 `sessionStyles`（按会话覆盖，全局写入保留），`POST|GET /style/session` 读写；
+  systemPrompt 注入按 `AssembleContext.agent.id` 解析当前会话，会话级风格优先于全局。
+- “详细信息”工具栏新增“对话风格（本会话）”卡片：跟随全局 / 简洁 / 详细 / 苏格拉底式 / 自定义 +
+  自定义文本框 + 保存；smoke-style 覆盖保存/注入/全局写入保留，GUI 卡片正常。
+
 ### 执行建议（下一轮开始）
 
 1. 先跑一轮完整 GUI 回归把 V1/V2 的实测结果拿到（我可代跑，你按清单抽查）。

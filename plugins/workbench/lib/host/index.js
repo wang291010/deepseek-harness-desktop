@@ -187,7 +187,7 @@ const CONVERSATION_PROMPTS = Object.freeze({
   detailed: 'Conversation style: provide structured, thorough explanations with the assumptions, evidence, tradeoffs, and verification steps needed to act confidently.',
   socratic: 'Conversation style: when the request benefits from reflection, guide the user with focused questions and explicit reasoning. Still answer direct factual or execution requests without unnecessary questioning.'
 });
-let styleState = { version: 1, revision: 0, settings: { ...STYLE_DEFAULTS }, presets: [] };
+let styleState = { version: 1, revision: 0, settings: { ...STYLE_DEFAULTS }, presets: [], sessionStyles: {} };
 
 // Edit-dialog chat: current default route; refine later via settings.
 const CHAT_PROVIDER = 'deepseek-official';
@@ -257,11 +257,20 @@ function cleanStylePreset(value) {
 
 function cleanStyleStore(value) {
   const input = value && typeof value === 'object' ? value : {};
+  const rawSessionStyles = input && typeof input.sessionStyles === 'object' && input.sessionStyles !== null ? input.sessionStyles : {};
+  const sessionStyles = {};
+  for (const [sessionId, raw] of Object.entries(rawSessionStyles).slice(-200)) {
+    const value2 = raw && typeof raw === 'object' ? raw : {};
+    const style = CONVERSATION_STYLES.has(value2.conversationStyle) ? value2.conversationStyle : '';
+    if (!style) continue;
+    sessionStyles[String(sessionId).slice(0, 160)] = { conversationStyle: style, customConversationStyle: String(value2.customConversationStyle || '').trim().slice(0, 1200) };
+  }
   return {
     version: 1,
     revision: Number.isSafeInteger(input.revision) && input.revision >= 0 ? input.revision : 0,
     settings: cleanStyleSettings(input.settings),
-    presets: Array.isArray(input.presets) ? input.presets.slice(0, 20).map(cleanStylePreset) : []
+    presets: Array.isArray(input.presets) ? input.presets.slice(0, 20).map(cleanStylePreset) : [],
+    sessionStyles
   };
 }
 
@@ -2574,8 +2583,11 @@ function knowledgeWritePath(folder, name) {
   return { folder, file: name + '.md', full: join(KNOWLEDGE_FOLDER_DIRS[folder], name + '.md'), relPath: folder + '/' + name + '.md' };
 }
 
-function conversationStylePrompt() {
-  const settings = styleState.settings;
+function conversationStylePrompt(sessionId = '') {
+  const override = sessionId ? (styleState.sessionStyles || {})[sessionId] : null;
+  const settings = override && override.conversationStyle
+    ? { conversationStyle: override.conversationStyle, customConversationStyle: override.customConversationStyle || '' }
+    : styleState.settings;
   if (settings.conversationStyle === 'custom') {
     const custom = settings.customConversationStyle.trim();
     return custom === '' ? '' : 'Conversation style selected by the user:\n' + custom;
@@ -4575,7 +4587,7 @@ function makeRoutes() {
         try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
         const operation = styleMutationQueue.then(async () => {
           const current = await readStyleStore();
-          const next = cleanStyleStore(body);
+          const next = cleanStyleStore({ ...body, sessionStyles: current.sessionStyles });
           next.revision = current.revision + 1;
           await writeStyleStore(next);
           styleState = next;
@@ -4583,6 +4595,42 @@ function makeRoutes() {
         });
         styleMutationQueue = operation.catch(() => {});
         try { writeJson(res, 200, await operation); } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/style/session',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        try {
+          if (req.method === 'GET') {
+            const sessionId = paramOf(req, 'sessionId') || '';
+            const store = await readStyleStore();
+            return writeJson(res, 200, (store.sessionStyles || {})[sessionId] || { conversationStyle: '', customConversationStyle: '' });
+          }
+          if (req.method !== 'POST') return bad(res, 'method', 'GET or POST required');
+          let body;
+          try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+          const sessionId = String(body.sessionId || '').slice(0, 160);
+          if (!sessionId) throw new Error('sessionId required');
+          const style = CONVERSATION_STYLES.has(body.conversationStyle) ? body.conversationStyle : '';
+          const operation = styleMutationQueue.then(async () => {
+            const current = await readStyleStore();
+            const sessionStyles = { ...(current.sessionStyles || {}) };
+            if (style) {
+              sessionStyles[sessionId] = { conversationStyle: style, customConversationStyle: String(body.customConversationStyle || '').trim().slice(0, 1200) };
+            } else {
+              delete sessionStyles[sessionId];
+            }
+            const next = cleanStyleStore({ ...current, sessionStyles });
+            next.revision = current.revision + 1;
+            await writeStyleStore(next);
+            styleState = next;
+            return sessionStyles[sessionId] || { conversationStyle: '', customConversationStyle: '' };
+          });
+          styleMutationQueue = operation.catch(() => {});
+          try { writeJson(res, 200, await operation); } catch (error) { fail(res, error); }
+        } catch (error) { fail(res, error); }
       }
     },
     // ---- P2.6 model readiness + per-project context overrides ----
@@ -5644,7 +5692,7 @@ function apply(ctx) {
     scoped.effect(() => scoped.systemPrompt.section({
       name: 'dsh-workbench:conversation-style',
       order: 50,
-      text: () => conversationStylePrompt()
+      text: (context) => conversationStylePrompt((context && context.agent && context.agent.id) || '')
     }), 'dsh-workbench: conversation style');
   });
   // `/todo` command: needs the command registry + the session-projection seam

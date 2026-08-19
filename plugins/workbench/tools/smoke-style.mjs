@@ -40,13 +40,13 @@ function request(method, url, body) {
   return req;
 }
 
-async function call(path, method, body) {
+async function call(path, method, body, query = '') {
   const route = routes.get(path);
   assert(route, `route missing: ${path}`);
   let status = 0;
   let text = '';
   const res = { writeHead(code) { status = code; }, end(value) { text += value || ''; } };
-  await route.handler(request(method, path, body), res);
+  await route.handler(request(method, path + query, body), res);
   assert.equal(status, 200, text);
   return JSON.parse(text);
 }
@@ -89,6 +89,20 @@ try {
   assert.equal(persisted.revision, 1);
   const roundTrip = await call('/api/dsh-workbench/style/read', 'GET');
   assert.deepEqual(roundTrip, saved);
+
+  // session-scoped conversation style: save, read back, and inject via agent context.
+  const sessionSaved = await call('/api/dsh-workbench/style/session', 'POST', { sessionId: 'session-1', conversationStyle: 'concise', customConversationStyle: '' });
+  assert.equal(sessionSaved.conversationStyle, 'concise');
+  const sessionRead = await call('/api/dsh-workbench/style/session', 'GET', undefined, '?sessionId=session-1');
+  assert.equal(sessionRead.conversationStyle, 'concise');
+  assert.ok(sections[0].text({ agent: { id: 'session-1' } }).includes('be concise'), 'session style should inject for that session');
+  assert.equal(sections[0].text({ agent: { id: 'session-2' } }), 'Conversation style selected by the user:\n用简洁中文回答', 'other sessions keep the global style');
+
+  // global style write must keep session overrides.
+  await call('/api/dsh-workbench/style/write', 'POST', { settings: { accent: '#ff0000' } });
+  const sessionAfter = await call('/api/dsh-workbench/style/session', 'GET', undefined, '?sessionId=session-1');
+  assert.equal(sessionAfter.conversationStyle, 'concise');
+  assert.ok(sections[0].text({ agent: { id: 'session-1' } }).includes('be concise'));
   console.log('style smoke test passed');
 } finally {
   await rm(home, { recursive: true, force: true });
