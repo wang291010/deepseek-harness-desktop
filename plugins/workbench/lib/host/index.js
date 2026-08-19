@@ -31,12 +31,13 @@
  * paths owned by ctx.workspaceRegistry.
  */
 import { homedir } from 'node:os';
-import { isAbsolute, join, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import { readdir, readFile, writeFile, stat, lstat, realpath, mkdir, rename, rm } from 'node:fs/promises';
 import { appendFileSync } from 'node:fs';
 import { execFile } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 
 const name = 'dsh-workbench';
 const hostRequire = createRequire(import.meta.url);
@@ -62,6 +63,40 @@ const ATTACHMENT_SUMMARY_CHARS = 4000;
 const WORKFLOW_STORE = join(DSH_ROOT, 'dsh-workbench-workflows.json');
 const MAX_WORKFLOW_STORE_BYTES = 2 * 1024 * 1024;
 const WORKFLOW_SCHEDULE_POLL_MS = 30000;
+const KNOWLEDGE_ROOT = join(DSH_ROOT, 'knowledge');
+const KNOWLEDGE_INBOX = join(KNOWLEDGE_ROOT, '01-Inbox');
+const KNOWLEDGE_ATOMIC = join(KNOWLEDGE_ROOT, '02-Atomic');
+const KNOWLEDGE_MOCS = join(KNOWLEDGE_ROOT, '03-MOCs');
+const KNOWLEDGE_PROJECTS = join(KNOWLEDGE_ROOT, '04-Projects');
+const KNOWLEDGE_TEMPLATES = join(KNOWLEDGE_ROOT, '99-Templates');
+const KNOWLEDGE_INDEX_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-index.json');
+const KNOWLEDGE_VECTOR_CONFIG_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-vector.json');
+const KNOWLEDGE_VECTOR_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-vectors.json');
+const KNOWLEDGE_PROFILE_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-profiles.json');
+const KNOWLEDGE_EVAL_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-eval.json');
+const MAX_KNOWLEDGE_INDEX_BYTES = 32 * 1024 * 1024;
+const MAX_KNOWLEDGE_EVAL_BYTES = 2 * 1024 * 1024;
+const KNOWLEDGE_FOLDER_DIRS = {
+  inbox: KNOWLEDGE_INBOX, atomic: KNOWLEDGE_ATOMIC, mocs: KNOWLEDGE_MOCS,
+  projects: KNOWLEDGE_PROJECTS, templates: KNOWLEDGE_TEMPLATES
+};
+const KNOWLEDGE_FOLDER_IDS = Object.keys(KNOWLEDGE_FOLDER_DIRS);
+const KNOWLEDGE_CONFIDENCES = ['high', 'medium', 'low'];
+const KNOWLEDGE_MAX_ENTRY_BYTES = 512 * 1024;
+const KNOWLEDGE_MAX_QUERY_CHARS = 1000;
+const KNOWLEDGE_MAX_TOPK = 20;
+const KNOWLEDGE_MAX_TOKEN_BUDGET = 8000;
+const KNOWLEDGE_VECTOR_PROVIDERS = ['none', 'bge-local', 'openai', 'custom'];
+const KNOWLEDGE_EMBED_SCRIPT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'tools', 'knowledge_embed.py');
+const KNOWLEDGE_DEFAULT_PROFILE = {
+  routes: { bm25: true, graph: true, vector: false, hyde: false },
+  weights: { bm25: 1, graph: 0.7, vector: 1 },
+  topK: 5,
+  tokenBudget: 1500,
+  rerank: 'none',
+  folders: ['inbox', 'atomic', 'mocs'],
+  projectType: ''
+};
 const TODO_STATUSES = ['pending', 'in_progress', 'completed'];
 const TASK_STATUSES = ['inbox', 'pending', 'in_progress', 'blocked', 'completed'];
 const TASK_PRIORITIES = ['low', 'medium', 'high'];
@@ -651,6 +686,1002 @@ async function pollWorkflowSchedules() {
       runWorkflow(schedule.templateId, schedule.projectPath, '', 'schedule').catch(() => {}).finally(() => workflowInFlight.delete(schedule.id));
     }
   } catch (e) { /* scheduler is best effort */ }
+}
+
+let knowledgeIndex = { version: 2, updatedAt: '', stats: null, entries: [] };
+let knowledgeVectors = { version: 1, updatedAt: '', dims: 0, vectors: {} };
+let vectorConfigCache = null;
+let knowledgeProfiles = null;
+let knowledgeEvalCache = null;
+
+function clampInt(value, min, max, fallback) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(n)));
+}
+
+function cleanKnowledgeEntry(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  return {
+    path: cleanTaskText(value.path, 500),
+    folder: KNOWLEDGE_FOLDER_IDS.includes(value.folder) ? value.folder : 'inbox',
+    name: cleanTaskText(value.name, 200),
+    title: cleanTaskText(value.title, 300),
+    tags: Array.isArray(value.tags) ? value.tags.map((item) => cleanTaskText(item, 80)).filter(Boolean).slice(0, 20) : [],
+    confidence: KNOWLEDGE_CONFIDENCES.includes(value.confidence) ? value.confidence : 'medium',
+    related: Array.isArray(value.related) ? value.related.map((item) => cleanTaskText(item, 200)).filter(Boolean).slice(0, 30) : [],
+    summary: cleanTaskText(value.summary, 2000),
+    source: cleanTaskText(value.source, 80),
+    project: cleanTaskText(value.project, 300),
+    createdAt: typeof value.createdAt === 'string' ? value.createdAt : '',
+    updatedAt: typeof value.updatedAt === 'string' ? value.updatedAt : new Date().toISOString(),
+    hash: cleanTaskText(value.hash, 64),
+    bodyChars: Number.isFinite(Number(value.bodyChars)) ? Math.max(1, Number(value.bodyChars)) : 1,
+    headings: Array.isArray(value.headings) ? value.headings.map((item) => cleanTaskText(item, 200)).filter(Boolean).slice(0, 30) : [],
+    terms: value.terms && typeof value.terms === 'object' && !Array.isArray(value.terms)
+      ? Object.fromEntries(Object.entries(value.terms).slice(0, 5000).map(([term, tf]) => [cleanTaskText(term, 64), Math.max(1, Math.floor(Number(tf) || 1))]))
+      : {}
+  };
+}
+
+function parseFrontmatter(text) {
+  const entry = { title: '', tags: [], confidence: 'medium', related: [], summary: '', source: '', project: '', created: '', body: String(text || '') };
+  const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(entry.body);
+  if (!match) {
+    entry.title = entry.body.split(/\r?\n/)[0].replace(/^#\s*/, '').slice(0, 300);
+    return entry;
+  }
+  entry.body = entry.body.slice(match[0].length);
+  const meta = match[1];
+  const line = (key) => { const hit = new RegExp('^' + key + ':\\s*(.+)$', 'm').exec(meta); return hit ? hit[1].trim() : ''; };
+  entry.title = line('title') || entry.body.split(/\r?\n/)[0].replace(/^#\s*/, '').slice(0, 300);
+  entry.confidence = KNOWLEDGE_CONFIDENCES.includes(line('confidence')) ? line('confidence') : 'medium';
+  entry.tags = line('tags').replace(/^\[|\]$/g, '').split(/[,\s]+/).map((item) => item.trim()).filter(Boolean).slice(0, 20);
+  entry.related = [...line('related').matchAll(/\[\[([^\]]+)\]\]/g)].map((hit) => hit[1].trim().replace(/\.md$/i, '')).filter(Boolean).slice(0, 30);
+  entry.summary = line('summary') || entry.body.replace(/\s+/g, ' ').slice(0, 2000);
+  entry.source = line('source');
+  entry.project = line('project');
+  entry.created = line('created');
+  return entry;
+}
+
+function tokenizeKnowledgeText(text) {
+  const tokens = [];
+  const lower = String(text || '').toLowerCase();
+  for (const match of lower.matchAll(/[a-z0-9][a-z0-9_\-]*/g)) tokens.push(match[0]);
+  for (const match of lower.matchAll(/[\u4e00-\u9fa5]+/g)) {
+    const run = match[0];
+    for (let i = 0; i + 1 < run.length; i += 1) tokens.push(run.slice(i, i + 2));
+  }
+  return tokens;
+}
+
+function countKnowledgeTerms(tokens) {
+  const counts = new Map();
+  for (const token of tokens) counts.set(token, (counts.get(token) || 0) + 1);
+  return Object.fromEntries(counts);
+}
+
+function knowledgeEntryHash(content) {
+  return createHash('sha1').update(content).digest('hex');
+}
+
+function extractKnowledgeHeadings(body) {
+  const headings = [];
+  for (const match of String(body || '').matchAll(/^(#{1,4})\s+(.+)$/gm)) headings.push(match[0].trim());
+  return headings.slice(0, 30);
+}
+
+function computeKnowledgeStats(entries) {
+  const now = new Date();
+  const weekAgo = now.getTime() - 7 * 24 * 3600 * 1000;
+  const links = new Set();
+  const titleIndex = new Map();
+  entries.forEach((entry) => titleIndex.set(entry.title.toLowerCase(), entry));
+  let lowConfidence = 0;
+  let weekNew = 0;
+  for (const entry of entries) {
+    for (const rel of entry.related) {
+      const target = titleIndex.get(rel.toLowerCase());
+      if (target) links.add(entry.path + '\u0000' + target.path);
+    }
+    if (entry.folder === 'inbox' && entry.confidence === 'low') lowConfidence += 1;
+    const created = entry.createdAt ? new Date(entry.createdAt).getTime() : 0;
+    if (Number.isFinite(created) && created >= weekAgo) weekNew += 1;
+  }
+  const trend = [];
+  for (let i = 6; i >= 0; i -= 1) {
+    const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    const key = day.toISOString().slice(0, 10);
+    const count = entries.filter((entry) => (entry.createdAt || '').slice(0, 10) === key).length;
+    trend.push({ date: key, count });
+  }
+  return { documents: entries.length, links: links.size, lowConfidence, weekNew, trend };
+}
+
+async function readKnowledgeIndex() {
+  try {
+    const info = await lstat(KNOWLEDGE_INDEX_STORE);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('knowledge index must be a regular non-symbolic file');
+    if (info.size > MAX_KNOWLEDGE_INDEX_BYTES) throw new Error('knowledge index exceeds size limit');
+    const parsed = JSON.parse(await readFile(KNOWLEDGE_INDEX_STORE, 'utf8'));
+    knowledgeIndex = {
+      version: 2,
+      updatedAt: parsed.updatedAt || '',
+      stats: parsed.stats && typeof parsed.stats === 'object' ? parsed.stats : null,
+      entries: Array.isArray(parsed.entries) ? parsed.entries.map(cleanKnowledgeEntry) : []
+    };
+    if (!knowledgeIndex.stats) knowledgeIndex.stats = computeKnowledgeStats(knowledgeIndex.entries);
+  } catch (error) {
+    if (error && error.code === 'ENOENT') knowledgeIndex = { version: 2, updatedAt: '', stats: computeKnowledgeStats([]), entries: [] };
+    else throw error;
+  }
+  return knowledgeIndex;
+}
+
+async function writeKnowledgeIndex(index) {
+  await mkdir(DSH_ROOT, { recursive: true });
+  const temp = KNOWLEDGE_INDEX_STORE + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, JSON.stringify(index, null, 2) + '\n', 'utf8');
+  let lastError = null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try { await rename(temp, KNOWLEDGE_INDEX_STORE); knowledgeIndex = index; return index; }
+    catch (error) { lastError = error; if (attempt < 4) await new Promise((resolvePromise) => setTimeout(resolvePromise, 25 * (attempt + 1))); }
+  }
+  try { await rm(temp, { force: true }); } catch (e) { /* keep temp */ }
+  throw lastError;
+}
+
+async function ensureKnowledgeVault() {
+  await Promise.all(Object.values(KNOWLEDGE_FOLDER_DIRS).map((dir) => mkdir(dir, { recursive: true })));
+  const dashboard = join(KNOWLEDGE_ROOT, 'Dashboard.md');
+  try { await stat(dashboard); } catch (e) {
+    await writeFile(dashboard, [
+      '# 知识库看板',
+      '',
+      '> 由工作台自动维护。最近 7 天新增条目与低置信度条目会出现在这里。',
+      '',
+      '## 最近新增',
+      '',
+      '```dataview',
+      'TABLE updatedAt, confidence',
+      'FROM "02-Atomic" OR "01-Inbox"',
+      'SORT updatedAt DESC LIMIT 20',
+      '```',
+      '',
+      '## 待审核（低置信度）',
+      '',
+      '```dataview',
+      'TABLE updatedAt',
+      'FROM "01-Inbox"',
+      'WHERE confidence = "low"',
+      '```',
+      ''
+    ].join('\n'), 'utf8');
+  }
+  const readme = join(KNOWLEDGE_ROOT, 'README.md');
+  try { await stat(readme); } catch (e) {
+    await writeFile(readme, [
+      '# 个人知识库（Obsidian Vault）',
+      '',
+      '> 由工作台知识库模块维护：蒸馏入库 → 人工审核 → 多路检索 → 自生长维护。',
+      '',
+      '## 目录结构',
+      '',
+      '- `01-Inbox/`：AI 写入区，蒸馏产物先进这里，人工确认后再移动。',
+      '- `02-Atomic/`：人类审核区，核心资产，检索默认优先。',
+      '- `03-MOCs/`：地图索引，由维护器自动更新。',
+      '- `04-Projects/`：按项目沉淀的知识。',
+      '- `99-Templates/`：条目模板。',
+      '',
+      '## 使用建议',
+      '',
+      '1. 用 Obsidian 打开本目录即可浏览与编辑；图谱视图看知识关联。',
+      '2. 每篇文档带 frontmatter：title / tags / related / confidence / summary / source / project / created。',
+      '3. 检索结果强制溯源（文件路径 + 置信度），需要时再到原始文档核对。',
+      ''
+    ].join('\n'), 'utf8');
+  }
+  const obsidianDir = join(KNOWLEDGE_ROOT, '.obsidian');
+  try { await stat(join(obsidianDir, 'app.json')); } catch (e) {
+    await mkdir(obsidianDir, { recursive: true });
+    await writeFile(join(obsidianDir, 'app.json'), JSON.stringify({ vault: true, attachmentFolderPath: '_attachments' }, null, 2) + '\n', 'utf8');
+  }
+  const template = join(KNOWLEDGE_TEMPLATES, '默认条目模板.md');
+  try { await stat(template); } catch (e) {
+    await writeFile(template, [
+      '---',
+      'title: ',
+      'tags: []',
+      'confidence: medium',
+      'related: ""',
+      'summary: ',
+      'source: ',
+      'project: ',
+      'created: ' + new Date().toISOString(),
+      '---',
+      '',
+      '# ',
+      '',
+      '## 结论',
+      '',
+      '## 方法',
+      '',
+      '## 决策',
+      '',
+      '## 待办',
+      ''
+    ].join('\n'), 'utf8');
+  }
+  return KNOWLEDGE_ROOT;
+}
+
+async function scanKnowledgeVault() {
+  await ensureKnowledgeVault();
+  const previous = new Map((knowledgeIndex.entries || []).map((entry) => [entry.path, entry]));
+  const entries = [];
+  for (const [folder, dir] of Object.entries(KNOWLEDGE_FOLDER_DIRS)) {
+    let names = [];
+    try { names = await readdir(dir); } catch (e) { continue; }
+    for (const name of names.filter((item) => item.toLocaleLowerCase().endsWith('.md'))) {
+      const full = join(dir, name);
+      try {
+        const info = await stat(full);
+        if (!info.isFile() || info.size > KNOWLEDGE_MAX_ENTRY_BYTES) continue;
+        const content = await readFile(full, 'utf8');
+        const hash = knowledgeEntryHash(content);
+        const path = folder + '/' + name;
+        const old = previous.get(path);
+        if (old && old.hash === hash) { entries.push(cleanKnowledgeEntry(old)); continue; }
+        const parsed = parseFrontmatter(content);
+        const tokens = tokenizeKnowledgeText(parsed.title + '\n' + parsed.summary + '\n' + parsed.body);
+        const bodyChars = Math.max(1, parsed.body.length + parsed.summary.length);
+        entries.push(cleanKnowledgeEntry({
+          path, folder, name,
+          title: parsed.title,
+          tags: parsed.tags,
+          confidence: parsed.confidence,
+          related: parsed.related,
+          summary: parsed.summary,
+          source: parsed.source,
+          project: parsed.project,
+          createdAt: parsed.created || (old && old.createdAt) || info.mtime.toISOString(),
+          updatedAt: info.mtime.toISOString(),
+          hash,
+          bodyChars,
+          headings: extractKnowledgeHeadings(parsed.body),
+          terms: countKnowledgeTerms(tokens)
+        }));
+      } catch (e) { /* skip unreadable */ }
+    }
+  }
+  entries.sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
+  const index = { version: 2, updatedAt: new Date().toISOString(), stats: computeKnowledgeStats(entries), entries };
+  await writeKnowledgeIndex(index);
+  return index;
+}
+
+function knowledgeBm25(entries, queryTokens, topK) {
+  if (!entries.length || !queryTokens.length) return [];
+  const n = entries.length;
+  const df = new Map();
+  for (const entry of entries) {
+    const seen = new Set();
+    for (const term of Object.keys(entry.terms || {})) {
+      if (!seen.has(term)) { seen.add(term); df.set(term, (df.get(term) || 0) + 1); }
+    }
+  }
+  let avgLen = 0;
+  for (const entry of entries) avgLen += entry.bodyChars || 1;
+  avgLen = Math.max(1, avgLen / n);
+  const k1 = 1.5;
+  const b = 0.75;
+  const scored = [];
+  for (const entry of entries) {
+    let score = 0;
+    const dl = Math.max(1, entry.bodyChars || 1);
+    for (const term of queryTokens) {
+      const dfn = df.get(term);
+      if (!dfn) continue;
+      const tf = (entry.terms || {})[term] || 0;
+      if (!tf) continue;
+      const idf = Math.log(1 + (n - dfn + 0.5) / (dfn + 0.5));
+      score += idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - b + b * dl / avgLen)));
+    }
+    if (score > 0) scored.push({ id: entry.path, score });
+  }
+  scored.sort((a, b2) => b2.score - a.score);
+  return scored.slice(0, topK);
+}
+
+function knowledgeGraphNeighbors(entries) {
+  const byTitle = new Map();
+  const byTag = new Map();
+  for (const entry of entries) {
+    byTitle.set(entry.title.toLowerCase(), entry);
+    for (const tag of entry.tags) {
+      const key = tag.toLowerCase();
+      if (!byTag.has(key)) byTag.set(key, []);
+      byTag.get(key).push(entry);
+    }
+  }
+  const neighborMap = new Map();
+  const add = (a, b) => {
+    if (!a || !b || a.path === b.path) return;
+    if (!neighborMap.has(a.path)) neighborMap.set(a.path, new Set());
+    if (!neighborMap.has(b.path)) neighborMap.set(b.path, new Set());
+    neighborMap.get(a.path).add(b.path);
+    neighborMap.get(b.path).add(a.path);
+  };
+  for (const entry of entries) {
+    for (const rel of entry.related) {
+      const target = byTitle.get(rel.toLowerCase());
+      if (target) add(entry, target);
+    }
+    for (const tag of entry.tags) {
+      for (const other of byTag.get(tag.toLowerCase()) || []) add(entry, other);
+    }
+  }
+  return neighborMap;
+}
+
+function knowledgeGraphSearch(entries, queryTokens, seeds, topK) {
+  const neighbors = knowledgeGraphNeighbors(entries);
+  const scores = new Map();
+  const push = (entry, weight) => { if (entry) scores.set(entry.path, (scores.get(entry.path) || 0) + weight); };
+  const byPath = new Map(entries.map((entry) => [entry.path, entry]));
+  for (const seed of seeds || []) {
+    const entry = byPath.get(seed);
+    if (!entry) continue;
+    push(entry, 1);
+    const hops = neighbors.get(entry.path) || new Set();
+    for (const hop of hops) {
+      push(byPath.get(hop), 0.5);
+      for (const hop2 of neighbors.get(hop) || new Set()) push(byPath.get(hop2), 0.25);
+    }
+  }
+  for (const entry of entries) {
+    const title = entry.title.toLowerCase();
+    const hit = queryTokens.some((token) => title.includes(token) || entry.tags.some((tag) => tag.toLowerCase().includes(token)));
+    if (hit) push(entry, 0.6);
+  }
+  const ranked = [...scores.entries()].map(([id, score]) => ({ id, score }));
+  ranked.sort((a, b) => b.score - a.score);
+  return ranked.slice(0, topK);
+}
+
+function knowledgeRrf(rankedLists, weights) {
+  const scores = new Map();
+  rankedLists.forEach((list, index) => {
+    if (!list || !list.length) return;
+    const weight = (weights && weights[index]) || 1;
+    list.forEach((item, rank) => {
+      scores.set(item.id, (scores.get(item.id) || 0) + weight / (60 + rank + 1));
+    });
+  });
+  return [...scores.entries()].map(([id, score]) => ({ id, score })).sort((a, b) => b.score - a.score);
+}
+
+function cleanVectorConfig(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  return {
+    provider: KNOWLEDGE_VECTOR_PROVIDERS.includes(value.provider) ? value.provider : 'none',
+    model: cleanTaskText(value.model, 120),
+    apiKey: cleanTaskText(value.apiKey, 500),
+    baseUrl: cleanTaskText(value.baseUrl, 500),
+    python: cleanTaskText(value.python, 300)
+  };
+}
+
+function maskVectorConfig(config) {
+  const key = config.apiKey;
+  return { ...config, apiKey: key ? (key.length > 8 ? key.slice(0, 4) + '…' + key.slice(-4) : '****') : '' };
+}
+
+async function readVectorConfig() {
+  if (vectorConfigCache) return vectorConfigCache;
+  try {
+    const info = await lstat(KNOWLEDGE_VECTOR_CONFIG_STORE);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('vector config must be a regular non-symbolic file');
+    if (info.size > 1024 * 1024) throw new Error('vector config exceeds size limit');
+    vectorConfigCache = cleanVectorConfig(JSON.parse(await readFile(KNOWLEDGE_VECTOR_CONFIG_STORE, 'utf8')));
+  } catch (error) {
+    if (error && error.code === 'ENOENT') vectorConfigCache = { provider: 'none', model: '', apiKey: '', baseUrl: '', python: '' };
+    else throw error;
+  }
+  return vectorConfigCache;
+}
+
+async function writeVectorConfig(config) {
+  const cleaned = cleanVectorConfig(config);
+  await mkdir(DSH_ROOT, { recursive: true });
+  const temp = KNOWLEDGE_VECTOR_CONFIG_STORE + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, JSON.stringify(cleaned, null, 2) + '\n', 'utf8');
+  await rename(temp, KNOWLEDGE_VECTOR_CONFIG_STORE);
+  vectorConfigCache = cleaned;
+  return cleaned;
+}
+
+async function readKnowledgeVectors() {
+  try {
+    const info = await lstat(KNOWLEDGE_VECTOR_STORE);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('vector store must be a regular non-symbolic file');
+    if (info.size > MAX_KNOWLEDGE_INDEX_BYTES) throw new Error('vector store exceeds size limit');
+    const parsed = JSON.parse(await readFile(KNOWLEDGE_VECTOR_STORE, 'utf8'));
+    knowledgeVectors = {
+      version: 1,
+      updatedAt: parsed.updatedAt || '',
+      dims: Number(parsed.dims) || 0,
+      vectors: parsed.vectors && typeof parsed.vectors === 'object' ? parsed.vectors : {}
+    };
+  } catch (error) {
+    if (error && error.code === 'ENOENT') knowledgeVectors = { version: 1, updatedAt: '', dims: 0, vectors: {} };
+    else throw error;
+  }
+  return knowledgeVectors;
+}
+
+async function writeKnowledgeVectors(store) {
+  await mkdir(DSH_ROOT, { recursive: true });
+  const temp = KNOWLEDGE_VECTOR_STORE + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, JSON.stringify(store, null, 2) + '\n', 'utf8');
+  await rename(temp, KNOWLEDGE_VECTOR_STORE);
+  knowledgeVectors = store;
+  return store;
+}
+
+function cosineSimilarity(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || !a.length || a.length !== b.length) return 0;
+  let dot = 0;
+  let na = 0;
+  let nb = 0;
+  for (let i = 0; i < a.length; i += 1) {
+    dot += a[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
+  }
+  if (!na || !nb) return 0;
+  return dot / (Math.sqrt(na) * Math.sqrt(nb));
+}
+
+function bgeLocalEmbed(config, texts) {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const python = config.python || (process.platform === 'win32' ? 'python' : 'python3');
+    const child = execFile(python, [KNOWLEDGE_EMBED_SCRIPT, '--model', config.model || 'bge-small-zh-v1.5'], {
+      cwd: DSH_ROOT,
+      timeout: 180000,
+      maxBuffer: 64 * 1024 * 1024,
+      windowsHide: true
+    }, (error, stdout, stderr) => {
+      if (error) {
+        rejectPromise(new Error('bge-local embedding failed: ' + String(stderr || error.message).slice(0, 500)));
+        return;
+      }
+      try {
+        const parsed = JSON.parse(stdout);
+        resolvePromise({ dims: Number(parsed.dims) || 0, vectors: Array.isArray(parsed.vectors) ? parsed.vectors : [] });
+      } catch (parseError) {
+        rejectPromise(new Error('bge-local invalid output: ' + String(stderr || '').slice(0, 300)));
+      }
+    });
+    child.stdin.on('error', () => {});
+    child.stdin.end(JSON.stringify({ texts }));
+  });
+}
+
+async function embedKnowledgeTexts(config, texts) {
+  if (!config || config.provider === 'none' || !texts || !texts.length) return null;
+  const clean = texts.map((text) => String(text || '').slice(0, 4000));
+  if (config.provider === 'openai') {
+    const base = (config.baseUrl || 'https://api.openai.com/v1').replace(/\/+$/, '');
+    if (!config.apiKey) throw new Error('openai embedding requires an api key');
+    const response = await fetch(base + '/embeddings', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + config.apiKey },
+      body: JSON.stringify({ model: config.model || 'text-embedding-3-small', input: clean })
+    });
+    if (!response.ok) throw new Error('embedding api error ' + response.status + ' ' + String(await response.text()).slice(0, 300));
+    const json = await response.json();
+    const data = Array.isArray(json && json.data) ? json.data : [];
+    return { dims: data.length && Array.isArray(data[0].embedding) ? data[0].embedding.length : 0, vectors: data.map((item) => (Array.isArray(item.embedding) ? item.embedding : [])) };
+  }
+  if (config.provider === 'custom') {
+    if (!config.baseUrl) throw new Error('custom embedding requires a baseUrl');
+    const response = await fetch(config.baseUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ texts: clean, model: config.model })
+    });
+    if (!response.ok) throw new Error('custom embedding error ' + response.status);
+    const json = await response.json();
+    const data = Array.isArray(json && (json.data || json.vectors)) ? (json.data || json.vectors) : [];
+    return {
+      dims: data.length ? (Array.isArray(data[0]) ? data[0].length : Array.isArray(data[0].embedding) ? data[0].embedding.length : 0) : 0,
+      vectors: data.map((item) => (Array.isArray(item) ? item : Array.isArray(item.embedding) ? item.embedding : []))
+    };
+  }
+  if (config.provider === 'bge-local') return bgeLocalEmbed(config, clean);
+  throw new Error('unsupported embedding provider');
+}
+
+async function knowledgeVectorSearch(entries, query, topK) {
+  const config = await readVectorConfig();
+  if (config.provider === 'none') return { ranked: [], status: 'disabled' };
+  const vectors = await readKnowledgeVectors();
+  if (!Object.keys(vectors.vectors || {}).length) return { ranked: [], status: 'no-vectors' };
+  const embedded = await embedKnowledgeTexts(config, [query]);
+  if (!embedded || !embedded.vectors || !embedded.vectors.length || !embedded.vectors[0].length) return { ranked: [], status: 'embed-error' };
+  const q = embedded.vectors[0];
+  const scored = [];
+  for (const entry of entries) {
+    const vec = vectors.vectors[entry.path];
+    if (!vec || !vec.length) continue;
+    scored.push({ id: entry.path, score: cosineSimilarity(q, vec) });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  return { ranked: scored.slice(0, topK), status: 'ok', dims: embedded.dims };
+}
+
+async function rebuildKnowledgeVectors() {
+  const index = await scanKnowledgeVault();
+  const config = await readVectorConfig();
+  if (config.provider === 'none') return { rebuilt: false, reason: 'disabled' };
+  const texts = index.entries.map((entry) => entry.title + '\n' + entry.summary);
+  const embedded = await embedKnowledgeTexts(config, texts);
+  const vectors = {};
+  index.entries.forEach((entry, i) => {
+    if (embedded.vectors[i] && embedded.vectors[i].length) vectors[entry.path] = embedded.vectors[i];
+  });
+  await writeKnowledgeVectors({ version: 1, updatedAt: new Date().toISOString(), dims: embedded.dims, vectors });
+  return { rebuilt: true, count: index.entries.length, dims: embedded.dims };
+}
+
+async function readKnowledgeProfiles() {
+  if (knowledgeProfiles) return knowledgeProfiles;
+  try {
+    const info = await lstat(KNOWLEDGE_PROFILE_STORE);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('profile store must be a regular non-symbolic file');
+    if (info.size > 1024 * 1024) throw new Error('profile store exceeds size limit');
+    const parsed = JSON.parse(await readFile(KNOWLEDGE_PROFILE_STORE, 'utf8'));
+    knowledgeProfiles = parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (error) {
+    if (error && error.code === 'ENOENT') knowledgeProfiles = {};
+    else throw error;
+  }
+  return knowledgeProfiles;
+}
+
+async function writeKnowledgeProfiles(profiles) {
+  await mkdir(DSH_ROOT, { recursive: true });
+  const temp = KNOWLEDGE_PROFILE_STORE + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, JSON.stringify(profiles, null, 2) + '\n', 'utf8');
+  await rename(temp, KNOWLEDGE_PROFILE_STORE);
+  knowledgeProfiles = profiles;
+  return profiles;
+}
+
+function mergeKnowledgeProfile(profile, project) {
+  const stored = profile && typeof profile === 'object' ? profile : {};
+  const base = JSON.parse(JSON.stringify(KNOWLEDGE_DEFAULT_PROFILE));
+  return {
+    routes: { ...base.routes, ...(stored.routes || {}) },
+    weights: { ...base.weights, ...(stored.weights || {}) },
+    topK: clampInt(stored.topK, 1, KNOWLEDGE_MAX_TOPK, base.topK),
+    tokenBudget: clampInt(stored.tokenBudget, 200, KNOWLEDGE_MAX_TOKEN_BUDGET, base.tokenBudget),
+    rerank: ['none', 'llm'].includes(stored.rerank) ? stored.rerank : 'none',
+    folders: Array.isArray(stored.folders) ? stored.folders.filter((item) => KNOWLEDGE_FOLDER_IDS.includes(item)).slice(0, 5) : [...base.folders],
+    projectType: cleanTaskText(stored.projectType || '', 80)
+  };
+}
+
+async function knowledgeHydeQuery(query) {
+  if (chatLlm === null) return '';
+  try {
+    const text = await streamLlmText(
+      '你是检索改写助手。把用户的问题改写成一段适合检索的假设性完美答案（HyDE），只输出改写后的文本，不要解释。',
+      '原问题：' + query + '\n\n改写：',
+      { maxTokens: 300, temperature: 0.2 }
+    );
+    return cleanTaskText(text, 1000);
+  } catch { return ''; }
+}
+
+async function knowledgeLlmRerank(query, candidates, topK) {
+  if (!candidates.length || chatLlm === null) return candidates.slice(0, topK);
+  try {
+    const listText = candidates.map((item, index) => (index + 1) + '. [' + item.path + '] ' + item.title + ' — ' + String(item.summary || '').slice(0, 200)).join('\n');
+    const text = await streamLlmText(
+      '你是检索重排器。根据问题判断候选相关性，只输出 JSON：{"order":[最相关候选编号在前]}，不要解释。',
+      '问题：' + query + '\n\n候选：\n' + listText + '\n\n输出：',
+      { maxTokens: 500, temperature: 0.1 }
+    );
+    const parsed = parseJsonObject(text);
+    const order = Array.isArray(parsed.order) ? parsed.order.map(Number).filter((n) => Number.isInteger(n) && n >= 1 && n <= candidates.length) : [];
+    const byIndex = new Map(candidates.map((item, index) => [index + 1, item]));
+    const ordered = order.map((n) => byIndex.get(n)).filter(Boolean);
+    const rest = candidates.filter((item) => !ordered.includes(item));
+    return [...ordered, ...rest].slice(0, topK);
+  } catch { return candidates.slice(0, topK); }
+}
+
+async function knowledgeSnippet(entry, queryTokens, maxChars = 240) {
+  try {
+    const file = join(KNOWLEDGE_FOLDER_DIRS[entry.folder], entry.name);
+    const text = await readFile(file, 'utf8');
+    const body = String(text).replace(/^---[\s\S]*?---\r?\n/, '');
+    const lines = body.split(/\r?\n/);
+    const headings = [];
+    let targetIndex = -1;
+    let bestLen = Infinity;
+    lines.forEach((line, index) => {
+      const heading = /^#{1,4}\s+(.+)$/.exec(line);
+      if (heading) headings.push({ index, title: heading[1].trim() });
+      for (const token of queryTokens) {
+        if (line.toLowerCase().includes(token) && line.length < bestLen) {
+          bestLen = line.length;
+          targetIndex = index;
+        }
+      }
+    });
+    let snippet = '';
+    if (targetIndex >= 0) {
+      const start = Math.max(0, targetIndex - 1);
+      const end = Math.min(lines.length, targetIndex + 3);
+      snippet = lines.slice(start, end).join(' ').replace(/\s+/g, ' ').slice(0, maxChars);
+    }
+    const heading = headings.filter((h) => targetIndex >= h.index).pop();
+    return { heading: heading ? heading.title : '', snippet: snippet || String(entry.summary || '').slice(0, maxChars) };
+  } catch { return { heading: '', snippet: String(entry.summary || '').slice(0, maxChars) }; }
+}
+
+async function runKnowledgeSearch(query, project, options = {}) {
+  const q = cleanTaskText(query, KNOWLEDGE_MAX_QUERY_CHARS);
+  if (!q) return { error: 'query required' };
+  let index = knowledgeIndex;
+  if (!index.entries || !index.entries.length) index = await scanKnowledgeVault();
+  const profiles = await readKnowledgeProfiles();
+  const profile = mergeKnowledgeProfile(profiles[project || ''], project);
+  const folders = new Set(profile.folders);
+  const entries = (index.entries || []).filter((entry) => folders.has(entry.folder));
+  const topK = clampInt(options.topK || profile.topK, 1, KNOWLEDGE_MAX_TOPK, profile.topK);
+  const tokenBudget = clampInt(options.tokenBudget || profile.tokenBudget, 200, KNOWLEDGE_MAX_TOKEN_BUDGET, profile.tokenBudget);
+  const queryTokens = tokenizeKnowledgeText(q);
+  const rankedLists = [];
+  const weights = [];
+  const routesUsed = [];
+  if (profile.routes.bm25 !== false) {
+    rankedLists.push(knowledgeBm25(entries, queryTokens, Math.max(40, topK * 4)));
+    weights.push(profile.weights.bm25 || 1);
+    routesUsed.push('bm25');
+  }
+  const seeds = rankedLists.length ? rankedLists[0].map((item) => item.id) : [];
+  if (profile.routes.graph !== false) {
+    rankedLists.push(knowledgeGraphSearch(entries, queryTokens, seeds, Math.max(40, topK * 4)));
+    weights.push(profile.weights.graph || 0.7);
+    routesUsed.push('graph');
+  }
+  if (profile.routes.hyde === true) {
+    const hydeText = await knowledgeHydeQuery(q);
+    if (hydeText) {
+      rankedLists.push(knowledgeBm25(entries, tokenizeKnowledgeText(hydeText), Math.max(40, topK * 4)));
+      weights.push(0.6);
+      routesUsed.push('hyde');
+    }
+  }
+  let vector = { ranked: [], status: 'disabled' };
+  if (profile.routes.vector === true) {
+    try {
+      vector = await knowledgeVectorSearch(entries, q, Math.max(40, topK * 4));
+      if (vector.ranked.length) {
+        rankedLists.push(vector.ranked);
+        weights.push(profile.weights.vector || 1);
+        routesUsed.push('vector');
+      }
+    } catch (vectorError) {
+      vector = { ranked: [], status: 'error', error: String((vectorError && vectorError.message) || vectorError) };
+    }
+  }
+  const fused = rankedLists.length ? knowledgeRrf(rankedLists, weights) : [];
+  const byPath = new Map(entries.map((entry) => [entry.path, entry]));
+  const candidates = fused.slice(0, Math.max(topK * 3, 12)).map((item) => byPath.get(item.id)).filter(Boolean);
+  let reranked = candidates;
+  if (profile.rerank === 'llm' && chatLlm !== null && candidates.length > 1) {
+    reranked = await knowledgeLlmRerank(q, candidates, topK);
+    routesUsed.push('rerank-llm');
+  } else {
+    reranked = candidates.slice(0, topK);
+  }
+  const results = [];
+  let estimatedTokens = 0;
+  for (const entry of reranked) {
+    if (results.length >= topK) break;
+    const { heading, snippet } = await knowledgeSnippet(entry, queryTokens);
+    const text = entry.title + '\n' + (heading ? '# ' + heading + '\n' : '') + snippet;
+    const tokens = Math.max(1, Math.ceil(text.length / 2.5));
+    if (estimatedTokens + tokens > tokenBudget && results.length >= 1) break;
+    estimatedTokens += tokens;
+    results.push({
+      path: entry.path,
+      folder: entry.folder,
+      title: entry.title,
+      tags: entry.tags,
+      related: entry.related,
+      confidence: entry.confidence,
+      summary: entry.summary,
+      heading,
+      snippet,
+      updatedAt: entry.updatedAt,
+      project: entry.project,
+      source: entry.source
+    });
+  }
+  return {
+    query: q,
+    project: project || '',
+    profile,
+    topK,
+    tokenBudget,
+    routes: routesUsed,
+    vectorStatus: vector.status || 'n/a',
+    vectorError: vector.error || '',
+    estimatedTokens,
+    results
+  };
+}
+
+function safeKnowledgeName(title) {
+  const base = cleanTaskText(title, 60).replace(/[\\/:*?"<>|\r\n]+/g, '-').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  return base || 'untitled';
+}
+
+async function distillKnowledge({ title, source, content, project }) {
+  await ensureKnowledgeVault();
+  const rawTitle = cleanTaskText(title, 120).replace(/[\r\n:]+/g, ' ');
+  const rawSource = cleanTaskText(source, 80) || 'text';
+  const rawProject = cleanTaskText(project, 300);
+  let markdown = '';
+  let fallback = false;
+  if (chatLlm !== null) {
+    try {
+      const system = [
+        '你是一个知识蒸馏器。把输入内容提炼为一条结构化 Markdown 知识条目，只输出 JSON：',
+        '{"title":"简短标题","tags":["标签"],"confidence":"high|medium|low","related":["建议关联的已有条目标题（没有则空数组）"],"summary":"一句话核心","body":"完整 Markdown 正文（含 ## 结论 / ## 方法 / ## 决策 / ## 待办 等小节，压缩至 800 字内）"}'
+      ].join('\n');
+      const prompt = ['来源：' + rawSource, '关联项目：' + rawProject, '原始内容：\n' + String(content || '').slice(0, 50000)].join('\n\n');
+      const text = await streamLlmText(system, prompt, { maxTokens: 2500, temperature: 0.3 });
+      const parsed = parseJsonObject(text);
+      if (parsed && (parsed.title || parsed.body)) {
+        const titleText = cleanTaskText(parsed.title || rawTitle || '未命名', 120).replace(/[\r\n:]+/g, ' ');
+        const related = Array.isArray(parsed.related) ? parsed.related.map((item) => ' [[' + cleanTaskText(item, 200) + ']]').join('') : '';
+        const tags = Array.isArray(parsed.tags) ? parsed.tags.map((item) => cleanTaskText(item, 60)).filter(Boolean).slice(0, 10) : [];
+        markdown = [
+          '---',
+          'title: ' + titleText,
+          'tags: [' + tags.join(', ') + ']',
+          'confidence: ' + (KNOWLEDGE_CONFIDENCES.includes(parsed.confidence) ? parsed.confidence : 'medium'),
+          'related: "' + related.trim() + '"',
+          'summary: ' + cleanTaskText(parsed.summary, 2000),
+          'source: ' + rawSource,
+          'project: ' + rawProject,
+          'created: ' + new Date().toISOString(),
+          '---',
+          '',
+          String(parsed.body || '').trim()
+        ].join('\n');
+      }
+    } catch (error) { markdown = ''; }
+  }
+  if (!markdown) {
+    fallback = true;
+    const body = String(content || '').replace(/\r?\n/g, ' ').replace(/\s+/g, ' ').slice(0, 2000);
+    markdown = [
+      '---',
+      'title: ' + (rawTitle || '未命名'),
+      'tags: []',
+      'confidence: low',
+      'related: ""',
+      'summary: ' + body.slice(0, 300),
+      'source: ' + rawSource,
+      'project: ' + rawProject,
+      'created: ' + new Date().toISOString(),
+      '---',
+      '',
+      '# ' + (rawTitle || '未命名'),
+      '',
+      body
+    ].join('\n');
+  }
+  const date = new Date().toISOString().slice(0, 10);
+  const fileName = date + '_' + safeKnowledgeName(rawTitle || '');
+  const file = join(KNOWLEDGE_INBOX, fileName + '.md');
+  await writeFile(file, markdown, 'utf8');
+  const index = await scanKnowledgeVault();
+  const entry = index.entries.find((item) => item.path === 'inbox/' + fileName + '.md') || null;
+  return { entry, fallback, path: 'inbox/' + fileName + '.md' };
+}
+
+async function maintainKnowledgeVault() {
+  const index = await scanKnowledgeVault();
+  const entries = index.entries || [];
+  const byTitle = new Map();
+  entries.forEach((entry) => byTitle.set(entry.title.toLowerCase(), entry));
+  const duplicates = [];
+  const keyTerms = (entry) => new Set(Object.keys(entry.terms || {}).slice(0, 80));
+  for (let i = 0; i < entries.length; i += 1) {
+    for (let j = i + 1; j < entries.length; j += 1) {
+      const a = keyTerms(entries[i]);
+      const b = keyTerms(entries[j]);
+      let inter = 0;
+      for (const term of a) if (b.has(term)) inter += 1;
+      const union = a.size + b.size - inter;
+      if (union > 0 && inter / union > 0.55) {
+        duplicates.push({ a: entries[i].path, b: entries[j].path, similarity: Math.round((inter / union) * 100) / 100 });
+      }
+    }
+  }
+  duplicates.sort((x, y) => y.similarity - x.similarity);
+  const brokenLinks = [];
+  for (const entry of entries) {
+    for (const rel of entry.related) {
+      if (!byTitle.has(rel.toLowerCase())) brokenLinks.push({ from: entry.path, link: rel });
+    }
+  }
+  const referenced = new Set();
+  entries.forEach((entry) => entry.related.forEach((rel) => {
+    const target = byTitle.get(rel.toLowerCase());
+    if (target) referenced.add(target.path);
+  }));
+  const orphans = entries.filter((entry) => !referenced.has(entry.path) && !entry.related.length).map((entry) => entry.path);
+  const now = new Date();
+  const stale = entries.filter((entry) => {
+    const t = new Date(entry.updatedAt || entry.createdAt).getTime();
+    return Number.isFinite(t) && now.getTime() - t > 180 * 24 * 3600 * 1000 && entry.confidence === 'high';
+  }).map((entry) => entry.path);
+  const tagIndex = new Map();
+  entries.forEach((entry) => entry.tags.forEach((tag) => {
+    if (!tagIndex.has(tag)) tagIndex.set(tag, []);
+    tagIndex.get(tag).push(entry);
+  }));
+  const mocs = [
+    '---',
+    'title: 知识库地图',
+    'tags: [MOC]',
+    'confidence: high',
+    'related: ""',
+    'summary: 自动生成的索引地图。',
+    '---',
+    '',
+    '# 知识库地图',
+    '',
+    '> 由工作台维护器自动生成，修改后下次维护会被覆盖。',
+    '',
+    '## 目录结构',
+    '',
+    '- 01-Inbox：AI 写入区，待人工审核',
+    '- 02-Atomic：人工审核后的核心资产',
+    '- 03-MOCs：地图索引',
+    '- 04-Projects：按项目沉淀',
+    '- 99-Templates：模板',
+    '',
+    '## 最近新增',
+    ''
+  ];
+  entries.slice(0, 12).forEach((entry) => mocs.push('- [[' + entry.title + ']]（' + entry.folder + '）'));
+  mocs.push('', '## 标签索引', '');
+  for (const [tag, tagged] of [...tagIndex.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 40)) {
+    mocs.push('- #' + tag + '：' + tagged.map((entry) => '[[' + entry.title + ']]').join('、'));
+  }
+  await writeFile(join(KNOWLEDGE_MOCS, 'Index.md'), mocs.join('\n') + '\n', 'utf8');
+  const indexAfter = await scanKnowledgeVault();
+  return {
+    duplicates: duplicates.slice(0, 20),
+    brokenLinks: brokenLinks.slice(0, 50),
+    orphans: orphans.slice(0, 50),
+    stale: stale.slice(0, 50),
+    mocsUpdated: true,
+    stats: indexAfter.stats
+  };
+}
+
+function cleanEvalItem(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  return {
+    id: cleanTaskText(value.id, 64) || randomUUID(),
+    question: cleanTaskText(value.question, 500),
+    expected: Array.isArray(value.expected) ? value.expected.map((item) => cleanTaskText(item, 300)).filter(Boolean).slice(0, 10) : [],
+    answerHints: cleanTaskText(value.answerHints, 2000),
+    note: cleanTaskText(value.note, 500),
+    createdAt: typeof value.createdAt === 'string' ? value.createdAt : new Date().toISOString()
+  };
+}
+
+async function readKnowledgeEval() {
+  if (knowledgeEvalCache) return knowledgeEvalCache;
+  try {
+    const info = await lstat(KNOWLEDGE_EVAL_STORE);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('eval store must be a regular non-symbolic file');
+    if (info.size > MAX_KNOWLEDGE_EVAL_BYTES) throw new Error('eval store exceeds size limit');
+    const parsed = JSON.parse(await readFile(KNOWLEDGE_EVAL_STORE, 'utf8'));
+    knowledgeEvalCache = {
+      version: 1,
+      items: Array.isArray(parsed.items) ? parsed.items.map(cleanEvalItem) : [],
+      candidates: Array.isArray(parsed.candidates) ? parsed.candidates.map((item) => cleanEvalItem({ ...item, id: undefined })) : [],
+      lastRun: parsed.lastRun && typeof parsed.lastRun === 'object' ? parsed.lastRun : null
+    };
+  } catch (error) {
+    if (error && error.code === 'ENOENT') knowledgeEvalCache = { version: 1, items: [], candidates: [], lastRun: null };
+    else throw error;
+  }
+  return knowledgeEvalCache;
+}
+
+async function writeKnowledgeEval(store) {
+  await mkdir(DSH_ROOT, { recursive: true });
+  const temp = KNOWLEDGE_EVAL_STORE + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, JSON.stringify(store, null, 2) + '\n', 'utf8');
+  await rename(temp, KNOWLEDGE_EVAL_STORE);
+  knowledgeEvalCache = store;
+  return store;
+}
+
+async function runKnowledgeEvalSet(options = {}) {
+  const store = await readKnowledgeEval();
+  const items = store.items || [];
+  const topK = clampInt(options.topK, 1, 10, 5);
+  const results = [];
+  for (const item of items) {
+    const start = Date.now();
+    const search = await runKnowledgeSearch(item.question, '', { topK: Math.max(topK, 10), tokenBudget: 4000 });
+    const paths = new Set((search.results || []).map((result) => result.path));
+    const titles = new Set((search.results || []).map((result) => result.title.toLowerCase()));
+    const expected = item.expected || [];
+    const hits = expected.filter((exp) => {
+      const normalized = String(exp).toLowerCase();
+      return paths.has(exp) || titles.has(normalized) || titles.has(normalized.replace(/\.md$/, ''));
+    });
+    results.push({
+      id: item.id,
+      question: item.question,
+      expected: expected.length,
+      hits: hits.length,
+      hitPaths: hits,
+      topK,
+      latencyMs: Date.now() - start,
+      tokens: search.estimatedTokens || 0
+    });
+  }
+  const completed = results.length;
+  const totalExpected = results.reduce((sum, result) => sum + result.expected, 0);
+  const totalHits = results.reduce((sum, result) => sum + result.hits, 0);
+  const report = {
+    ranAt: new Date().toISOString(),
+    topK,
+    items: completed,
+    recallAtK: completed && totalExpected ? Math.round((totalHits / totalExpected) * 1000) / 1000 : 0,
+    avgTokens: completed ? Math.round(results.reduce((sum, result) => sum + result.tokens, 0) / completed) : 0,
+    avgLatencyMs: completed ? Math.round(results.reduce((sum, result) => sum + result.latencyMs, 0) / completed) : 0,
+    results
+  };
+  store.lastRun = report;
+  await writeKnowledgeEval(store);
+  return report;
+}
+
+function knowledgeResolve(relPath) {
+  const parts = String(relPath || '').split('/');
+  if (parts.length !== 2) return null;
+  const [folder, file] = parts;
+  if (!KNOWLEDGE_FOLDER_IDS.includes(folder)) return null;
+  if (!/^[\w\u4e00-\u9fa5-]{1,160}\.md$/i.test(file)) return null;
+  const full = join(KNOWLEDGE_FOLDER_DIRS[folder], file);
+  if (!inside(KNOWLEDGE_ROOT, full)) return null;
+  return { folder, file, full, relPath: folder + '/' + file };
+}
+
+function knowledgeWritePath(folder, name) {
+  if (!KNOWLEDGE_FOLDER_IDS.includes(folder)) return null;
+  if (!/^[\w\u4e00-\u9fa5-]{1,160}$/.test(name)) return null;
+  return { folder, file: name + '.md', full: join(KNOWLEDGE_FOLDER_DIRS[folder], name + '.md'), relPath: folder + '/' + name + '.md' };
 }
 
 function conversationStylePrompt() {
@@ -2653,6 +3684,295 @@ function makeRoutes() {
           workflows.revision += 1;
           await writeWorkflowStore(workflows);
           writeJson(res, 200, { schedules: workflows.schedules, runs: workflows.runs });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    // ---- knowledge: Obsidian-compatible vault + retrieval engine (P5 v3.1) ----
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/list',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        try {
+          const vaultRoot = await ensureKnowledgeVault();
+          const index = await readKnowledgeIndex();
+          const vectorConfig = maskVectorConfig(await readVectorConfig());
+          const profiles = await readKnowledgeProfiles();
+          writeJson(res, 200, {
+            vaultRoot,
+            updatedAt: index.updatedAt,
+            stats: index.stats,
+            entries: index.entries,
+            profiles,
+            vector: vectorConfig
+          });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/sync',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        try {
+          const index = await scanKnowledgeVault();
+          writeJson(res, 200, { updatedAt: index.updatedAt, stats: index.stats, entries: index.entries });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/write',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        const target = knowledgeWritePath(body.folder, cleanTaskText(body.name, 160));
+        if (!target) return bad(res, 'bad-path', 'invalid folder or file name');
+        const content = String(body.content || '');
+        if (!content.trim()) return bad(res, 'empty', 'content required');
+        if (Buffer.byteLength(content, 'utf8') > KNOWLEDGE_MAX_ENTRY_BYTES) return bad(res, 'too-large', 'content exceeds 512KB');
+        try {
+          await ensureKnowledgeVault();
+          await writeFile(target.full, content, 'utf8');
+          const index = await scanKnowledgeVault();
+          const entry = index.entries.find((item) => item.path === target.relPath) || null;
+          writeJson(res, 200, { entry, entries: index.entries });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/read',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        try {
+          const target = knowledgeResolve(paramOf(req, 'path'));
+          if (!target) return bad(res, 'bad-path', 'invalid knowledge path');
+          const content = await readFile(target.full, 'utf8');
+          const index = await readKnowledgeIndex();
+          const entry = index.entries.find((item) => item.path === target.relPath) || null;
+          writeJson(res, 200, { path: target.relPath, content, entry });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/remove',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        const target = knowledgeResolve(body.path);
+        if (!target) return bad(res, 'bad-path', 'invalid knowledge path');
+        try {
+          await rm(target.full, { force: true });
+          const index = await scanKnowledgeVault();
+          writeJson(res, 200, { ok: true, removed: target.relPath, entries: index.entries });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/search',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        try {
+          const result = await runKnowledgeSearch(body.query, body.project, {
+            topK: body.topK,
+            tokenBudget: body.tokenBudget
+          });
+          writeJson(res, 200, result);
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/profile',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        try {
+          const profiles = await readKnowledgeProfiles();
+          if (req.method === 'POST') {
+            let body;
+            try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+            const project = cleanTaskText(body.project, 300);
+            const merged = mergeKnowledgeProfile(body.profile, project);
+            profiles[project] = merged;
+            await writeKnowledgeProfiles(profiles);
+            writeJson(res, 200, { project, profile: merged });
+          } else {
+            const project = cleanTaskText(paramOf(req, 'project'), 300);
+            writeJson(res, 200, { project, profile: mergeKnowledgeProfile(profiles[project], project) });
+          }
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/distill',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        const content = String(body.content || '').slice(0, 60000);
+        if (!content.trim()) return bad(res, 'empty', 'content required');
+        try {
+          const result = await distillKnowledge({ title: body.title, source: body.source, content, project: body.project });
+          writeJson(res, 200, result);
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/maintain',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        try {
+          writeJson(res, 200, await maintainKnowledgeVault());
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/feedback',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        const question = cleanTaskText(body.question, 500);
+        if (!question) return bad(res, 'empty', 'question required');
+        try {
+          const store = await readKnowledgeEval();
+          store.candidates = store.candidates || [];
+          store.candidates.push(cleanEvalItem({
+            question,
+            note: cleanTaskText(body.note, 500),
+            expected: body.missed ? [] : []
+          }));
+          store.candidates = store.candidates.slice(-200);
+          await writeKnowledgeEval(store);
+          writeJson(res, 200, { ok: true, candidates: store.candidates.length });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/eval',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        try {
+          writeJson(res, 200, await readKnowledgeEval());
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/eval/add',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        const item = cleanEvalItem({ question: body.question, expected: body.expected, answerHints: body.answerHints });
+        if (!item.question) return bad(res, 'empty', 'question required');
+        try {
+          const store = await readKnowledgeEval();
+          store.items = store.items || [];
+          store.items.push(item);
+          store.items = store.items.slice(-300);
+          await writeKnowledgeEval(store);
+          writeJson(res, 200, { item, items: store.items });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/eval/remove',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        try {
+          const store = await readKnowledgeEval();
+          store.items = (store.items || []).filter((item) => item.id !== body.id);
+          await writeKnowledgeEval(store);
+          writeJson(res, 200, { ok: true, items: store.items });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/eval/run',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        try {
+          writeJson(res, 200, await runKnowledgeEvalSet({ topK: body.topK }));
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/vector',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        try {
+          if (req.method === 'POST') {
+            let body;
+            try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+            const config = cleanVectorConfig(body.config);
+            let status = { tested: false, reason: 'provider none' };
+            if (config.provider !== 'none') {
+              try {
+                const embedded = await embedKnowledgeTexts(config, ['测试']);
+                status = { tested: true, dims: embedded ? embedded.dims : 0 };
+              } catch (embedError) {
+                status = { tested: false, error: String((embedError && embedError.message) || embedError) };
+              }
+            }
+            if (config.provider === 'none' || status.tested) {
+              await writeVectorConfig(config);
+              writeJson(res, 200, { saved: true, config: maskVectorConfig(config), status });
+            } else {
+              const current = await readVectorConfig();
+              writeJson(res, 200, { saved: false, config: maskVectorConfig(current), status });
+            }
+          } else {
+            const config = await readVectorConfig();
+            const vectors = await readKnowledgeVectors();
+            writeJson(res, 200, {
+              config: maskVectorConfig(config),
+              stored: {
+                count: Object.keys(vectors.vectors || {}).length,
+                dims: vectors.dims,
+                updatedAt: vectors.updatedAt
+              }
+            });
+          }
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/vector/rebuild',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        try {
+          writeJson(res, 200, await rebuildKnowledgeVectors());
         } catch (error) { fail(res, error); }
       }
     },
