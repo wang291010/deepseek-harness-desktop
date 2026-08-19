@@ -142,11 +142,25 @@ export interface PreparedDesktopProfile {
 /**
  * Normalize the installation-owned prefix while preserving third-party order.
  * @param current - current persistent bundle list.
- * @returns base, Web carrier, then every third-party bundle in prior order.
+ * @param installationOwnedPackages - packages sealed into the packaged application
+ * and composed ahead of third-party bundles.
+ * @returns base, Web carrier, installation-owned bundles, then every
+ * third-party bundle in prior order.
  */
-export function desktopBundleList(current: readonly string[]): string[] {
-  const thirdParty = current.filter(name => !REQUIRED_BUNDLE_SET.has(name) && name !== DESKTOP_PACKAGE_NAME)
-  return [...REQUIRED_BUNDLES, ...thirdParty]
+export function desktopBundleList(
+  current: readonly string[],
+  installationOwnedPackages: readonly string[] = [],
+): string[] {
+  const owned = new Set(installationOwnedPackages)
+  const thirdParty = current.filter(name => (
+    !REQUIRED_BUNDLE_SET.has(name)
+    && name !== DESKTOP_PACKAGE_NAME
+    && !owned.has(name)
+  ))
+  const ownedOrdered = installationOwnedPackages.filter(name => (
+    !REQUIRED_BUNDLE_SET.has(name) && name !== DESKTOP_PACKAGE_NAME
+  ))
+  return [...REQUIRED_BUNDLES, ...ownedOrdered, ...thirdParty]
 }
 
 /** Return whether two ordered string lists are identical. */
@@ -197,9 +211,14 @@ export function removeInstallationOwnedProfileDependencies(
 /**
  * Initialize or repair the persistent desktop profile.
  * @param home - Harness home containing the profiles directory.
+ * @param installationOwnedPackages - packages owned by the running desktop
+ * distribution and always composed into the desktop profile.
  * @returns the absolute profile directory.
  */
-export function ensureDesktopProfile(home: string = resolveDshHome()): string {
+export function ensureDesktopProfile(
+  home: string = resolveDshHome(),
+  installationOwnedPackages: readonly string[] = [],
+): string {
   const dir = resolveProfileDir(DESKTOP_PROFILE_NAME, home)
   if (!existsSync(join(dir, 'package.json'))) initProfile(dir, REQUIRED_BUNDLES)
   const manifest = readProfileManifest(BIN_NAME, dir)
@@ -209,7 +228,7 @@ export function ensureDesktopProfile(home: string = resolveDshHome()): string {
     throw new Error(`${BIN_NAME}: dsh.profile.bundles must be an array of package names`)
   }
   const current = rawBundles === undefined ? [] : rawBundles as string[]
-  const bundles = desktopBundleList(current)
+  const bundles = desktopBundleList(current, installationOwnedPackages)
   if (!sameList(current, bundles)) {
     writeProfileManifest(dir, {
       ...manifest,
@@ -269,7 +288,7 @@ export function prepareDesktopProfile(
   installationOwnedPackages: readonly string[] = [],
 ): PreparedDesktopProfile {
   const profileDir = profileName === DESKTOP_PROFILE_NAME
-    ? ensureDesktopProfile(home)
+    ? ensureDesktopProfile(home, installationOwnedPackages)
     : resolveProfileDir(profileName, home)
   removeInstallationOwnedProfileDependencies(profileDir, installationOwnedPackages)
   healProfilesModuleFallback(INSTALL_ANCHOR, home)
@@ -328,6 +347,17 @@ export function prepareDesktopProfile(
       { id: 'ui-layout', disabled: true },
       { id: 'ui-sidebar', disabled: false },
       { id: 'ui-conversation', disabled: false },
+    )
+  }
+  // Packaged distributions own the workbench shell: compose it over the
+  // upstream Web carrier in the desktop profile and hand the root, layout,
+  // and sidebar surfaces to the workbench client (mirrors the profile patch
+  // used by the development profile).
+  if (profileName === DESKTOP_PROFILE_NAME
+    && installationOwnedPackages.includes('dsh-workbench')) {
+    patches.push(
+      { id: 'ui-layout', disabled: true },
+      { id: 'ui-sidebar', disabled: true },
     )
   }
   const presets = rows.get('agent-presets')

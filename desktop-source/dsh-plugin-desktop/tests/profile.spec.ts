@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -41,6 +41,28 @@ describe('desktop profile composition', () => {
     ])
   })
 
+  it('composes installation-owned bundles after the Web carrier without duplicating them', () => {
+    expect(desktopBundleList(
+      ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', 'third-party'],
+      ['dsh-workbench', 'dsh-plugin-hub'],
+    )).toEqual([
+      '@deepseek-ai/dsh-base',
+      '@deepseek-ai/dsh-web-app',
+      'dsh-workbench',
+      'dsh-plugin-hub',
+      'third-party',
+    ])
+    expect(desktopBundleList(
+      ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', 'dsh-workbench', 'third-party'],
+      ['dsh-workbench'],
+    )).toEqual([
+      '@deepseek-ai/dsh-base',
+      '@deepseek-ai/dsh-web-app',
+      'dsh-workbench',
+      'third-party',
+    ])
+  })
+
   it('repairs a base-only CLI profile without replacing dependencies', () => {
     const home = temporaryHome()
     const dir = ensureDesktopProfile(home)
@@ -66,6 +88,45 @@ describe('desktop profile composition', () => {
     ])
     expect(repaired.dependencies).toEqual({ 'third-party-plugin': '^1.2.3' })
     expect(repaired.custom.preserved).toBe(true)
+  })
+
+  it('seeds a fresh desktop profile with installation-owned bundles', () => {
+    const home = temporaryHome()
+    const dir = ensureDesktopProfile(home, ['dsh-workbench', 'dsh-plugin-hub'])
+    const manifest = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as {
+      dsh: { profile: { bundles: string[] } }
+    }
+
+    expect(manifest.dsh.profile.bundles).toEqual([
+      '@deepseek-ai/dsh-base',
+      '@deepseek-ai/dsh-web-app',
+      'dsh-workbench',
+      'dsh-plugin-hub',
+    ])
+  })
+
+  it('repairs an existing web-only desktop profile with missing installation-owned bundles', () => {
+    const home = temporaryHome()
+    const dir = ensureDesktopProfile(home)
+    const path = join(dir, 'package.json')
+    const manifest = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>
+    writeFileSync(path, JSON.stringify({
+      ...manifest,
+      dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'] } },
+    }) + '\n')
+
+    ensureDesktopProfile(home, ['@abcdefu_cja/dsh-usage-stats', 'dsh-plugin-hub', 'dsh-workbench'])
+    const repaired = JSON.parse(readFileSync(path, 'utf8')) as {
+      dsh: { profile: { bundles: string[] } }
+    }
+
+    expect(repaired.dsh.profile.bundles).toEqual([
+      '@deepseek-ai/dsh-base',
+      '@deepseek-ai/dsh-web-app',
+      '@abcdefu_cja/dsh-usage-stats',
+      'dsh-plugin-hub',
+      'dsh-workbench',
+    ])
   })
 
   it('rejects malformed persistent bundle metadata', () => {
@@ -242,6 +303,62 @@ describe('desktop profile composition', () => {
     expect(rows.find(row => row.id === 'ui-layout')?.disabled).toBe(true)
     expect(rows.find(row => row.id === 'ui-sidebar')?.disabled).toBe(false)
     expect(rows.find(row => row.id === 'ui-conversation')?.disabled).toBe(false)
+  })
+
+  it('composes installation-owned workbench over the desktop profile with native UI surfaces disabled', () => {
+    const home = temporaryHome()
+    const fallbackPackage = join(home, 'profiles', 'node_modules', 'dsh-workbench')
+    mkdirSync(fallbackPackage, { recursive: true })
+    writeFileSync(join(fallbackPackage, 'package.json'), JSON.stringify({
+      name: 'dsh-workbench',
+      private: true,
+      dsh: { bundle: { patch: './cordis.patch.yml' } },
+    }) + '\n')
+    writeFileSync(join(fallbackPackage, 'cordis.patch.yml'), [
+      '- insert:',
+      '    - id: dsh-workbench',
+      "      name: 'dsh-workbench'",
+      '',
+    ].join('\n'))
+
+    const prepared = prepareDesktopProfile(
+      undefined,
+      home,
+      'darwin',
+      'desktop',
+      ['dsh-workbench'],
+    )
+    const rows = composeEntries([prepared.patches])
+
+    expect(prepared.profile.layers.map(layer => layer.packageName)).toContain('dsh-workbench')
+    expect(rows.find(row => row.id === 'dsh-workbench')).toEqual({
+      id: 'dsh-workbench',
+      name: 'dsh-workbench',
+    })
+    expect(rows.find(row => row.id === 'ui-layout')?.disabled).toBe(true)
+    expect(rows.find(row => row.id === 'ui-sidebar')?.disabled).toBe(true)
+    expect(rows.find(row => row.id === 'ui-conversation')?.disabled).toBeFalsy()
+  })
+
+  it('keeps a selected Web profile free of installation-owned bundles and overrides', () => {
+    const home = temporaryHome()
+    const webDir = join(home, 'profiles', 'web')
+    const bundles = PROFILE_TEMPLATES.web
+    if (bundles === undefined) throw new Error('test requires the shipped Web template')
+    initProfile(webDir, bundles)
+
+    const prepared = prepareDesktopProfile(
+      undefined,
+      home,
+      'darwin',
+      'web',
+      ['dsh-workbench'],
+    )
+    const rows = composeEntries([prepared.patches])
+
+    expect(rows.map(row => row.id)).not.toContain('dsh-workbench')
+    expect(rows.find(row => row.id === 'ui-layout')?.disabled).toBeFalsy()
+    expect(rows.find(row => row.id === 'ui-sidebar')?.disabled).toBeFalsy()
   })
 
   it('reads JSON settings and defaults an absent desktop namespace to compatibility', () => {
