@@ -1,6 +1,7 @@
 # 工作台交接清单（2026-08-19）
 
 > 新会话入口文档。新窗口先读本清单，再按需展开
+> [最新交接文档](workbench-handover-2026-08-19-v6.md)、
 > [交接文档](workbench-handover-2026-08-18.md)、
 > [计划总结](workbench-build-plan-summary-2026-08-18.md) 与
 > [未来完整计划](workbench-future-plan-2026-08-18.md)。
