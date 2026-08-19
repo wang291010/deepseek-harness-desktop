@@ -1103,6 +1103,15 @@ verifiedBy/At，可一键移入 02-Atomic）→ 入索引（文本 + 向量 + �
 - 剩余 R2（覆盖安装怪癖）、R3（卸载残留）、R5（朋友安装包 + Node 运行时）需真实构建/安装测试，
   列入下次发布前专项；R7 暂缓。
 
+**队列五 R3 调查 / R5 方案与过渡（2026-08-20）**：
+
+- R3 结论：已安装目录与构建产物 sourcemap 数量一致（各 6405 个），含 @opentelemetry 的 .map 为
+  安装包正常依赖内容，非卸载残留，无需清理。
+- R5 方案：《工作台内置运行时方案》（docs/workbench-runtime-bundling-plan.md）——盘点唯一外部依赖为
+  BGE 向量（Python + onnxruntime）；推荐长期用 `onnxruntime-node` 重写嵌入桥（B），过渡先用降级提示（C）。
+- C 已落地：向量设置页未就绪时显示友好文案与 `pip install onnxruntime tokenizers numpy huggingface_hub`
+  指引，检索自动回退 BM25+图谱；已部署。
+
 ### 执行建议（下一轮开始）
 
 1. 先跑一轮完整 GUI 回归把 V1/V2 的实测结果拿到（我可代跑，你按清单抽查）。

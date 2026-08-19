@@ -4236,8 +4236,10 @@ window.__ModuleLoader__.load({
               ] })
             ] }),
             vectorStatus && jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
-              jsxRuntime.jsx("h3", { children: "状态" }),
-              jsxRuntime.jsx("p", { className: "wb-collab-memory-finding", children: JSON.stringify(vectorStatus) })
+              jsxRuntime.jsx("h3", { children: "向量路状态" }),
+              jsxRuntime.jsx("p", { className: "wb-collab-memory-finding", children: vectorStatus.tested === false
+                ? "未就绪：" + (vectorStatus.reason || "测试失败") + "。当前检索自动回退 BM25+图谱；如需启用向量路，请安装 Python 3 并执行：pip install onnxruntime tokenizers numpy huggingface_hub"
+                : (vectorStatus.rebuilt !== undefined ? "已重建：" + (vectorStatus.count || 0) + " 条 · " + (vectorStatus.dims || 0) + " 维" + (vectorStatus.reason ? " · " + vectorStatus.reason : "") : JSON.stringify(vectorStatus)) })
             ] }),
             vectorMeta && jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
               jsxRuntime.jsx("h3", { children: "当前配置" }),
