@@ -33,7 +33,8 @@ function releaseResponse(version: string): Response {
 
 interface Harness {
   readonly statePath: string
-  readonly tray: DesktopTrayItem
+  readonly checkTray: DesktopTrayItem
+  readonly toggleTray: DesktopTrayItem
   readonly notifications: DesktopNotification[]
   readonly warnings: unknown[][]
   readonly confirmDownload: ReturnType<typeof vi.fn>
@@ -68,7 +69,7 @@ async function createHarness(options: {
   const confirmDownload = vi.fn(options.confirmDownload ?? (async () => false))
   const showManualCheckResult = vi.fn(options.showManualCheckResult ?? (async () => {}))
   const downloadAndOpen = vi.fn(options.downloadAndOpen ?? (async () => {}))
-  let tray: DesktopTrayItem | undefined
+  const trayItems: DesktopTrayItem[] = []
   let disposer: (() => void | Promise<void>) | undefined
   const runtime = {
     updates: {
@@ -83,12 +84,32 @@ async function createHarness(options: {
       notify: options.notify ?? ((notification: DesktopNotification) => { notifications.push(notification) }),
     },
     registerTrayItem: (item: DesktopTrayItem) => {
-      tray = item
+      trayItems.push(item)
       return { refresh, dispose: registrationDispose }
     },
   } as unknown as DesktopRuntime
+  const settings = {
+    register: (_ns: string, _schema: unknown, options?: { base?: Record<string, unknown> }) => {
+      const resolved: Record<string, unknown> = { ...(options?.base ?? {}) }
+      let userSection: Record<string, unknown> | undefined
+      return {
+        get: () => resolved,
+        update: async (patch: Record<string, unknown>) => {
+          userSection = { ...(userSection ?? {}), ...patch }
+          for (const [key, value] of Object.entries(userSection)) resolved[key] = value
+        },
+        replace: async (section: Record<string, unknown>) => {
+          userSection = section
+          for (const key of Object.keys(resolved)) delete resolved[key]
+          for (const [key, value] of Object.entries(section)) resolved[key] = value
+        },
+        watch: () => () => {},
+      }
+    },
+  }
   const ctx = {
     desktopRuntime: runtime,
+    settings,
     logger: { warn: (...args: unknown[]) => { warnings.push(args) } },
     effect: (register: () => (() => void | Promise<void>)) => {
       disposer = register()
@@ -97,10 +118,15 @@ async function createHarness(options: {
   } as unknown as Context
 
   apply(ctx, options.config ?? testConfig)
-  if (tray === undefined) throw new Error('Update tray item was not registered.')
+  const checkTray = trayItems.find(item => item.order === 10)
+  const toggleTray = trayItems.find(item => item.order === 11)
+  if (checkTray === undefined || toggleTray === undefined) {
+    throw new Error('Update tray items were not registered.')
+  }
   return {
     statePath,
-    tray,
+    checkTray,
+    toggleTray,
     notifications,
     warnings,
     confirmDownload,
@@ -118,7 +144,7 @@ afterEach(() => {
 
 describe('desktop update Host plugin', () => {
   it('exposes the packaged 60-second and six-hour background policy', () => {
-    expect(inject).toEqual(['desktopRuntime'])
+    expect(inject).toEqual(['desktopRuntime', 'settings'])
     expect(Config({} as UpdateConfig)).toEqual({
       enabled: true,
       initialDelayMs: 60_000,
@@ -143,8 +169,8 @@ describe('desktop update Host plugin', () => {
 
     await vi.advanceTimersByTimeAsync(testConfig.intervalMs)
     expect(request).not.toHaveBeenCalled()
-    expect(harness.tray.label()).toBe('Check for Updates…')
-    await harness.tray.invoke()
+    expect(harness.checkTray.label()).toBe('Check for Updates…')
+    await harness.checkTray.invoke()
     expect(request).toHaveBeenCalledOnce()
     expect(harness.showManualCheckResult).toHaveBeenCalledWith({
       status: 'up-to-date',
@@ -166,7 +192,7 @@ describe('desktop update Host plugin', () => {
     await vi.advanceTimersByTimeAsync(testConfig.initialDelayMs)
     await vi.waitFor(() => { expect(harness.confirmDownload).toHaveBeenCalledWith('2.1.0') })
     expect(harness.downloadAndOpen).not.toHaveBeenCalled()
-    expect(harness.tray.label()).toBe('DeepSeek Harness Desktop 2.1.0 Available')
+    expect(harness.checkTray.label()).toBe('DeepSeek Harness Desktop 2.1.0 Available')
     await vi.waitFor(async () => {
       expect(JSON.parse(await readFile(harness.statePath, 'utf8'))).toEqual({
         version: 2,
@@ -198,13 +224,13 @@ describe('desktop update Host plugin', () => {
     expect(result).toMatchObject({ latestVersion: '2.1.0', downloadUrl: ASSET_URL })
     expect(signal).toBeInstanceOf(AbortSignal)
     expect(signal.aborted).toBe(false)
-    expect(harness.tray.label()).toBe('Downloading DeepSeek Harness Desktop 2.1.0…')
+    expect(harness.checkTray.label()).toBe('Downloading DeepSeek Harness Desktop 2.1.0…')
     expect(harness.notifications).toEqual([])
 
     resolveDownload()
-    await vi.waitFor(() => { expect(harness.tray.label()).toBe('DeepSeek Harness Desktop 2.1.0 Available') })
+    await vi.waitFor(() => { expect(harness.checkTray.label()).toBe('DeepSeek Harness Desktop 2.1.0 Available') })
     expect(harness.notifications).toEqual([])
-    expect(harness.tray.label()).toBe('DeepSeek Harness Desktop 2.1.0 Available')
+    expect(harness.checkTray.label()).toBe('DeepSeek Harness Desktop 2.1.0 Available')
   })
 
   it('treats a manual available-version selection as a fresh confirmation', async () => {
@@ -217,12 +243,12 @@ describe('desktop update Host plugin', () => {
       confirmDownload,
     })
 
-    await harness.tray.invoke()
+    await harness.checkTray.invoke()
     expect(confirmDownload).toHaveBeenCalledOnce()
     expect(harness.downloadAndOpen).not.toHaveBeenCalled()
-    expect(harness.tray.label()).toBe('DeepSeek Harness Desktop 2.1.0 Available')
+    expect(harness.checkTray.label()).toBe('DeepSeek Harness Desktop 2.1.0 Available')
 
-    await harness.tray.invoke()
+    await harness.checkTray.invoke()
     expect(confirmDownload).toHaveBeenCalledTimes(2)
     expect(harness.downloadAndOpen).toHaveBeenCalledOnce()
     expect(harness.showManualCheckResult).not.toHaveBeenCalled()
@@ -238,13 +264,13 @@ describe('desktop update Host plugin', () => {
       confirmDownload: async () => true,
     })
 
-    await harness.tray.invoke()
+    await harness.checkTray.invoke()
 
     expect(request).toHaveBeenCalledTimes(2)
     expect(harness.confirmDownload).toHaveBeenCalledWith('2.1.0')
     expect(harness.downloadAndOpen).not.toHaveBeenCalled()
     expect(harness.showManualCheckResult).not.toHaveBeenCalled()
-    expect(harness.tray.label()).toBe('DeepSeek Harness Desktop 2.2.0 Available')
+    expect(harness.checkTray.label()).toBe('DeepSeek Harness Desktop 2.2.0 Available')
   })
 
   it.each([
@@ -278,14 +304,14 @@ describe('desktop update Host plugin', () => {
   ] as const)('reports a manual %s result without prompting or downloading', async (_case, request, expected) => {
     const harness = await createHarness({ packaged: false, request })
 
-    await harness.tray.invoke()
+    await harness.checkTray.invoke()
 
     expect(harness.showManualCheckResult).toHaveBeenCalledWith(expected)
     expect(harness.confirmDownload).not.toHaveBeenCalled()
     expect(harness.downloadAndOpen).not.toHaveBeenCalled()
     expect(harness.notifications).toEqual([])
     expect(harness.warnings).toEqual([])
-    expect(harness.tray.label()).toBe('Check for Updates…')
+    expect(harness.checkTray.label()).toBe('Check for Updates…')
   })
 
   it('silently resets legacy state and does not use it as an available version cache', async () => {
@@ -305,7 +331,7 @@ describe('desktop update Host plugin', () => {
       }),
     })
 
-    expect(harness.tray.label()).toBe('Check for Updates…')
+    expect(harness.checkTray.label()).toBe('Check for Updates…')
     await vi.advanceTimersByTimeAsync(testConfig.initialDelayMs)
     await vi.waitFor(() => { expect(harness.confirmDownload).toHaveBeenCalledWith('2.1.0') })
     await vi.waitFor(async () => {
@@ -324,7 +350,7 @@ describe('desktop update Host plugin', () => {
       request: async () => releaseResponse('2.1.0'),
     })
 
-    await harness.tray.invoke()
+    await harness.checkTray.invoke()
 
     expect(harness.confirmDownload).not.toHaveBeenCalled()
     expect(harness.showManualCheckResult).toHaveBeenCalledWith({
@@ -335,7 +361,7 @@ describe('desktop update Host plugin', () => {
     })
     expect(harness.downloadAndOpen).not.toHaveBeenCalled()
     expect(harness.notifications).toEqual([])
-    expect(harness.tray.label()).toBe('Check for Updates…')
+    expect(harness.checkTray.label()).toBe('Check for Updates…')
   })
 
   it('shares one pending download and silently restores availability after failure', async () => {
@@ -348,9 +374,9 @@ describe('desktop update Host plugin', () => {
       downloadAndOpen: async () => download,
     })
 
-    const first = harness.tray.invoke()
+    const first = harness.checkTray.invoke()
     await vi.waitFor(() => { expect(harness.downloadAndOpen).toHaveBeenCalledOnce() })
-    const second = harness.tray.invoke()
+    const second = harness.checkTray.invoke()
     expect(harness.downloadAndOpen).toHaveBeenCalledOnce()
     rejectDownload(new Error('offline'))
     await Promise.all([first, second])
@@ -358,7 +384,7 @@ describe('desktop update Host plugin', () => {
     expect(harness.downloadAndOpen).toHaveBeenCalledOnce()
     expect(harness.notifications).toEqual([])
     expect(harness.warnings).toEqual([])
-    expect(harness.tray.label()).toBe('DeepSeek Harness Desktop 2.1.0 Available')
+    expect(harness.checkTray.label()).toBe('DeepSeek Harness Desktop 2.1.0 Available')
   })
 
   it('aborts checks and downloads and removes the tray item on effect disposal', async () => {
@@ -372,12 +398,12 @@ describe('desktop update Host plugin', () => {
         }, { once: true })
       }),
     })
-    const pendingCheck = checking.tray.invoke()
+    const pendingCheck = checking.checkTray.invoke()
     await vi.waitFor(() => { expect(checkSignal).toBeDefined() })
     await checking.dispose()
     await pendingCheck
     expect(checkSignal?.aborted).toBe(true)
-    expect(checking.registrationDispose).toHaveBeenCalledOnce()
+    expect(checking.registrationDispose).toHaveBeenCalledTimes(2)
     expect(checking.notifications).toEqual([])
 
     let downloadSignal: AbortSignal | undefined
@@ -392,12 +418,12 @@ describe('desktop update Host plugin', () => {
         }, { once: true })
       }),
     })
-    const pendingDownload = downloading.tray.invoke()
+    const pendingDownload = downloading.checkTray.invoke()
     await vi.waitFor(() => { expect(downloadSignal).toBeDefined() })
     await downloading.dispose()
     await pendingDownload
     expect(downloadSignal?.aborted).toBe(true)
-    expect(downloading.registrationDispose).toHaveBeenCalledOnce()
+    expect(downloading.registrationDispose).toHaveBeenCalledTimes(2)
     expect(downloading.notifications).toEqual([])
     expect(downloading.warnings).toEqual([])
   })
@@ -409,11 +435,11 @@ describe('desktop update Host plugin', () => {
       packaged: false,
       showManualCheckResult: async () => dialog,
     })
-    const pending = harness.tray.invoke()
+    const pending = harness.checkTray.invoke()
     await vi.waitFor(() => { expect(harness.showManualCheckResult).toHaveBeenCalledOnce() })
 
     await harness.dispose()
-    expect(harness.registrationDispose).toHaveBeenCalledOnce()
+    expect(harness.registrationDispose).toHaveBeenCalledTimes(2)
 
     closeDialog()
     await pending
@@ -431,10 +457,10 @@ describe('desktop update Host plugin', () => {
     }))
     const harness = await createHarness({ packaged: false, request })
 
-    const first = harness.tray.invoke()
-    const second = harness.tray.invoke()
+    const first = harness.checkTray.invoke()
+    const second = harness.checkTray.invoke()
     await vi.waitFor(() => { expect(request).toHaveBeenCalledOnce() })
-    expect(harness.tray.label()).toBe('Checking for Updates…')
+    expect(harness.checkTray.label()).toBe('Checking for Updates…')
     await vi.advanceTimersByTimeAsync(testConfig.requestTimeoutMs)
     await Promise.all([first, second])
 
@@ -443,6 +469,41 @@ describe('desktop update Host plugin', () => {
     expect(harness.showManualCheckResult).toHaveBeenCalledWith(null)
     expect(harness.notifications).toEqual([])
     expect(harness.warnings).toEqual([])
-    expect(harness.tray.label()).toBe('Check for Updates…')
+    expect(harness.checkTray.label()).toBe('Check for Updates…')
+  })
+
+  it('toggles automatic background checks from the tray while keeping the manual check', async () => {
+    vi.useFakeTimers()
+    const request = vi.fn(async () => releaseResponse('2.1.0'))
+    const harness = await createHarness({ request })
+
+    expect(harness.toggleTray.label()).toBe('Automatic Updates: On')
+    await harness.toggleTray.invoke()
+    expect(harness.toggleTray.label()).toBe('Automatic Updates: Off')
+    expect(harness.checkTray.label()).toBe('Check for Updates…')
+
+    await vi.advanceTimersByTimeAsync(testConfig.intervalMs)
+    expect(request).not.toHaveBeenCalled()
+
+    await harness.checkTray.invoke()
+    expect(request).toHaveBeenCalledOnce()
+  })
+
+  it('enables background polling from the tray when the patch policy disabled it', async () => {
+    vi.useFakeTimers()
+    const request = vi.fn(async () => releaseResponse('2.0.0'))
+    const harness = await createHarness({
+      request,
+      config: { ...testConfig, enabled: false },
+    })
+
+    expect(harness.toggleTray.label()).toBe('Automatic Updates: Off')
+    await vi.advanceTimersByTimeAsync(testConfig.initialDelayMs)
+    expect(request).not.toHaveBeenCalled()
+
+    await harness.toggleTray.invoke()
+    expect(harness.toggleTray.label()).toBe('Automatic Updates: On')
+    await vi.advanceTimersByTimeAsync(testConfig.initialDelayMs)
+    await vi.waitFor(() => { expect(request).toHaveBeenCalled() })
   })
 })

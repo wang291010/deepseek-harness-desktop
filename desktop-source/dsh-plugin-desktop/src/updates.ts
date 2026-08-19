@@ -3,6 +3,7 @@
 import { open } from 'node:fs/promises'
 import type { Context } from '@deepseek-ai/cordis'
 import { writeFileAtomic } from '@deepseek-ai/dsh-atomic-write'
+import { settingsNamespace } from '@deepseek-ai/dsh-settings'
 import z from '@deepseek-ai/schemastery'
 import type {} from './runtime.ts'
 import {
@@ -15,7 +16,20 @@ import {
 export const name = 'desktop-updates'
 
 /** Native adapter required for network, tray, confirmation, and installer access. */
-export const inject = ['desktopRuntime']
+export const inject = ['desktopRuntime', 'settings']
+
+/** Persistent per-machine automatic-update preference toggled from the tray. */
+export const UPDATES_SETTINGS_NAMESPACE = settingsNamespace('dsh-desktop-updates')
+
+/** User-facing automatic-update preference. */
+export interface UpdatesSettings {
+  enabled: boolean
+}
+
+/** Validated automatic-update preference with a true default. */
+export const UpdatesSettingsSchema: z<UpdatesSettings> = z.object({
+  enabled: z.boolean().default(true),
+})
 
 const MAX_TIMER_DELAY_MS = 2_147_483_647
 const MAX_STATE_BYTES = 4 * 1024
@@ -54,12 +68,23 @@ const EMPTY_STATE: UpdateStateV2 = { version: 2 }
  */
 export function apply(ctx: Context, config: Config): void {
   const adapter = ctx.desktopRuntime.updates
+  const updatesSettings = ctx.settings.register(
+    UPDATES_SETTINGS_NAMESPACE,
+    UpdatesSettingsSchema,
+    {
+      // The composed patch policy (including an explicit profile override)
+      // is the base; a user toggle persisted in the settings document wins.
+      base: { enabled: config.enabled },
+      applies: 'live',
+    },
+  )
   ctx.effect(() => {
     let disposed = false
     let checking = false
     let availableVersion: string | undefined
     let availableResult: UpdateCheckResult | undefined
     let downloadingVersion: string | undefined
+    let autoEnabled = updatesSettings.get().enabled
     let state: UpdateStateV2 = EMPTY_STATE
     let pollTimer: ReturnType<typeof setTimeout> | undefined
     let requestTimer: ReturnType<typeof setTimeout> | undefined
@@ -216,7 +241,7 @@ export function apply(ctx: Context, config: Config): void {
       pollTimer = setTimeout(() => {
         pollTimer = undefined
         void runBackgroundCheck().finally(() => {
-          if (!disposed) scheduleBackgroundCheck(config.intervalMs)
+          if (!disposed && autoEnabled) scheduleBackgroundCheck(config.intervalMs)
         })
       }, delayMs)
     }
@@ -233,7 +258,33 @@ export function apply(ctx: Context, config: Config): void {
     })
     refreshTray = registration.refresh
 
-    if (adapter.isPackaged && config.enabled) scheduleBackgroundCheck(config.initialDelayMs)
+    const setAutoEnabled = (next: boolean): void => {
+      if (autoEnabled === next) return
+      autoEnabled = next
+      refreshTray()
+      if (pollTimer !== undefined) {
+        clearTimeout(pollTimer)
+        pollTimer = undefined
+      }
+      if (next && adapter.isPackaged) scheduleBackgroundCheck(config.initialDelayMs)
+    }
+
+    const toggleRegistration = ctx.desktopRuntime.registerTrayItem({
+      group: 'status',
+      order: 11,
+      label: () => `Automatic Updates: ${autoEnabled ? 'On' : 'Off'}`,
+      invoke: async () => {
+        const next = !autoEnabled
+        setAutoEnabled(next)
+        try {
+          await updatesSettings.update({ enabled: next })
+        } catch {
+          setAutoEnabled(!next)
+        }
+      },
+    })
+
+    if (adapter.isPackaged && autoEnabled) scheduleBackgroundCheck(config.initialDelayMs)
 
     return async () => {
       disposed = true
@@ -242,6 +293,7 @@ export function apply(ctx: Context, config: Config): void {
       requestController?.abort()
       downloadController?.abort()
       registration.dispose()
+      toggleRegistration.dispose()
       // Native dialogs are not cancellable. Await only file state and the abortable version request.
       const pending: Promise<unknown>[] = [stateReady]
       if (inFlight !== undefined) pending.push(inFlight)
