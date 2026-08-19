@@ -83,6 +83,14 @@
 - 验证：新增 `smoke-collab.mjs`；smoke ×5、eslint、`node --check` 通过；CDP GUI 回归通过，
   截图 `collab-attach.png`、`collab-order.png`；测试数据与附件已清理。
 
+### 自动更新托盘开关（另一会话完成，8dbf932）
+
+- `desktop-updates` 插件新增持久化设置 `dsh-desktop-updates.enabled`（默认沿用合成补丁策略），
+  托盘 "Automatic Updates: On/Off" 开关：关闭即停后台检查与弹窗（保留手动检查更新），
+  开启即调度下一次后台检查；偏好持久化、跨重启保留。
+- 验证：`updates.spec.ts` 21/22 通过（1 个既有 Windows 权限位断言差异）、tsc ×4 通过，已推送。
+- 生效前提：需要重新构建/打包桌面端（`src/updates.ts` 编译进桌面插件包）。
+
 ## 三、未完成与下一步
 
 1. P1B 剩余 GUI 回归（需用户实测）：文件视图（盘符面包屑/保存/大文件/越界提示）、外壳（置顶/拖拽/重命名归档/默认收起）、专家页（调用/编辑/复制/删除/重启保留）、任务中心存量（看板/`/todo`/想法流转）。

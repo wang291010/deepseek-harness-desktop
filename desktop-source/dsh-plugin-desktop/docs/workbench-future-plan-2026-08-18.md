@@ -437,6 +437,17 @@
 - 如需要免安装单文件 exe：增加 portable 打包目标，并补自动更新适配
   （当前自动更新只适配安装版）。
 
+完成记录（2026-08-19，8dbf932，另一会话）：
+
+- 自动更新托盘开关：`desktop-updates` 插件注册持久化设置 `dsh-desktop-updates.enabled`
+  （默认沿用合成补丁策略），托盘新增 "Automatic Updates: On/Off" 项；关闭后立即停止后台
+  检查与弹窗，保留手动 "Check for Updates"；重新打开会调度下一次后台检查；偏好写入设置文档
+  并跨重启保留。
+- 验证：`updates.spec.ts` 21/22 通过（1 个失败为 Windows 下 POSIX 权限位断言的既有环境差异），
+  tsc ×4 通过；已推送 origin/main。
+- 说明：该改动编译进桌面插件包（`src/updates.ts`），运行端生效需要重新构建/打包桌面端；
+  与工作台插件（plugins/workbench）相互独立。
+
 ## 3. 决策清单（需要用户拍板）
 
 | 编号 | 决策点 | 建议默认值 | 影响 |
