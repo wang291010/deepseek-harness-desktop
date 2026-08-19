@@ -32,12 +32,14 @@
  */
 import { homedir } from 'node:os';
 import { isAbsolute, join, resolve, sep } from 'node:path';
+import { createRequire } from 'node:module';
 import { readdir, readFile, writeFile, stat, lstat, realpath, mkdir, rename, rm } from 'node:fs/promises';
 import { appendFileSync } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 
 const name = 'dsh-workbench';
+const hostRequire = createRequire(import.meta.url);
 const DSH_ROOT = resolve((process.env.DSH_HOME ?? '').trim() || join(homedir(), '.dsh'));
 const PRESET_ROOT = join(DSH_ROOT, '.agent-presets');
 const MAX_READ_BYTES = 512 * 1024;
@@ -2078,6 +2080,23 @@ function makeRoutes() {
         } catch (error) {
           bad(res, 'task-mutation-failed', String((error && error.message) || error));
         }
+      }
+    },
+    // ---- fs: native folder picker (Electron main process only) ----
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/fs/pick-folder',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let dialog = null;
+        try { dialog = hostRequire('electron').dialog; } catch (e) { dialog = null; }
+        if (!dialog || typeof dialog.showOpenDialog !== 'function') return bad(res, 'native-dialog-unavailable', '当前环境不支持原生文件夹选择，请手动输入路径');
+        try {
+          const result = await dialog.showOpenDialog({ properties: ['openDirectory'], title: '选择项目文件夹' });
+          const picked = result && !result.canceled && Array.isArray(result.filePaths) ? result.filePaths[0] : '';
+          writeJson(res, 200, { path: typeof picked === 'string' ? picked : '' });
+        } catch (error) { fail(res, error); }
       }
     },
     // ---- fs: list ----

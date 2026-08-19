@@ -88,6 +88,13 @@ powershell -ExecutionPolicy Bypass -File .\tools\enable-workbench.ps1    # 恢�
 
 见 `..\工作台方案清单.md`（工作区根目录）。
 
+### 项目文件夹选择
+
+- “添加项目 → 浏览…”优先调用 Host 原生文件夹选择框（`POST /api/dsh-workbench/fs/pick-folder`，
+  基于 Electron `dialog.showOpenDialog`，主进程实现），不依赖已废弃的 `File.path` 或
+  `window.webUtils`（Electron 32+ 已移除，旧方式在部分环境报“无法从当前环境读取文件夹绝对路径”）。
+- 非桌面环境（如纯 Web/普通 Node）下原生对话框不可用，自动回退到 HTML 文件夹输入。
+
 ## 风格页
 
 - 原生主题偏好：浅色、深色、跟随系统，继续通过 DSH `ThemeRuntime` 持久化。

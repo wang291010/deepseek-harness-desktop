@@ -183,6 +183,11 @@ try {
   try { await stat(attachmentPath); removed = false; } catch (e) { /* expected */ }
   assert.ok(removed, 'attachment file should be removed with the orchestration');
 
+  // native folder picker route must exist and degrade gracefully outside Electron
+  const pick = await callRaw('/api/dsh-workbench/fs/pick-folder', 'POST');
+  assert.equal(pick.status, 400, 'native picker should be unavailable in plain Node');
+  assert.equal(pick.data.error, 'native-dialog-unavailable');
+
   // --- reset restores defaults in free mode; free mode omits the pool reference ---
   const reset = await call('/api/dsh-workbench/agents/reset', 'POST');
   assert.equal(reset.mode, 'free');

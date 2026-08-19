@@ -870,7 +870,12 @@ window.__ModuleLoader__.load({
           setWsPath("");
         }).catch((e) => { console.error("[dsh-workbench] create workspace failed", e); });
       };
-      const pickWsFolder = () => { if (wsPickerRef.current) wsPickerRef.current.click(); };
+      const pickWsFolder = () => {
+        wbPickFolder().then((path) => {
+          if (path) { setWsPath(path); return; }
+          if (wsPickerRef.current) wsPickerRef.current.click();
+        }).catch(() => { if (wsPickerRef.current) wsPickerRef.current.click(); });
+      };
       const onWsPicked = (e) => {
         const files = Array.prototype.slice.call((e.target && e.target.files) || []);
         const first = files[0];
@@ -878,7 +883,9 @@ window.__ModuleLoader__.load({
         if (!first) return;
         let folder = "";
         try {
-          const filePath = String(first.path || (window.webUtils && typeof window.webUtils.getPathForFile === "function" ? window.webUtils.getPathForFile(first) : "") || "");
+          let webUtils = null;
+          try { webUtils = window.webUtils || (window.electron && window.electron.webUtils) || (typeof window.require === "function" ? window.require("electron").webUtils : null); } catch (err) { webUtils = null; }
+          const filePath = String(first.path || (webUtils && typeof webUtils.getPathForFile === "function" ? webUtils.getPathForFile(first) : "") || "");
           const rel = String(first.webkitRelativePath || "");
           if (filePath && rel) {
             const prefixLength = filePath.length - rel.length;
@@ -1185,6 +1192,10 @@ window.__ModuleLoader__.load({
     function wbListProjectFiles(projectPath) {
       if (!projectPath) return Promise.resolve([]);
       return wbFetchJson("/api/dsh-workbench/fs/list?path=" + encodeURIComponent(projectPath)).then(({ data }) => Array.isArray(data && data.entries) ? data.entries : []).catch(() => []);
+    }
+
+    function wbPickFolder() {
+      return wbFetchJson("/api/dsh-workbench/fs/pick-folder", { method: "POST" }).then(({ data }) => (data && typeof data.path === "string" ? data.path : "")).catch(() => "");
     }
 
     function wbLoadAgents() {
