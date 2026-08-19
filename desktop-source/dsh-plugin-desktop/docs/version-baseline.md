@@ -2,7 +2,7 @@
 
 ## 当前版本
 
-- 桌面端：**2.0.3**（`desktop-source/package.json`）
+- 桌面端：**2.1.0**（`desktop-source/package.json`）
 - 自动更新：启用（默认）；托盘可关闭后台检查，保留手动 Check for Updates。
 - 工作台插件：开发源 `plugins/workbench`；运行端部署于
   `resources/app.asar.unpacked/node_modules/dsh-workbench/lib`。
@@ -15,6 +15,7 @@
 | 2.0.1 | DeepSeek-Harness-Desktop-2.0.1-x64-Setup.exe | `E1B5A41B208EF44701C5D4CC5665139484EAB0F77A402740D8189606E1BB134B` |
 | 2.0.2 | DeepSeek-Harness-Desktop-2.0.2-x64-Setup.exe | `E6993A9EDF61B6635F426E367AC56E4904FE35174258FBD16D55E6203B660C2B` |
 | 2.0.3 | DeepSeek-Harness-Desktop-2.0.3-x64-Setup.exe | `C9D54E0117B35177DE917A0B41B6779ABADBD169FA03F670FACF3F6303FFAF60`（2026-08-20 重建：内置工作台 tools + bge-node 依赖） |
+| 2.1.0 | DeepSeek-Harness-Desktop-2.1.0-x64-Setup.exe | `DBD00FCD3AF953E16FCC2074134ADEE7181DEA65F948F7293E77263293041C45`（2026-08-20：完整版对外发布基线，含全部工作台功能） |
 
 > 安装包均为本地构建产物（未签名）：Windows 可能显示 Unknown publisher / SmartScreen 提示。
 > 签名证书到位后需重新生成并回填哈希（见 release-sop.md）。
