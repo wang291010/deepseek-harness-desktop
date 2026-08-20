@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-desktop",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "DeepSeek Harness Desktop: an Electron shell composed as a DeepSeek Harness Cordis plugin",
   "license": "MIT",
   "repository": {
@@ -258,7 +258,7 @@
     "extraResources": [
       {
         "from": "../../plugins/usage-monitor",
-        "to": "app.asar.unpacked/node_modules/@abcdefu_cja/dsh-usage-stats",
+        "to": "app.asar.unpacked/node_modules/@wang291010/dsh-usage-stats",
         "filter": [
           "package.json",
           "cordis.patch.yml",

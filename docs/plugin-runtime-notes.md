@@ -7,7 +7,7 @@ Verified on 2026-08-18 with DSH Desktop 2.0.0.
 
 ## Installed local distributions
 
-- `@abcdefu_cja/dsh-usage-stats`: `0.1.0-yourworkbench.2`
+- `@wang291010/dsh-usage-stats`: `0.1.0-yourworkbench.2`
 - `dsh-plugin-hub`: `0.1.6-yourworkbench.2`
 - `dsh-workbench`: `0.0.2-yourworkbench.1`
 
@@ -25,7 +25,7 @@ Current required declarations:
 
 ```json
 {
-  "@abcdefu_cja/dsh-usage-stats": "file:C:/YourWorkbench/plugins/usage-monitor",
+  "@wang291010/dsh-usage-stats": "file:C:/YourWorkbench/plugins/usage-monitor",
   "dsh-plugin-hub": "file:C:/YourWorkbench/plugins/plugin-hub"
 }
 ```

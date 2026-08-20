@@ -8,10 +8,13 @@ compatibility test before it becomes the new baseline.
 
 ## Desktop runtime
 
-- Desktop package: `dsh-plugin-desktop@2.0.1`
+- Desktop package: `dsh-plugin-desktop@2.1.1`（2026-08-20：用量插件包名
+  改为 `@wang291010/dsh-usage-stats`，归属与更新上游见 `docs/ownership-boundary.md`）
 - DeepSeek Harness core: `@deepseek-ai/dsh@0.1.0-rc.6`
 - Electron: `43.4.0`
 - Desktop-bundled pnpm: `11.7.0`
+- Setup installer SHA-256 (2.1.1):
+  `83713ED9E02D3E3353D44E5AC31A47ADF6FB5665191B7098CB52DF0127B89C87`
 - Setup installer SHA-256 (2.0.1):
   `E1B5A41B208EF44701C5D4CC5665139484EAB0F77A402740D8189606E1BB134B`
 - Installed executable SHA-256 (2.0.1):
@@ -19,7 +22,7 @@ compatibility test before it becomes the new baseline.
 
 ## Profile plugins
 
-- `@abcdefu_cja/dsh-usage-stats@0.1.0-yourworkbench.2`（本地维护 fork）
+- `@wang291010/dsh-usage-stats@0.1.0-yourworkbench.2`（本地维护 fork）
 - `dsh-plugin-hub@0.1.6-yourworkbench.2`（本地维护 fork）
 - `dsh-workbench@0.0.2-yourworkbench.1`（原创；开发源 `C:/YourWorkbench/plugins/workbench`；
   发布时经 extraResources 内置，运行时不再依赖该路径）

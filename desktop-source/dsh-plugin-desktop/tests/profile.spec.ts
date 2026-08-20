@@ -115,7 +115,7 @@ describe('desktop profile composition', () => {
       dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'] } },
     }) + '\n')
 
-    ensureDesktopProfile(home, ['@abcdefu_cja/dsh-usage-stats', 'dsh-plugin-hub', 'dsh-workbench'])
+    ensureDesktopProfile(home, ['@wang291010/dsh-usage-stats', 'dsh-plugin-hub', 'dsh-workbench'])
     const repaired = JSON.parse(readFileSync(path, 'utf8')) as {
       dsh: { profile: { bundles: string[] } }
     }
@@ -123,7 +123,7 @@ describe('desktop profile composition', () => {
     expect(repaired.dsh.profile.bundles).toEqual([
       '@deepseek-ai/dsh-base',
       '@deepseek-ai/dsh-web-app',
-      '@abcdefu_cja/dsh-usage-stats',
+      '@wang291010/dsh-usage-stats',
       'dsh-plugin-hub',
       'dsh-workbench',
     ])
@@ -146,7 +146,7 @@ describe('desktop profile composition', () => {
     const bundles = [
       '@deepseek-ai/dsh-base',
       '@deepseek-ai/dsh-web-app',
-      '@abcdefu_cja/dsh-usage-stats',
+      '@wang291010/dsh-usage-stats',
       'dsh-plugin-hub',
       'dsh-workbench',
       'third-party-plugin',
@@ -154,7 +154,7 @@ describe('desktop profile composition', () => {
     writeFileSync(path, JSON.stringify({
       ...manifest,
       dependencies: {
-        '@abcdefu_cja/dsh-usage-stats': 'file:C:/YourWorkbench/plugins/usage-monitor',
+        '@wang291010/dsh-usage-stats': 'file:C:/YourWorkbench/plugins/usage-monitor',
         'dsh-plugin-hub': 'file:C:/YourWorkbench/plugins/plugin-hub',
         'dsh-workbench': 'link:C:/YourWorkbench/plugins/workbench',
         'third-party-plugin': '^1.2.3',
@@ -167,7 +167,7 @@ describe('desktop profile composition', () => {
     }, undefined, 2) + '\n')
 
     expect(removeInstallationOwnedProfileDependencies(dir, [
-      '@abcdefu_cja/dsh-usage-stats',
+      '@wang291010/dsh-usage-stats',
       'dsh-plugin-hub',
       'dsh-workbench',
     ])).toBe(true)

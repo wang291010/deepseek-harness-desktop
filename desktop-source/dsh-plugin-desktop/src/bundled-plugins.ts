@@ -2,7 +2,7 @@
 
 /** Package names whose runtime files ship beside app.asar. */
 export const BUNDLED_PLUGIN_PACKAGES = [
-  '@abcdefu_cja/dsh-usage-stats',
+  '@wang291010/dsh-usage-stats',
   'dsh-plugin-hub',
   'dsh-workbench',
 ] as const

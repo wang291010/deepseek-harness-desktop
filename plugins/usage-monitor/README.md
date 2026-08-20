@@ -1,4 +1,4 @@
-# @abcdefu_cja/dsh-usage-stats
+# @wang291010/dsh-usage-stats
 
 > YourWorkbench 本地维护发行版：基于上游 `@abcdefu_cja/dsh-usage-stats@0.1.0`
 > （BSD-3-Clause）修改。后续改动以本仓库为准，上游仅作来源标注。
@@ -32,8 +32,8 @@ DSH Web 的 API 用量统计插件：精确统计 token、请求、完成轮次�
 **方式一：npm（发布后）**
 
 ```sh
-npm i @abcdefu_cja/dsh-usage-stats
-dsh plugin --profile web add @abcdefu_cja/dsh-usage-stats
+npm i @wang291010/dsh-usage-stats
+dsh plugin --profile web add @wang291010/dsh-usage-stats
 ```
 
 **方式二：本地 link（开发）**
@@ -47,7 +47,7 @@ dsh plugin --profile web add link:/path/to/dsh-usage-stats
 ```yaml
 - insert:
     - id: usage-stats
-      name: '@abcdefu_cja/dsh-usage-stats'
+      name: '@wang291010/dsh-usage-stats'
       config:
         enabled: true
         currency: CNY

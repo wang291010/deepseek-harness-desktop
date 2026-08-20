@@ -302,7 +302,7 @@ describe('published package surface', () => {
     expect(manifest.build?.extraResources).toEqual([
       {
         from: '../../plugins/usage-monitor',
-        to: 'app.asar.unpacked/node_modules/@abcdefu_cja/dsh-usage-stats',
+        to: 'app.asar.unpacked/node_modules/@wang291010/dsh-usage-stats',
         filter: ['package.json', 'cordis.patch.yml', 'lib/**', 'LICENSE', 'README.md'],
       },
       {

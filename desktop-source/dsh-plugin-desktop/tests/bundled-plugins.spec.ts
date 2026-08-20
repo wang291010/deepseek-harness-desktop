@@ -17,7 +17,7 @@ import {
 describe('distribution-owned plugin runtime', () => {
   it('enables the fixed plugin set only in packaged Electron builds', () => {
     expect(BUNDLED_PLUGIN_PACKAGES).toEqual([
-      '@abcdefu_cja/dsh-usage-stats',
+      '@wang291010/dsh-usage-stats',
       'dsh-plugin-hub',
       'dsh-workbench',
     ])
@@ -27,11 +27,11 @@ describe('distribution-owned plugin runtime', () => {
 
   it('matches package roots and exports without accepting lookalike names', () => {
     expect(isInstallationOwnedPackageSpecifier(
-      '@abcdefu_cja/dsh-usage-stats',
+      '@wang291010/dsh-usage-stats',
       BUNDLED_PLUGIN_PACKAGES,
     )).toBe(true)
     expect(isInstallationOwnedPackageSpecifier(
-      '@abcdefu_cja/dsh-usage-stats/client',
+      '@wang291010/dsh-usage-stats/client',
       BUNDLED_PLUGIN_PACKAGES,
     )).toBe(true)
     expect(isInstallationOwnedPackageSpecifier('dsh-plugin-hub/client', BUNDLED_PLUGIN_PACKAGES)).toBe(true)

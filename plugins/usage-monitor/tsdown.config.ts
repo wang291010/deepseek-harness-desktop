@@ -1,6 +1,6 @@
 import { defineConfig } from 'tsdown'
 
-const PACKAGE_NAME = '@abcdefu_cja/dsh-usage-stats'
+const PACKAGE_NAME = '@wang291010/dsh-usage-stats'
 
 function inlineDshClientCss() {
   return {

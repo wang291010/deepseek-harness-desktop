@@ -16,7 +16,7 @@
 | Harness 核心 | `desktop-source/deepseek-harness/`（submodule，待钉 commit） | `deepseek-ai/deepseek-harness` | commit `47f943859bef60e4160492346772ded9b24f765a`（0.1.0-rc.5），运行包 0.1.0-rc.6 | MIT | 上游，只读钉死 |
 | 桌面外壳 `dsh-plugin-desktop` | `desktop-source/dsh-plugin-desktop/` | `anywhere-labs/deepseek-harness-desktop` | v2.0.0，commit `ee1235e1dd1675bbd6c52cfbe3f27b27bcfcfa81` | MIT | 你的 fork（本地维护） |
 | 插件商店 `dsh-plugin-hub` | `plugins/plugin-hub/` | `yunhuantian/dsh-plugin-hub` | 0.1.6 | MIT | 你的 fork（本地维护） |
-| 用量监控 `@abcdefu_cja/dsh-usage-stats` | `plugins/usage-monitor/` | `@abcdefu_cja/dsh-usage-stats` | 0.1.0 | BSD-3-Clause | 你的 fork（本地维护） |
+| 用量监控 `@wang291010/dsh-usage-stats` | `plugins/usage-monitor/` | `@abcdefu_cja/dsh-usage-stats` | 0.1.0 | BSD-3-Clause | 你的 fork（本地维护） |
 | 工作台 `dsh-workbench` | `plugins/workbench/` | 无（原创） | — | MIT | 你的原创 |
 
 ## 更新上游规则

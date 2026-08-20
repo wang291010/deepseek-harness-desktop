@@ -1,5 +1,5 @@
 {
-  "name": "@abcdefu_cja/dsh-usage-stats",
+  "name": "@wang291010/dsh-usage-stats",
   "description": "DSH API 用量统计（YourWorkbench 本地维护，基于上游 @abcdefu_cja/dsh-usage-stats 0.1.0 修改）：token、请求、轮次、缓存命中、费用估算与多提供商余额/配额。",
   "version": "0.1.0-yourworkbench.2",
   "type": "module",
