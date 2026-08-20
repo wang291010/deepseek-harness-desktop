@@ -2,9 +2,12 @@
 
 Verified on 2026-08-18 with DSH Desktop 2.0.0.
 
+> 三个插件均为本仓库维护的发行（两个 fork + 一个原创），归属与更新上游见
+> `docs/ownership-boundary.md`。
+
 ## Installed local distributions
 
-- `@abcdefu_cja/dsh-usage-stats`: `0.1.0-yourworkbench.1`
+- `@abcdefu_cja/dsh-usage-stats`: `0.1.0-yourworkbench.2`
 - `dsh-plugin-hub`: `0.1.6-yourworkbench.2`
 - `dsh-workbench`: `0.0.2-yourworkbench.1`
 

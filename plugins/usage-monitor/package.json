@@ -1,6 +1,6 @@
 {
   "name": "@abcdefu_cja/dsh-usage-stats",
-  "description": "DSH API 用量统计：token、请求、轮次、缓存命中、费用估算与多提供商余额/配额。",
+  "description": "DSH API 用量统计（YourWorkbench 本地维护，基于上游 @abcdefu_cja/dsh-usage-stats 0.1.0 修改）：token、请求、轮次、缓存命中、费用估算与多提供商余额/配额。",
   "version": "0.1.0-yourworkbench.2",
   "type": "module",
   "main": "lib/index.js",
@@ -26,6 +26,11 @@
     "watch": "tsdown --watch"
   },
   "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wang291010/deepseek-harness-desktop.git",
+    "directory": "plugins/usage-monitor"
+  },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
     "@deepseek-ai/dsh-client-connection": "^0.1.0-rc.6",

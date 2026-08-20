@@ -5,7 +5,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/anywhere-labs/deepseek-harness-desktop.git",
+    "url": "git+https://github.com/wang291010/deepseek-harness-desktop.git",
     "directory": "dsh-plugin-desktop"
   },
   "type": "module",

@@ -36,3 +36,17 @@ Independent-distribution changes belong under `desktop-source/dsh-plugin-desktop
 or in clearly named project-owned packages. Changes to the pinned official core
 must be handled separately and documented as core patches or an explicit core
 version update.
+
+## Ownership and update boundary
+
+These components are locally maintained by this distribution:
+
+- Desktop shell `dsh-plugin-desktop`: a fork of the upstream release above; its
+  self-update source is the project-owned repository
+  `wang291010/deepseek-harness-desktop` (see `src/update-source.ts`).
+- Plugin Hub and usage stats: forks maintained under `plugins/` in this
+  repository; their package `repository` fields point here until standalone
+  repositories are created.
+
+The pinned Harness core remains the only upstream update track. Full ownership
+definitions live in `docs/ownership-boundary.md`.

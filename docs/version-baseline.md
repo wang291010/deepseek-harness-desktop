@@ -19,9 +19,9 @@ compatibility test before it becomes the new baseline.
 
 ## Profile plugins
 
-- `@abcdefu_cja/dsh-usage-stats@0.1.0`
-- `dsh-plugin-hub@0.1.6`
-- `dsh-workbench@0.0.1`（开发源 `C:/YourWorkbench/plugins/workbench`；
+- `@abcdefu_cja/dsh-usage-stats@0.1.0-yourworkbench.2`（本地维护 fork）
+- `dsh-plugin-hub@0.1.6-yourworkbench.2`（本地维护 fork）
+- `dsh-workbench@0.0.2-yourworkbench.1`（原创；开发源 `C:/YourWorkbench/plugins/workbench`；
   发布时经 extraResources 内置，运行时不再依赖该路径）
 
 ## Workbench development tools
@@ -40,5 +40,11 @@ compatibility test before it becomes the new baseline.
 - Registry plugins use exact versions in the profile manifest and lockfile.
 - The Workbench dev source is changed only from this project and rebuilt into
   the desktop package for releases.
+- Desktop shell, Plugin Hub, and usage stats are locally maintained forks:
+  their code lives in this repository and their updates are published through
+  this repository's Releases; they never pull from their upstream repositories
+  (see `docs/ownership-boundary.md`).
+- The only upstream update track is the DeepSeek Harness core, which is pinned
+  and must be reviewed and backed up before any upgrade.
 - Upstream versions must not be accepted until their source and compatibility
   have been reviewed against this baseline.

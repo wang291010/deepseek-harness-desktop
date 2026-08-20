@@ -1,5 +1,9 @@
 # dsh-plugin-hub — DeepSeek Harness 插件商店
 
+> YourWorkbench 本地维护发行版：基于上游 `yunhuantian/dsh-plugin-hub@0.1.6`
+> （MIT）修改。后续改动以本仓库为准，上游仅作来源标注。
+> 归属与更新上游见 `docs/ownership-boundary.md`。
+
 一个深度集成于 **Harness Web UI** 的图形化插件商店：在原生界面中浏览、搜索、一键安装
 GitHub 上的 DSH 插件（来源限定为标记 `topic: dsh-plugin` 或 `#dsh-plugin` 的仓库），
 并内置本地评分评论、依赖拓扑评估、操作审计日志与插件开发脚手架引导。

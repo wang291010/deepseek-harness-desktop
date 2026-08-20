@@ -108,3 +108,5 @@ corepack yarn dist:win
 - 安装包为未签名构建（等证书）；Windows 可能提示 Unknown publisher。
 - 旧版 DSH 数据不自动迁移；凭据文件不进入仓库。
 - 许可证：MIT（本仓库）；DeepSeek Harness 与 DSH Desktop 为上游项目，保留各自许可证。
+- 组件归属与更新上游见 [docs/ownership-boundary.md](docs/ownership-boundary.md)：桌面外壳 / 插件商店 /
+  用量监控为基于上游开源的本地 fork，工作台为原创；唯一的上游更新轨道是钉死的 Harness 核心。
