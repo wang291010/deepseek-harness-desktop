@@ -288,7 +288,9 @@ try {
   const runningTask = (await listAll()).tasks.find((task) => task.orchestrationId === ctxId);
   assert.ok(['in_progress', 'blocked'].includes(runningTask.status), 'orchestration run should sync task status');
   if ((await listAll()).orchestrations.find((item) => item.id === ctxId).phase === 'review') {
-    await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_accept', scope: 'all', projectPath: projectDir, id: ctxId, note: 'ok' });
+const acceptedResult = await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_accept', scope: 'all', projectPath: projectDir, id: ctxId, note: 'ok' });
+assert.ok(acceptedResult.knowledgeCapture && acceptedResult.knowledgeCapture.created, 'accepted orchestration should create a review-gated experience snapshot');
+assert.equal(acceptedResult.knowledgeCapture.entry.status, 'review');
     const doneTask = (await listAll()).tasks.find((task) => task.orchestrationId === ctxId);
     assert.equal(doneTask.status, 'completed', 'accepted orchestration should complete the board task');
   }

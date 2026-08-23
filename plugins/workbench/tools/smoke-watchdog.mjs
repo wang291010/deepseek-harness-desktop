@@ -122,8 +122,9 @@ try {
   });
   await waitPhase(created.id, ['planned', 'failed']);
   assert.ok(llmCalls.length >= 1, 'planner should have been invoked');
-  assert.ok(llmCalls[0].system.includes('快速问答模式'), 'quick mode should inject planner instruction');
-  assert.ok(llmCalls[0].system.includes('直接回答'), 'quick mode instruction should mention direct answer');
+  const quickPlannerCall = llmCalls.find((call) => call.system.includes('快速问答模式'));
+  assert.ok(quickPlannerCall, 'quick mode should inject planner instruction');
+  assert.ok(quickPlannerCall.system.includes('直接回答'), 'quick mode instruction should mention direct answer');
   await call('/api/dsh-workbench/tasks/mutate', 'POST', {
     action: 'orchestration_remove', scope: 'all', projectPath: 'D:\\demo', id: created.id
   });

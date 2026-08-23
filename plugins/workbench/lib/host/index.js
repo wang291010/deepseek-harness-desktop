@@ -84,8 +84,14 @@ const KNOWLEDGE_VECTOR_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-vectors.j
 const KNOWLEDGE_PROFILE_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-profiles.json');
 const KNOWLEDGE_EVAL_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-eval.json');
 const KNOWLEDGE_QUALITY_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-quality.json');
+const KNOWLEDGE_AUTO_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-auto.json');
+const KNOWLEDGE_TRACE_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-traces.json');
 const MAX_KNOWLEDGE_INDEX_BYTES = 32 * 1024 * 1024;
 const MAX_KNOWLEDGE_EVAL_BYTES = 2 * 1024 * 1024;
+const MAX_KNOWLEDGE_TRACE_BYTES = 2 * 1024 * 1024;
+const MAX_KNOWLEDGE_TRACES = 1000;
+const KNOWLEDGE_TRACE_TOOLS = new Set(['knowledge_search', 'knowledge_read', 'web_search', 'web_fetch']);
+const KNOWLEDGE_TRACE_SECRET_KEY = /api[-_]?key|authorization|cookie|credential|password|secret|(?:access|refresh|auth)?token$/i;
 const KNOWLEDGE_FOLDER_DIRS = {
   raw: KNOWLEDGE_RAW, inbox: KNOWLEDGE_INBOX, atomic: KNOWLEDGE_ATOMIC, mocs: KNOWLEDGE_MOCS,
   projects: KNOWLEDGE_PROJECTS, templates: KNOWLEDGE_TEMPLATES, archive: KNOWLEDGE_ARCHIVE
@@ -100,8 +106,29 @@ const KNOWLEDGE_MAX_ENTRY_BYTES = 512 * 1024;
 const KNOWLEDGE_MAX_QUERY_CHARS = 1000;
 const KNOWLEDGE_MAX_TOPK = 20;
 const KNOWLEDGE_MAX_TOKEN_BUDGET = 8000;
+const KNOWLEDGE_TOOL_READ_MAX_CHARS = 6000;
 const KNOWLEDGE_VECTOR_PROVIDERS = ['none', 'bge-local', 'bge-node', 'openai', 'custom'];
 const KNOWLEDGE_DEFAULT_VECTOR_CONFIG = { provider: 'bge-local', model: 'bge-small-zh-v1.5', apiKey: '', baseUrl: '', python: '' };
+const KNOWLEDGE_AUTO_DEFAULT_CONFIG = {
+  enabled: true,
+  gate: 'both',
+  routing: 'auto',
+  maxIterations: 2,
+  rerank: 'none',
+  topK: 3,
+  tokenBudget: 600,
+  minConfidence: 'medium',
+  maxRefs: 3,
+  cacheTtlMs: 10 * 60 * 1000,
+  webFallback: true,
+  thresholds: { insufficient: 0.42, gray: 0.55 },
+  auditLevel: 'ref-only'
+};
+const KNOWLEDGE_CHAT_CONTEXT_TTL_MS = 10 * 60 * 1000;
+const KNOWLEDGE_CONFIDENCE_SCORE = { high: 0.85, medium: 0.6, low: 0.35 };
+const KNOWLEDGE_AUTO_TRIGGER = /什么|怎么|如何|为什么|能否|能不能|可不可以|是否|有没有|多少|哪个|哪些|谁|区别|对比|差异|关系|影响|依赖|介绍|总结|概括|方案|流程|经验|踩坑|问题|原理|机制|架构|设计|配置|使用|注意|建议|最佳实践|做法|步骤|规范|标准|原因|背景|含义|用途|优势|劣势|适合|应该|需要|推荐|选择|评估|测试|部署|上线|修复|排查|解决|追溯/;
+const KNOWLEDGE_AUTO_SKIP = /^(你好|您好|hi|hello|嗨|哈喽|早上好|下午好|晚上好|谢谢|感谢|再见|拜拜|好的|收到|知道了|ok|嗯|哦|在吗|在不在|哈哈|可以|没问题|加油)[\s!！。.~～]*$/i;
+const KNOWLEDGE_AUTO_FOLLOWUP = /^(继续|展开|详细|具体|然后|那|为什么|再|接着|还有|举例|比如|说说|讲讲|更多|深入|解释|另外|其他)/;
 const KNOWLEDGE_EMBED_SCRIPT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'tools', 'knowledge_embed.py');
 const KNOWLEDGE_EMBED_NODE_SCRIPT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'tools', 'knowledge_embed.mjs');
 const KNOWLEDGE_DEFAULT_PROFILE = {
@@ -736,6 +763,8 @@ let vectorConfigCache = null;
 let knowledgeProfiles = null;
 let knowledgeEvalCache = null;
 let knowledgeQualityCache = null;
+let knowledgeTraceCache = null;
+let knowledgeTraceWriteQueue = Promise.resolve();
 
 async function readKnowledgeQuality() {
   if (knowledgeQualityCache) return knowledgeQualityCache;
@@ -833,12 +862,20 @@ function computeKnowledgeConfidenceBasis(entry, quality) {
   const usageReasons = [];
   if (usageRecord) {
     const hits = Number(usageRecord.hits) || 0;
+    const helpful = Math.max(0, Number(usageRecord.helpful) || 0);
+    const unhelpful = Math.max(0, Number(usageRecord.unhelpful) || 0);
     const lastHit = usageRecord.lastHitAt ? Date.parse(usageRecord.lastHitAt) : 0;
     if (hits >= 3) { usage = 1.1; usageReasons.push('被命中 ' + hits + ' 次（使用强化）'); }
     else if (hits >= 1) { usage = 1.05; usageReasons.push('被命中 ' + hits + ' 次'); }
     if (Number.isFinite(lastHit) && lastHit > 0 && Date.now() - lastHit > 90 * 86400000) {
       usage = Math.max(0.9, usage - 0.05);
       usageReasons.push('超过 90 天未被使用');
+    }
+    if (helpful + unhelpful > 0) {
+      const helpfulRatio = (helpful + 1) / (helpful + unhelpful + 2);
+      const feedbackFactor = 0.8 + helpfulRatio * 0.4;
+      usage = Math.max(0.8, Math.min(1.2, usage * feedbackFactor));
+      usageReasons.push('用户反馈：有帮助 ' + helpful + ' / 没帮助 ' + unhelpful);
     }
   } else if (ageDays > 180) {
     usage = 0.9;
@@ -1740,7 +1777,7 @@ function mergeKnowledgeProfile(profile, project) {
     weights: { ...base.weights, ...(stored.weights || {}) },
     topK: clampInt(stored.topK, 1, KNOWLEDGE_MAX_TOPK, base.topK),
     tokenBudget: clampInt(stored.tokenBudget, 200, KNOWLEDGE_MAX_TOKEN_BUDGET, base.tokenBudget),
-    rerank: ['none', 'llm'].includes(stored.rerank) ? stored.rerank : 'none',
+    rerank: ['none', 'local', 'llm'].includes(stored.rerank) ? stored.rerank : 'none',
     folders: Array.isArray(stored.folders) ? stored.folders.filter((item) => KNOWLEDGE_FOLDER_IDS.includes(item)).slice(0, 5) : [...base.folders],
     projectType: cleanTaskText(stored.projectType || '', 80)
   };
@@ -1776,6 +1813,30 @@ async function knowledgeLlmRerank(query, candidates, topK) {
   } catch { return candidates.slice(0, topK); }
 }
 
+async function knowledgeLocalRerank(query, candidates, topK) {
+  const fallback = candidates.slice(0, topK);
+  if (candidates.length < 2) return { results: fallback, status: 'skipped' };
+  try {
+    const config = await readVectorConfig();
+    if (!['bge-local', 'bge-node'].includes(config.provider)) {
+      return { results: fallback, status: 'disabled', error: 'local BGE provider is not enabled' };
+    }
+    const texts = [query, ...candidates.map((entry) => [entry.title, entry.summary, entry.snippet].filter(Boolean).join('\n').slice(0, 2000))];
+    const embedded = await embedKnowledgeTexts(config, texts);
+    const queryVector = embedded && embedded.vectors && embedded.vectors[0];
+    if (!queryVector || !queryVector.length) return { results: fallback, status: 'empty', error: 'local reranker returned no query vector' };
+    const scored = candidates.map((entry, index) => ({
+      entry,
+      index,
+      score: cosineSimilarity(queryVector, embedded.vectors[index + 1])
+    }));
+    scored.sort((a, b) => b.score - a.score || a.index - b.index);
+    return { results: scored.slice(0, topK).map((item) => item.entry), status: 'ok' };
+  } catch (error) {
+    return { results: fallback, status: 'error', error: String((error && error.message) || error).slice(0, 500) };
+  }
+}
+
 async function knowledgeSnippet(entry, queryTokens, maxChars = 240) {
   try {
     const file = join(KNOWLEDGE_FOLDER_DIRS[entry.folder], entry.name);
@@ -1808,6 +1869,7 @@ async function knowledgeSnippet(entry, queryTokens, maxChars = 240) {
 
 function knowledgeClassifyQuery(query, queryTokens, entries) {
   const relationHits = /关联|关系|区别|差异|依赖|影响|联系|图谱|对比|类似|谁/.test(String(query || ''));
+  const multiHopHits = /同时|分别|并且|以及|之间|先.*再|为什么.*如何|比较.*并|从.*到|影响.*原因/.test(String(query || ''));
   const termSet = new Set();
   const knownSet = new Set();
   for (const entry of entries) {
@@ -1823,19 +1885,28 @@ function knowledgeClassifyQuery(query, queryTokens, entries) {
   const longQuery = queryTokens.length >= 6 || String(query || '').length >= 14;
   let mode = 'hybrid';
   let reason = '';
-  if (relationHits && coverage < 0.55) {
+  let complexity = 'simple';
+  if (multiHopHits && !relationHits && queryTokens.length >= 5) {
+    mode = 'hybrid';
+    complexity = 'complex';
+    reason = '包含多跳关系或复合目标，进入迭代检索';
+  } else if (relationHits) {
     mode = 'graph';
-    reason = '关系类提问且精确词覆盖低，优先图谱';
+    complexity = 'complex';
+    reason = '关系类提问，优先图谱';
   } else if (coverage >= 0.6 && queryTokens.length <= 10) {
     mode = 'bm25-graph';
+    complexity = 'simple';
     reason = '精确术语覆盖 ' + Math.round(coverage * 100) + '%，走关键词+图谱';
   } else if (longQuery && coverage < 0.5) {
     mode = 'vector';
+    complexity = 'ambiguous';
     reason = '语义模糊长问题（覆盖 ' + Math.round(coverage * 100) + '%），优先向量';
   } else {
+    complexity = longQuery ? 'ambiguous' : 'simple';
     reason = '综合场景，混合多路召回';
   }
-  return { mode, reason, coverage: Math.round(coverage * 1000) / 1000 };
+  return { mode, complexity, reason, coverage: Math.round(coverage * 1000) / 1000 };
 }
 
 async function precheckKnowledgeEntry({ title, content, source, excludePath }) {
@@ -1886,7 +1957,39 @@ async function precheckKnowledgeEntry({ title, content, source, excludePath }) {
   };
 }
 
-async function runKnowledgeSearch(query, project, options = {}) {
+function knowledgeCoverageSignal(query, results, thresholds = KNOWLEDGE_AUTO_DEFAULT_CONFIG.thresholds) {
+  const queryTokens = tokenizeKnowledgeText(query);
+  const hits = Array.isArray(results) ? results : [];
+  const thresholdInsufficient = Number.isFinite(Number(thresholds && thresholds.insufficient)) ? Number(thresholds.insufficient) : KNOWLEDGE_AUTO_DEFAULT_CONFIG.thresholds.insufficient;
+  const thresholdGray = Number.isFinite(Number(thresholds && thresholds.gray)) ? Number(thresholds.gray) : KNOWLEDGE_AUTO_DEFAULT_CONFIG.thresholds.gray;
+  if (!hits.length || !queryTokens.length) {
+    return { score: 0, maxConfidence: 0, hitCount: 0, lexicalCoverage: 0, level: 'insufficient', action: 'web-primary' };
+  }
+  const covered = new Set();
+  let maxConfidence = 0;
+  for (const entry of hits) {
+    maxConfidence = Math.max(maxConfidence, knowledgeEntryConfidenceScore(entry));
+    const text = [entry.title, entry.summary, entry.snippet, ...(entry.tags || [])].join(' ').toLocaleLowerCase();
+    queryTokens.forEach((token) => { if (text.includes(token)) covered.add(token); });
+  }
+  const lexicalCoverage = covered.size / queryTokens.length;
+  const hitFactor = hits.length ? 1 : 0;
+  const score = Math.max(0, Math.min(1, maxConfidence * 0.55 + lexicalCoverage * 0.3 + hitFactor * 0.15));
+  const requiresFreshEvidence = /最新|今天|现行|实时|价格|政策|新闻|业界|近期|版本更新|刚发布/.test(String(query || ''));
+  let level = score < thresholdInsufficient ? 'insufficient' : score < thresholdGray ? 'gray' : 'sufficient';
+  if (requiresFreshEvidence && level === 'sufficient') level = 'gray';
+  return {
+    score: Math.round(score * 1000) / 1000,
+    maxConfidence: Math.round(maxConfidence * 1000) / 1000,
+    hitCount: hits.length,
+    lexicalCoverage: Math.round(lexicalCoverage * 1000) / 1000,
+    requiresFreshEvidence,
+    level,
+    action: level === 'sufficient' ? 'knowledge-only' : level === 'gray' ? 'parallel-kb-web' : 'web-primary'
+  };
+}
+
+async function runKnowledgeSearchOnce(query, project, options = {}) {
   const q = cleanTaskText(query, KNOWLEDGE_MAX_QUERY_CHARS);
   if (!q) return { error: 'query required' };
   const prevEntries = (knowledgeIndex.entries || []).slice();
@@ -1920,7 +2023,7 @@ async function runKnowledgeSearch(query, project, options = {}) {
   const tokenBudget = clampInt(options.tokenBudget || profile.tokenBudget, 200, KNOWLEDGE_MAX_TOKEN_BUDGET, profile.tokenBudget);
   const queryTokens = tokenizeKnowledgeText(q);
   const routing = knowledgeClassifyQuery(q, queryTokens, entries);
-  const mode = profile.mode === 'auto' ? routing.mode : profile.mode;
+  const mode = options.mode || (profile.mode === 'auto' ? routing.mode : profile.mode);
   const want = (route) => profile.routes[route] !== false;
   const useBm25 = (mode === 'bm25-graph' || mode === 'hybrid') && want('bm25');
   const useGraph = (mode === 'bm25-graph' || mode === 'graph' || mode === 'hybrid') && want('graph');
@@ -1961,13 +2064,33 @@ async function runKnowledgeSearch(query, project, options = {}) {
       vector = { ranked: [], status: 'error', error: String((vectorError && vectorError.message) || vectorError) };
     }
   }
+  if (!rankedLists.length) {
+    const lexicalFallback = knowledgeBm25(entries, queryTokens, Math.max(40, topK * 4));
+    rankedLists.push(lexicalFallback);
+    weights.push(profile.weights.bm25 || 1);
+    routesUsed.push('bm25-fallback');
+    const fallbackSeeds = lexicalFallback.map((item) => item.id);
+    rankedLists.push(knowledgeGraphSearch(entries, queryTokens, fallbackSeeds, Math.max(40, topK * 4)));
+    weights.push(profile.weights.graph || 0.7);
+    routesUsed.push('graph-fallback');
+  }
   const fused = rankedLists.length ? knowledgeRrf(rankedLists, weights) : [];
   const byPath = new Map(entries.map((entry) => [entry.path, entry]));
   const scoreMap = new Map(fused.map((item) => [item.id, item.score]));
   const candidates = fused.slice(0, Math.max(topK * 3, 12)).map((item) => byPath.get(item.id)).filter(Boolean);
   let reranked = candidates;
-  if (profile.rerank === 'llm' && chatLlm !== null && candidates.length > 1) {
+  const rerankMode = ['none', 'local', 'llm'].includes(options.rerank) ? options.rerank : profile.rerank;
+  let rerankStatus = rerankMode === 'none' ? 'disabled' : 'skipped';
+  let rerankError = '';
+  if (rerankMode === 'local' && candidates.length > 1) {
+    const local = await knowledgeLocalRerank(q, candidates, topK);
+    reranked = local.results;
+    rerankStatus = local.status;
+    rerankError = local.error || '';
+    routesUsed.push(local.status === 'ok' ? 'rerank-local' : 'rerank-local-fallback');
+  } else if (rerankMode === 'llm' && chatLlm !== null && candidates.length > 1) {
     reranked = await knowledgeLlmRerank(q, candidates, topK);
+    rerankStatus = 'ok';
     routesUsed.push('rerank-llm');
   } else {
     reranked = candidates.slice(0, topK);
@@ -2005,6 +2128,7 @@ async function runKnowledgeSearch(query, project, options = {}) {
       source: entry.source
     });
   }
+  const coverage = knowledgeCoverageSignal(q, results, options.thresholds);
   const selfCheck = { caution: false, reasons: [] };
   if (vector.status === 'error') {
     selfCheck.caution = true;
@@ -2029,9 +2153,352 @@ async function runKnowledgeSearch(query, project, options = {}) {
     routes: routesUsed,
     vectorStatus: vector.status || 'n/a',
     vectorError: vector.error || '',
+    rerankMode,
+    rerankStatus,
+    rerankError,
     estimatedTokens,
+    coverage,
     selfCheck,
     results
+  };
+}
+
+async function runKnowledgeSearch(query, project, options = {}) {
+  const startedAt = Date.now();
+  const q = cleanTaskText(query, KNOWLEDGE_MAX_QUERY_CHARS);
+  if (!q) return { error: 'query required' };
+  const routingMode = ['auto', 'force-hybrid', 'force-iterative'].includes(options.routingMode) ? options.routingMode : 'auto';
+  const maxIterations = clampInt(options.maxIterations, 1, 2, 2);
+  const first = await runKnowledgeSearchOnce(q, project, {
+    ...options,
+    mode: routingMode === 'force-hybrid' ? 'hybrid' : options.mode,
+    thresholds: options.thresholds
+  });
+  if (first.error) return first;
+  const iterationReason = routingMode === 'force-iterative'
+    ? 'forced'
+    : first.routing && first.routing.complexity === 'complex'
+      ? 'complex-query'
+      : first.coverage && first.coverage.level === 'insufficient'
+        ? 'insufficient-coverage'
+        : '';
+  const shouldIterate = routingMode === 'force-iterative' || (routingMode === 'auto' && !!iterationReason);
+  if (!shouldIterate || maxIterations <= 1) {
+    return { ...first, iterations: 1, retrievalTokens: first.estimatedTokens || 0, latencyMs: Date.now() - startedAt, firstCoverage: first.coverage, routing: { ...first.routing, strategy: shouldIterate ? 'iterative-disabled-by-limit' : 'single-pass', iterationReason } };
+  }
+
+  const allResults = [...(first.results || [])];
+  const iterationQueries = [q];
+  let totalTokens = first.estimatedTokens || 0;
+  let last = first;
+  for (let round = 1; round < maxIterations; round += 1) {
+    const hints = allResults.slice(0, 3).map((entry) => entry.title).filter(Boolean).join(' ');
+    const nextQuery = hints ? q + ' ' + hints : q;
+    iterationQueries.push(nextQuery);
+    last = await runKnowledgeSearchOnce(nextQuery, project, {
+      ...options,
+      mode: options.mode || 'hybrid',
+      routingMode: 'force-hybrid',
+      thresholds: options.thresholds
+    });
+    totalTokens += last.estimatedTokens || 0;
+    for (const entry of last.results || []) {
+      const existing = allResults.find((item) => item.path === entry.path);
+      if (!existing || Number(entry.retrievalScore || 0) > Number(existing.retrievalScore || 0)) {
+        if (existing) allResults[allResults.indexOf(existing)] = entry;
+        else allResults.push(entry);
+      }
+    }
+    const coverage = knowledgeCoverageSignal(q, allResults, options.thresholds);
+    if (coverage.level === 'sufficient') break;
+  }
+  allResults.sort((a, b) => Number(b.retrievalScore || 0) - Number(a.retrievalScore || 0));
+  const bounded = [];
+  let boundedTokens = 0;
+  for (const entry of allResults) {
+    if (bounded.length >= first.topK) break;
+    const tokens = Math.max(1, Math.ceil((String(entry.title || '') + String(entry.summary || '') + String(entry.snippet || '')).length / 2.5));
+    if (bounded.length && boundedTokens + tokens > first.tokenBudget) break;
+    bounded.push(entry);
+    boundedTokens += tokens;
+  }
+  return {
+    ...first,
+    mode: 'iterative',
+    routes: [...new Set([...(first.routes || []), ...(last.routes || []), 'iterative'])],
+    iterations: iterationQueries.length,
+    iterationQueries,
+    estimatedTokens: boundedTokens,
+    retrievalTokens: totalTokens,
+    latencyMs: Date.now() - startedAt,
+    firstCoverage: first.coverage,
+    coverage: knowledgeCoverageSignal(q, bounded, options.thresholds),
+    routing: { ...first.routing, strategy: 'iterative', iterationReason },
+    selfCheck: last.selfCheck,
+    results: bounded
+  };
+}
+
+function cleanKnowledgeAutoConfig(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  const base = JSON.parse(JSON.stringify(KNOWLEDGE_AUTO_DEFAULT_CONFIG));
+  const thresholds = value.thresholds && typeof value.thresholds === 'object' ? value.thresholds : {};
+  const insufficientThreshold = Math.max(0, Math.min(1, Number.isFinite(Number(thresholds.insufficient)) ? Number(thresholds.insufficient) : base.thresholds.insufficient));
+  const grayThreshold = Math.max(insufficientThreshold, Math.min(1, Number.isFinite(Number(thresholds.gray)) ? Number(thresholds.gray) : base.thresholds.gray));
+  return {
+    enabled: typeof value.enabled === 'boolean' ? value.enabled : base.enabled,
+    gate: ['rule', 'model', 'both'].includes(value.gate) ? value.gate : base.gate,
+    routing: ['auto', 'force-hybrid', 'force-iterative'].includes(value.routing) ? value.routing : base.routing,
+    maxIterations: clampInt(value.maxIterations, 1, 2, base.maxIterations),
+    rerank: ['none', 'local', 'llm'].includes(value.rerank) ? value.rerank : base.rerank,
+    topK: clampInt(value.topK, 1, KNOWLEDGE_MAX_TOPK, base.topK),
+    tokenBudget: clampInt(value.tokenBudget, 200, KNOWLEDGE_MAX_TOKEN_BUDGET, base.tokenBudget),
+    minConfidence: KNOWLEDGE_CONFIDENCES.includes(value.minConfidence) ? value.minConfidence : base.minConfidence,
+    maxRefs: clampInt(value.maxRefs, 1, 5, base.maxRefs),
+    cacheTtlMs: Number.isFinite(Number(value.cacheTtlMs)) && Number(value.cacheTtlMs) >= 0 ? Math.min(Number(value.cacheTtlMs), 60 * 60 * 1000) : base.cacheTtlMs,
+    webFallback: typeof value.webFallback === 'boolean' ? value.webFallback : base.webFallback,
+    thresholds: {
+      insufficient: insufficientThreshold,
+      gray: grayThreshold
+    },
+    auditLevel: value.auditLevel === 'ref+groundedness' ? 'ref+groundedness' : base.auditLevel
+  };
+}
+
+async function readKnowledgeAutoConfig() {
+  try {
+    const info = await lstat(KNOWLEDGE_AUTO_STORE);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('auto config store must be a regular file');
+    if (info.size > 256 * 1024) throw new Error('auto config store too large');
+    const parsed = JSON.parse(await readFile(KNOWLEDGE_AUTO_STORE, 'utf8'));
+    return cleanKnowledgeAutoConfig(parsed);
+  } catch {
+    return cleanKnowledgeAutoConfig({});
+  }
+}
+
+async function writeKnowledgeAutoConfig(config) {
+  await mkdir(DSH_ROOT, { recursive: true });
+  const temp = KNOWLEDGE_AUTO_STORE + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, JSON.stringify(cleanKnowledgeAutoConfig(config), null, 2) + '\n', 'utf8');
+  await rename(temp, KNOWLEDGE_AUTO_STORE);
+  return cleanKnowledgeAutoConfig(config);
+}
+
+function knowledgeEntryConfidenceScore(entry) {
+  if (entry && Number.isFinite(Number(entry.confidenceBasis && entry.confidenceBasis.score))) {
+    return Number(entry.confidenceBasis.score);
+  }
+  const label = (entry && (entry.computedConfidence || entry.confidence)) || 'medium';
+  return KNOWLEDGE_CONFIDENCE_SCORE[label] || KNOWLEDGE_CONFIDENCE_SCORE.medium;
+}
+
+function knowledgeEntryConfidenceRank(entry) {
+  const label = (entry && (entry.computedConfidence || entry.confidence)) || 'medium';
+  return { high: 2, medium: 1, low: 0 }[label] ?? 1;
+}
+
+function knowledgeAutoGate(query) {
+  const q = cleanTaskText(query, KNOWLEDGE_MAX_QUERY_CHARS);
+  if (q.length < 4) return { should: false, hardSkip: true, reason: '输入过短，无需检索' };
+  if (KNOWLEDGE_AUTO_SKIP.test(q)) return { should: false, hardSkip: true, reason: '寒暄/确认类消息，无需检索' };
+  if (KNOWLEDGE_AUTO_TRIGGER.test(q)) return { should: true, hardSkip: false, reason: '知识型提问，触发检索' };
+  if (q.length >= 20) return { should: true, hardSkip: false, reason: '长任务描述，可能受益于知识库' };
+  return { should: false, hardSkip: false, reason: '无知识型意图，不消耗 token' };
+}
+
+async function knowledgeModelGate(query) {
+  if (chatLlm === null) return null;
+  try {
+    const text = await streamLlmText(
+      '你是知识库调用门控器。判断用户消息是否需要检索个人知识库。只输出 JSON：{"shouldRetrieve":true|false,"reason":"简短原因"}。寒暄、确认、纯创作和不依赖既有资料的请求返回 false。',
+      '用户消息：\n' + cleanTaskText(query, KNOWLEDGE_MAX_QUERY_CHARS) + '\n\n输出：',
+      { maxTokens: 80, temperature: 0 }
+    );
+    const parsed = parseJsonObject(text);
+    if (typeof parsed.shouldRetrieve !== 'boolean') return null;
+    return { should: parsed.shouldRetrieve, reason: cleanTaskText(parsed.reason, 120) || '模型门控判断' };
+  } catch { return null; }
+}
+
+function knowledgeAutoBuildBlock(refs, meta, config) {
+  const lines = [];
+  lines.push('[知识库参考 · 自动检索]');
+  if (meta) {
+    const routeText = (meta.routes || []).join(' + ') || 'n/a';
+    const coverage = meta.coverage;
+    const coverageText = coverage ? ' · 覆盖 ' + coverage.level + '（' + coverage.score + '，' + coverage.action + '）' : '';
+    lines.push('检索：' + (meta.mode || 'n/a') + '（' + routeText + '）· 向量 ' + (meta.vectorStatus || 'n/a') + ' · ' + (meta.iterations || 1) + ' 轮 · ' + (meta.latencyMs || 0) + 'ms' + coverageText + ' · ' + (refs.length ? '命中 ' + refs.length + ' 条 · 注入约 ' + (meta.estimatedTokens || 0) + ' tokens' : '未命中高置信度条目'));
+  }
+  if (refs.length) {
+    for (const ref of refs) {
+      const snippet = String(ref.snippet || ref.summary || '').replace(/\s+/g, ' ').slice(0, 160);
+      lines.push('');
+      lines.push('[' + ref.id + '] 《' + ref.title + '》（置信度 ' + (ref.confidence || 'medium') + '）');
+      if (snippet) lines.push('摘要：' + snippet);
+      lines.push('路径：' + ref.path);
+    }
+    lines.push('');
+    lines.push('使用规则：');
+    const coverageAction = meta && meta.coverage ? meta.coverage.action : '';
+    if (config && config.webFallback && coverageAction === 'parallel-kb-web') {
+      lines.push('- 覆盖处于灰区：并行调用 web_search 补充证据，再与知识库结果融合；冲突时并列说明。');
+    } else if (config && config.webFallback && coverageAction === 'web-primary') {
+      lines.push('- 覆盖不足：以 web_search 为主要证据源，知识库仅作旁证；无法核实的内容标注“未验证”。');
+    } else {
+      lines.push('- 覆盖充分：优先使用本次知识库证据；仅当问题明确要求最新信息时再联网。');
+    }
+    lines.push('- 引用规则：引用知识库内容时标注 [知识N《标题》· 置信度 X]（如 [知识1《工作台-看门狗机制》· 置信度中]）；引用联网内容时标注来源 URL；不得只给结论不给出处。');
+    lines.push('- 可信度区分：知识库与联网信息冲突或都不充分时，说明差异；无法确认的内容一律标注“未验证”，不得编造。');
+  } else if (config && config.webFallback) {
+    lines.push('');
+    lines.push('知识库未找到高置信度匹配。若问题涉及事实、经验或最新信息，请调用 web_search 联网核实并标注来源 URL；无法联网时标注“未验证”。');
+  }
+  return lines.join('\n');
+}
+
+const knowledgeAutoCache = new Map();
+const knowledgeAutoLastBySession = new Map();
+const knowledgeChatContext = new Map();
+
+function rememberKnowledgeChatContext(sessionId, result) {
+  const key = String(sessionId || '');
+  if (!key) return;
+  const now = Date.now();
+  for (const [id, entry] of knowledgeChatContext) {
+    if (now - entry.at > KNOWLEDGE_CHAT_CONTEXT_TTL_MS) knowledgeChatContext.delete(id);
+  }
+  if (result && result.inject && result.block) {
+    knowledgeChatContext.set(key, { at: now, block: result.block, refs: (result.refs || []).length });
+  } else {
+    knowledgeChatContext.delete(key);
+  }
+}
+
+function knowledgeChatContextSectionText(context) {
+  const id = context && context.agent && context.agent.id ? String(context.agent.id) : '';
+  if (!id) return '';
+  const entry = knowledgeChatContext.get(id);
+  if (!entry || Date.now() - entry.at > KNOWLEDGE_CHAT_CONTEXT_TTL_MS) return '';
+  return entry.block;
+}
+
+function knowledgeAutoCacheKey(sessionId, query) {
+  return String(sessionId || 'global') + '\u0000' + cleanTaskText(query, KNOWLEDGE_MAX_QUERY_CHARS).toLocaleLowerCase();
+}
+
+async function knowledgeAutoRetrieve(query, sessionId, project, options = {}) {
+  const q = cleanTaskText(query, KNOWLEDGE_MAX_QUERY_CHARS);
+  const config = cleanKnowledgeAutoConfig(options.config || await readKnowledgeAutoConfig());
+  if (!config.enabled) return { inject: false, reason: 'disabled', gated: false, block: '', refs: [], meta: null };
+  const now = Date.now();
+  const cacheKey = knowledgeAutoCacheKey(sessionId, q);
+  const cached = knowledgeAutoCache.get(cacheKey);
+  if (cached && now - cached.at < config.cacheTtlMs) {
+    return { ...cached.result, reused: true, cachedAt: cached.at };
+  }
+  const last = knowledgeAutoLastBySession.get(String(sessionId || 'global'));
+  if (q.length <= 14 && KNOWLEDGE_AUTO_FOLLOWUP.test(q) && last && now - last.at < config.cacheTtlMs) {
+    const reuse = { ...last.result, reused: true, followupReuse: true, reason: '追问复用上次检索结果' };
+    return reuse;
+  }
+  const ruleGate = knowledgeAutoGate(q);
+  if (ruleGate.hardSkip) {
+    return { inject: false, reason: ruleGate.reason, gated: true, gate: 'rule', block: '', refs: [], meta: null };
+  }
+  let gate = ruleGate;
+  if (config.gate === 'model' || config.gate === 'both') {
+    const modelGate = await knowledgeModelGate(q);
+    if (modelGate) gate = { ...modelGate, source: 'model' };
+  }
+  if (!gate.should) {
+    return { inject: false, reason: gate.reason, gated: true, gate: gate.source || 'rule', block: '', refs: [], meta: null };
+  }
+  const search = await runKnowledgeSearch(q, project, {
+    topK: Math.max(config.topK, 5),
+    tokenBudget: config.tokenBudget,
+    rerank: config.rerank,
+    routingMode: config.routing,
+    maxIterations: config.maxIterations,
+    thresholds: config.thresholds
+  });
+  const minRank = { high: 2, medium: 1, low: 0 }[config.minConfidence] ?? 1;
+  const refs = (search.results || []).filter((entry) => knowledgeEntryConfidenceRank(entry) >= minRank).slice(0, config.maxRefs).map((entry, index) => ({
+    id: '知识' + (index + 1),
+    title: entry.title,
+    path: entry.path,
+    confidence: entry.computedConfidence || entry.confidence || 'medium',
+    snippet: entry.summary || entry.snippet || ''
+  }));
+  const meta = {
+    mode: search.mode || '',
+    routes: search.routes || [],
+    vectorStatus: search.vectorStatus || 'n/a',
+    estimatedTokens: (search.estimatedTokens || 0) + 120,
+    retrievalTokens: search.retrievalTokens || search.estimatedTokens || 0,
+    latencyMs: search.latencyMs || 0,
+    query: q,
+    coverage: search.coverage || null,
+    iterations: search.iterations || 1,
+    at: new Date().toISOString()
+  };
+  const block = knowledgeAutoBuildBlock(refs, meta, config);
+  const shouldInject = refs.length > 0 || config.webFallback;
+  const result = { inject: shouldInject, reason: refs.length ? 'knowledge-query' : 'knowledge-miss', gated: false, gate: gate.source || config.gate, block: shouldInject ? block : '', refs, meta };
+  knowledgeAutoCache.set(cacheKey, { at: now, result });
+  knowledgeAutoLastBySession.set(String(sessionId || 'global'), { at: now, result });
+  if (knowledgeAutoCache.size > 200) {
+    const firstKey = knowledgeAutoCache.keys().next().value;
+    if (firstKey) knowledgeAutoCache.delete(firstKey);
+  }
+  return result;
+}
+
+function cleanKnowledgeRef(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  return {
+    id: cleanTaskText(value.id, 40) || '知识1',
+    title: cleanTaskText(value.title, 300),
+    path: cleanTaskText(value.path, 500),
+    confidence: KNOWLEDGE_CONFIDENCES.includes(value.confidence) ? value.confidence : 'medium',
+    snippet: cleanTaskText(value.snippet, 1000)
+  };
+}
+
+function auditKnowledgeCitations(answer, refs, level = 'ref-only') {
+  const text = String(answer || '').trim();
+  const references = Array.isArray(refs) ? refs.map(cleanKnowledgeRef).filter((entry) => entry.title) : [];
+  const byId = new Map(references.map((entry) => [entry.id, entry]));
+  const citations = [];
+  const invalid = [];
+  const citationPattern = /\[知识\s*(\d+)(?:《([^》]+)》)?[^\]]*\]/g;
+  let match;
+  while ((match = citationPattern.exec(text))) {
+    const id = '知识' + match[1];
+    const ref = byId.get(id);
+    const citedTitle = cleanTaskText(match[2], 300);
+    if (!ref || (citedTitle && citedTitle !== ref.title)) {
+      invalid.push({ id, title: citedTitle, reason: ref ? '标题与本次注入条目不一致' : '引用编号不存在于本次注入上下文' });
+    } else {
+      citations.push({ id, title: ref.title, index: match.index });
+    }
+  }
+  const sentences = text.split(/[。！？!?\n]+/).map((item) => item.trim()).filter(Boolean);
+  const groundedness = level === 'ref+groundedness' && references.length > 0
+    ? sentences.filter((sentence) => /是|为|应|可以|需要|建议|因此|导致|说明|支持|选择|采用|必须/.test(sentence) && !/\[知识\s*\d+[^\]]*\]/.test(sentence)).map((sentence) => ({ sentence, reason: '结论句未发现知识库引用' })).slice(0, 20)
+    : [];
+  citationPattern.lastIndex = 0;
+  const missing = references.length > 0 && text.length > 0 && citations.length === 0;
+  return {
+    level,
+    valid: !missing && invalid.length === 0 && groundedness.length === 0,
+    citationCount: citations.length,
+    citations,
+    invalid,
+    missing: missing ? ['回答没有包含有效的 [知识N] 引用'] : [],
+    groundedness,
+    abstainRequired: missing || invalid.length > 0 || groundedness.length > 0,
+    checkedAt: new Date().toISOString()
   };
 }
 
@@ -2149,6 +2616,63 @@ async function distillKnowledge({ title, source, content, project }) {
     autoPublished = true;
   }
   return { entry, fallback, path: finalPath, autoPublished, precheck };
+}
+
+async function captureAcceptedOrchestrationKnowledge(orchestration) {
+  if (!orchestration || orchestration.phase !== 'accepted' || !String(orchestration.finalReport || '').trim()) return null;
+  await ensureKnowledgeVault();
+  const name = 'project-experience-' + String(orchestration.id || '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 80);
+  const target = knowledgeWritePath('inbox', name);
+  if (!target) return null;
+  try {
+    const existing = await lstat(target.full);
+    if (existing.isFile() && !existing.isSymbolicLink()) {
+      const index = await readKnowledgeIndex();
+      return { path: target.relPath, created: false, entry: (index.entries || []).find((item) => item.path === target.relPath) || null };
+    }
+  } catch (error) {
+    if (!error || error.code !== 'ENOENT') throw error;
+  }
+  const title = cleanTaskText('项目经验：' + (orchestration.title || orchestration.idea || '已验收任务'), 120).replace(/[\r\n:]+/g, ' ');
+  const context = cleanTaskText(orchestration.idea, 2000);
+  const result = cleanTaskText(orchestration.finalReport, 4000);
+  const reusable = cleanTaskText(orchestration.plan && orchestration.plan.strategy, 2000) || result.slice(0, 1200);
+  const acceptance = cleanTaskText(orchestration.acceptedNote, 1000) || '用户已通过验收';
+  const markdown = knowledgeFrontmatter({
+    title,
+    type: 'experience',
+    context,
+    result,
+    reusable,
+    tags: ['项目经验', '已验收'],
+    confidence: 'medium',
+    status: 'review',
+    claimType: 'fact',
+    staleness: 'CHECK',
+    source: '项目验收',
+    project: cleanTaskText(orchestration.projectPath, 300),
+    related: [],
+    summary: result.slice(0, 300),
+    assumptions: ['仅沉淀用户已验收的执行结果；发布前仍需通过知识质量门'],
+    created: new Date().toISOString()
+  }) + '\n\n' + [
+    '# ' + title,
+    '',
+    '## 情境',
+    context,
+    '',
+    '## 执行结果',
+    result,
+    '',
+    '## 可复用结论',
+    reusable,
+    '',
+    '## 验证',
+    acceptance
+  ].join('\n');
+  await writeFile(target.full, markdown, 'utf8');
+  const index = await scanKnowledgeVault();
+  return { path: target.relPath, created: true, entry: (index.entries || []).find((item) => item.path === target.relPath) || null };
 }
 
 function precheckOkConfidence(markdown) {
@@ -2509,6 +3033,8 @@ function cleanEvalItem(raw) {
     question: cleanTaskText(value.question, 500),
     expected: Array.isArray(value.expected) ? value.expected.map((item) => cleanTaskText(item, 300)).filter(Boolean).slice(0, 10) : [],
     answerHints: cleanTaskText(value.answerHints, 2000),
+    expectedStrategy: ['single', 'iterative'].includes(value.expectedStrategy) ? value.expectedStrategy : '',
+    expectedWeb: ['none', 'parallel', 'primary'].includes(value.expectedWeb) ? value.expectedWeb : '',
     note: cleanTaskText(value.note, 500),
     createdAt: typeof value.createdAt === 'string' ? value.createdAt : new Date().toISOString()
   };
@@ -2524,7 +3050,7 @@ async function readKnowledgeEval() {
     knowledgeEvalCache = {
       version: 1,
       items: Array.isArray(parsed.items) ? parsed.items.map(cleanEvalItem) : [],
-      candidates: Array.isArray(parsed.candidates) ? parsed.candidates.map((item) => cleanEvalItem({ ...item, id: undefined })) : [],
+      candidates: Array.isArray(parsed.candidates) ? parsed.candidates.map(cleanEvalItem) : [],
       lastRun: parsed.lastRun && typeof parsed.lastRun === 'object' ? parsed.lastRun : null,
       history: Array.isArray(parsed.history) ? parsed.history.slice(-10) : []
     };
@@ -2542,6 +3068,290 @@ async function writeKnowledgeEval(store) {
   await rename(temp, KNOWLEDGE_EVAL_STORE);
   knowledgeEvalCache = store;
   return store;
+}
+
+function redactKnowledgeTraceString(value, maxLength = 1000) {
+  let text = String(value ?? '').replace(/\0/g, '');
+  text = text
+    .replace(/\bBearer\s+[A-Za-z0-9._~+\/-]+=*/gi, 'Bearer [REDACTED]')
+    .replace(/\b(sk|key)-[A-Za-z0-9_-]{12,}\b/gi, '$1-[REDACTED]');
+  if (/^https?:\/\//i.test(text)) {
+    try {
+      const url = new URL(text);
+      for (const key of [...url.searchParams.keys()]) {
+        if (KNOWLEDGE_TRACE_SECRET_KEY.test(key)) url.searchParams.set(key, '[REDACTED]');
+      }
+      text = url.toString();
+    } catch { /* preserve the bounded original */ }
+  }
+  return text.slice(0, maxLength);
+}
+
+function boundedKnowledgeTraceValue(value, key = '', depth = 0) {
+  if (KNOWLEDGE_TRACE_SECRET_KEY.test(key)) return '[REDACTED]';
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string') return redactKnowledgeTraceString(value);
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'boolean') return value;
+  if (depth >= 3) return '[TRUNCATED]';
+  if (Array.isArray(value)) return value.slice(0, 20).map((item) => boundedKnowledgeTraceValue(item, key, depth + 1));
+  if (typeof value !== 'object') return redactKnowledgeTraceString(value, 200);
+  const output = {};
+  for (const [childKey, childValue] of Object.entries(value).slice(0, 30)) {
+    output[redactKnowledgeTraceString(childKey, 80)] = boundedKnowledgeTraceValue(childValue, childKey, depth + 1);
+  }
+  return output;
+}
+
+function knowledgeTraceWebSummary(value, content) {
+  const urls = new Set();
+  let sourceArrayCount = 0;
+  let visited = 0;
+  const visit = (item, key = '', depth = 0) => {
+    if (item === null || item === undefined || depth > 5 || visited > 500) return;
+    visited += 1;
+    if (typeof item === 'string') {
+      if (/^https?:\/\//i.test(item)) {
+        try { urls.add(new URL(item).origin); } catch { /* ignore malformed URLs */ }
+      }
+      return;
+    }
+    if (Array.isArray(item)) {
+      if (/results?|sources?|items?/i.test(key)) sourceArrayCount = Math.max(sourceArrayCount, item.length);
+      for (const child of item.slice(0, 100)) visit(child, key, depth + 1);
+      return;
+    }
+    if (typeof item === 'object') {
+      for (const [childKey, childValue] of Object.entries(item)) visit(childValue, childKey, depth + 1);
+    }
+  };
+  visit(value);
+  const contentChars = (Array.isArray(content) ? content : []).reduce((sum, block) => {
+    if (!block || typeof block !== 'object') return sum;
+    return sum + (typeof block.text === 'string' ? block.text.length : 0);
+  }, 0);
+  return {
+    sourceCount: Math.max(sourceArrayCount, urls.size),
+    sourceDomains: [...urls].slice(0, 10),
+    contentChars
+  };
+}
+
+function summarizeKnowledgeTraceResult(tool, result, thrownError) {
+  if (thrownError || !result || result.isError === true) {
+    const failure = thrownError || result && result.error || {};
+    return {
+      success: false,
+      error: redactKnowledgeTraceString(failure.message || thrownError || 'tool execution failed', 500),
+      errorCode: redactKnowledgeTraceString(failure.info && failure.info.code || failure.code || '', 100)
+    };
+  }
+  const value = result.value && typeof result.value === 'object' ? result.value : {};
+  const summary = { success: true };
+  if (tool === 'knowledge_search') {
+    summary.coverage = redactKnowledgeTraceString(value.coverage || '', 40);
+    summary.coverageScore = Number.isFinite(value.coverageScore) ? value.coverageScore : null;
+    summary.action = redactKnowledgeTraceString(value.action || '', 40);
+    summary.resultCount = Array.isArray(value.results) ? value.results.length : 0;
+    summary.estimatedTokens = Math.max(0, Number(value.estimatedTokens) || 0);
+    summary.retrievalTokens = Math.max(0, Number(value.retrievalTokens) || 0);
+    summary.retrievalLatencyMs = Math.max(0, Number(value.latencyMs) || 0);
+    summary.iterations = Math.max(0, Number(value.iterations) || 0);
+  } else if (tool === 'knowledge_read') {
+    summary.path = redactKnowledgeTraceString(value.path || '', 300);
+    summary.title = redactKnowledgeTraceString(value.title || '', 300);
+    summary.truncated = value.truncated === true;
+    summary.estimatedTokens = Math.max(0, Number(value.estimatedTokens) || 0);
+  } else {
+    Object.assign(summary, knowledgeTraceWebSummary(value, result.content));
+  }
+  return summary;
+}
+
+function knowledgeTracePosition(exec) {
+  const events = exec && exec.agent && exec.agent.session && exec.agent.session.events;
+  const list = Array.isArray(events) ? events : [];
+  for (let index = list.length - 1; index >= 0; index -= 1) {
+    const event = list[index] || {};
+    const data = event.data && typeof event.data === 'object' ? event.data : event;
+    if (event.type === 'tool/call' && String(data.callId || '') === String(exec.callId || '')) {
+      return { turn: Math.max(0, Number(data.turn) || 0), step: Math.max(0, Number(data.step) || 0) };
+    }
+  }
+  return { turn: 0, step: 0 };
+}
+
+function cleanKnowledgeTrace(raw) {
+  const trace = raw && typeof raw === 'object' ? raw : {};
+  const startedMs = Math.max(0, Number(trace.startedMs) || 0);
+  const endedMs = Math.max(startedMs, Number(trace.endedMs) || startedMs);
+  return {
+    id: cleanTaskText(trace.id, 80) || randomUUID(),
+    sessionId: cleanTaskText(trace.sessionId, 160),
+    callId: cleanTaskText(trace.callId, 200),
+    rootCallId: cleanTaskText(trace.rootCallId, 200),
+    turn: Math.max(0, Number(trace.turn) || 0),
+    step: Math.max(0, Number(trace.step) || 0),
+    tool: KNOWLEDGE_TRACE_TOOLS.has(trace.tool) ? trace.tool : '',
+    arguments: boundedKnowledgeTraceValue(trace.arguments),
+    startedAt: typeof trace.startedAt === 'string' ? trace.startedAt : new Date(startedMs).toISOString(),
+    endedAt: typeof trace.endedAt === 'string' ? trace.endedAt : new Date(endedMs).toISOString(),
+    startedMs,
+    endedMs,
+    durationMs: Math.max(0, endedMs - startedMs),
+    success: trace.success === true,
+    result: boundedKnowledgeTraceValue(trace.result)
+  };
+}
+
+async function readKnowledgeTraceStore() {
+  if (knowledgeTraceCache) return knowledgeTraceCache;
+  try {
+    const info = await lstat(KNOWLEDGE_TRACE_STORE);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('knowledge trace store must be a regular non-symbolic file');
+    if (info.size > MAX_KNOWLEDGE_TRACE_BYTES) throw new Error('knowledge trace store exceeds size limit');
+    const parsed = JSON.parse(await readFile(KNOWLEDGE_TRACE_STORE, 'utf8'));
+    knowledgeTraceCache = {
+      version: 1,
+      updatedAt: typeof parsed.updatedAt === 'string' ? parsed.updatedAt : '',
+      traces: Array.isArray(parsed.traces) ? parsed.traces.map(cleanKnowledgeTrace).filter((trace) => trace.tool).slice(-MAX_KNOWLEDGE_TRACES) : []
+    };
+  } catch (error) {
+    if (error && error.code === 'ENOENT') knowledgeTraceCache = { version: 1, updatedAt: '', traces: [] };
+    else throw error;
+  }
+  return knowledgeTraceCache;
+}
+
+async function writeKnowledgeTraceStore(store) {
+  await mkdir(DSH_ROOT, { recursive: true });
+  const normalized = {
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    traces: (Array.isArray(store.traces) ? store.traces : []).map(cleanKnowledgeTrace).filter((trace) => trace.tool).slice(-MAX_KNOWLEDGE_TRACES)
+  };
+  let serialized = JSON.stringify(normalized, null, 2) + '\n';
+  while (Buffer.byteLength(serialized, 'utf8') > MAX_KNOWLEDGE_TRACE_BYTES && normalized.traces.length > 1) {
+    normalized.traces.splice(0, Math.max(1, Math.ceil(normalized.traces.length / 10)));
+    serialized = JSON.stringify(normalized, null, 2) + '\n';
+  }
+  if (Buffer.byteLength(serialized, 'utf8') > MAX_KNOWLEDGE_TRACE_BYTES) throw new Error('one knowledge trace exceeds size limit');
+  const temp = KNOWLEDGE_TRACE_STORE + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, serialized, 'utf8');
+  await rename(temp, KNOWLEDGE_TRACE_STORE);
+  knowledgeTraceCache = normalized;
+  return normalized;
+}
+
+function mutateKnowledgeTraceStore(mutator) {
+  const operation = knowledgeTraceWriteQueue.then(async () => {
+    const current = await readKnowledgeTraceStore();
+    const next = { ...current, traces: [...current.traces] };
+    await mutator(next);
+    return writeKnowledgeTraceStore(next);
+  });
+  knowledgeTraceWriteQueue = operation.catch(() => {});
+  return operation;
+}
+
+function summarizeKnowledgeTraces(traces) {
+  const list = Array.isArray(traces) ? traces : [];
+  const byTool = {};
+  const sessions = new Set();
+  for (const trace of list) {
+    byTool[trace.tool] = (byTool[trace.tool] || 0) + 1;
+    if (trace.sessionId) sessions.add(trace.sessionId);
+  }
+  const knowledge = list.filter((trace) => trace.tool === 'knowledge_search' || trace.tool === 'knowledge_read');
+  const web = list.filter((trace) => trace.tool === 'web_search' || trace.tool === 'web_fetch');
+  const overlapPairs = [];
+  const batches = new Set();
+  for (const kbTrace of knowledge) {
+    for (const webTrace of web) {
+      if (!kbTrace.sessionId || kbTrace.sessionId !== webTrace.sessionId) continue;
+      if (kbTrace.turn !== webTrace.turn || kbTrace.step !== webTrace.step) continue;
+      const overlapMs = Math.max(0, Math.min(kbTrace.endedMs, webTrace.endedMs) - Math.max(kbTrace.startedMs, webTrace.startedMs));
+      if (overlapMs <= 0) continue;
+      overlapPairs.push({
+        knowledgeTraceId: kbTrace.id,
+        webTraceId: webTrace.id,
+        sessionId: kbTrace.sessionId,
+        turn: kbTrace.turn,
+        step: kbTrace.step,
+        overlapMs
+      });
+      batches.add(kbTrace.sessionId + ':' + kbTrace.turn + ':' + kbTrace.step);
+    }
+  }
+  return {
+    total: list.length,
+    successful: list.filter((trace) => trace.success).length,
+    failed: list.filter((trace) => !trace.success).length,
+    sessions: sessions.size,
+    byTool,
+    knowledgeCalls: knowledge.length,
+    webCalls: web.length,
+    overlapPairs: overlapPairs.slice(-100),
+    parallelBatches: batches.size,
+    hasParallelEvidence: overlapPairs.length > 0
+  };
+}
+
+async function recordKnowledgeToolTrace(exec, result, startedMs, endedMs, thrownError) {
+  if (!exec || !KNOWLEDGE_TRACE_TOOLS.has(exec.name)) return null;
+  const position = knowledgeTracePosition(exec);
+  const resultSummary = summarizeKnowledgeTraceResult(exec.name, result, thrownError);
+  const trace = cleanKnowledgeTrace({
+    id: randomUUID(),
+    sessionId: exec.agent && exec.agent.id || '',
+    callId: exec.callId || '',
+    rootCallId: exec.rootCallId || exec.callId || '',
+    turn: position.turn,
+    step: position.step,
+    tool: exec.name,
+    arguments: exec.arguments,
+    startedAt: new Date(startedMs).toISOString(),
+    endedAt: new Date(endedMs).toISOString(),
+    startedMs,
+    endedMs,
+    success: resultSummary.success,
+    result: resultSummary
+  });
+  await mutateKnowledgeTraceStore((store) => { store.traces.push(trace); });
+  return trace;
+}
+
+async function traceKnowledgeToolExecution(exec, next) {
+  if (!exec || !KNOWLEDGE_TRACE_TOOLS.has(exec.name)) return next();
+  const startedMs = Date.now();
+  try {
+    const result = await next();
+    try { await recordKnowledgeToolTrace(exec, result, startedMs, Date.now(), null); }
+    catch (error) { diag('knowledge trace write failed: ' + String((error && error.stack) || error)); }
+    return result;
+  } catch (error) {
+    try { await recordKnowledgeToolTrace(exec, null, startedMs, Date.now(), error); }
+    catch (traceError) { diag('knowledge trace write failed: ' + String((traceError && traceError.stack) || traceError)); }
+    throw error;
+  }
+}
+
+async function knowledgeOnlineAuditSummary() {
+  try {
+    const taskStore = await readTaskStore();
+    const audits = (taskStore.orchestrations || []).map((item) => item.knowledgeCitationAudit).filter((audit) => audit && typeof audit === 'object');
+    const grounded = audits.filter((audit) => audit.level === 'ref+groundedness');
+    const rate = (list, predicate) => list.length ? Math.round(list.filter(predicate).length / list.length * 1000) / 1000 : null;
+    return {
+      citationSamples: audits.length,
+      citationValidRate: rate(audits, (audit) => audit.valid === true),
+      abstainRate: rate(audits, (audit) => audit.abstainRequired === true),
+      groundednessSamples: grounded.length,
+      groundedness: rate(grounded, (audit) => audit.valid === true && (!audit.groundedness || audit.groundedness.length === 0))
+    };
+  } catch {
+    return { citationSamples: 0, citationValidRate: null, abstainRate: null, groundednessSamples: 0, groundedness: null };
+  }
 }
 
 async function runKnowledgeEvalSet(options = {}) {
@@ -2568,19 +3378,60 @@ async function runKnowledgeEvalSet(options = {}) {
       hitPaths: hits,
       topK,
       latencyMs: Date.now() - start,
-      tokens: search.estimatedTokens || 0
+      tokens: search.estimatedTokens || 0,
+      retrievalTokens: search.retrievalTokens || search.estimatedTokens || 0,
+      coverage: search.coverage || null,
+      firstCoverage: search.firstCoverage || search.coverage || null,
+      mode: search.mode || '',
+      routes: search.routes || [],
+      iterations: search.iterations || 1,
+      iterationReason: search.routing && search.routing.iterationReason || '',
+      expectedStrategy: item.expectedStrategy || '',
+      actualStrategy: Number(search.iterations || 1) > 1 ? 'iterative' : 'single',
+      expectedWeb: item.expectedWeb || '',
+      actualWeb: search.coverage && search.coverage.action === 'parallel-kb-web' ? 'parallel' : search.coverage && search.coverage.action === 'web-primary' ? 'primary' : 'none'
     });
   }
   const completed = results.length;
   const totalExpected = results.reduce((sum, result) => sum + result.expected, 0);
   const totalHits = results.reduce((sum, result) => sum + result.hits, 0);
+  const recallAtK = completed && totalExpected ? Math.round((totalHits / totalExpected) * 1000) / 1000 : 0;
+  const routeSamples = results.filter((result) => result.expectedStrategy);
+  const webRouteSamples = results.filter((result) => result.expectedWeb);
+  const simpleRouteSamples = routeSamples.filter((result) => result.expectedStrategy === 'single');
+  const routeAccuracy = routeSamples.length ? Math.round(routeSamples.filter((result) => result.actualStrategy === result.expectedStrategy).length / routeSamples.length * 1000) / 1000 : null;
+  const webRouteAccuracy = webRouteSamples.length ? Math.round(webRouteSamples.filter((result) => result.actualWeb === result.expectedWeb).length / webRouteSamples.length * 1000) / 1000 : null;
+  const simpleSinglePassRate = simpleRouteSamples.length ? Math.round(simpleRouteSamples.filter((result) => result.actualStrategy === 'single').length / simpleRouteSamples.length * 1000) / 1000 : null;
+  const onlineAudit = await knowledgeOnlineAuditSummary();
+  const acceptanceChecks = [
+    { id: 'dataset-size', label: '离线评测题数', actual: completed, target: 50, passed: completed >= 50 },
+    { id: 'recall-at-k', label: 'recall@' + topK, actual: recallAtK, target: 0.9, passed: completed > 0 && recallAtK >= 0.9 },
+    { id: 'groundedness-samples', label: '逐句审计样本', actual: onlineAudit.groundednessSamples, target: 1, passed: onlineAudit.groundednessSamples >= 1 },
+    { id: 'groundedness', label: 'groundedness', actual: onlineAudit.groundedness, target: 0.85, passed: onlineAudit.groundedness !== null && onlineAudit.groundedness >= 0.85 }
+  ];
   const report = {
     ranAt: new Date().toISOString(),
     topK,
     items: completed,
-    recallAtK: completed && totalExpected ? Math.round((totalHits / totalExpected) * 1000) / 1000 : 0,
+    recallAtK,
     avgTokens: completed ? Math.round(results.reduce((sum, result) => sum + result.tokens, 0) / completed) : 0,
+    avgRetrievalTokens: completed ? Math.round(results.reduce((sum, result) => sum + result.retrievalTokens, 0) / completed) : 0,
     avgLatencyMs: completed ? Math.round(results.reduce((sum, result) => sum + result.latencyMs, 0) / completed) : 0,
+    avgCoverage: completed ? Math.round(results.reduce((sum, result) => sum + Number(result.coverage && result.coverage.score || 0), 0) / completed * 1000) / 1000 : 0,
+    routeSamples: routeSamples.length,
+    routeAccuracy,
+    webRouteSamples: webRouteSamples.length,
+    webRouteAccuracy,
+    simpleSinglePassRate,
+    coverageLevels: {
+      sufficient: results.filter((result) => result.coverage && result.coverage.level === 'sufficient').length,
+      gray: results.filter((result) => result.coverage && result.coverage.level === 'gray').length,
+      insufficient: results.filter((result) => !result.coverage || result.coverage.level === 'insufficient').length
+    },
+    webFallbackRate: completed ? Math.round(results.filter((result) => result.coverage && result.coverage.action !== 'knowledge-only').length / completed * 1000) / 1000 : 0,
+    iterativeRate: completed ? Math.round(results.filter((result) => Number(result.iterations || 1) > 1).length / completed * 1000) / 1000 : 0,
+    onlineAudit,
+    acceptance: { ready: acceptanceChecks.every((check) => check.passed), checks: acceptanceChecks },
     results
   };
   store.lastRun = report;
@@ -2602,6 +3453,271 @@ async function addKnowledgeEvalCandidate(question) {
   store.candidates = store.candidates.slice(-200);
   await writeKnowledgeEval(store);
 }
+
+async function recordKnowledgeFeedback(raw) {
+  const question = cleanTaskText(raw && raw.question, 500);
+  if (!question) throw new Error('question required');
+  const rating = ['helpful', 'unhelpful', 'miss'].includes(raw && raw.rating)
+    ? raw.rating
+    : 'miss';
+  const requestedPaths = Array.isArray(raw && raw.paths) ? raw.paths.slice(0, 5) : [];
+  let index = await readKnowledgeIndex();
+  if (await knowledgeIndexStale()) index = await scanKnowledgeVault();
+  const knownPaths = new Set((index.entries || []).map((entry) => entry.path));
+  const paths = [...new Set(requestedPaths.map((path) => {
+    const target = knowledgeResolve(path);
+    return target && knownPaths.has(target.relPath) ? target.relPath : '';
+  }).filter(Boolean))];
+  if (rating !== 'miss' && !paths.length) throw new Error('at least one valid knowledge path is required');
+
+  let usage = {};
+  if (rating !== 'miss') {
+    const quality = await readKnowledgeQuality();
+    quality.usage = quality.usage || {};
+    const at = new Date().toISOString();
+    for (const path of paths) {
+      const current = quality.usage[path] || { hits: 0, lastHitAt: '' };
+      quality.usage[path] = {
+        ...current,
+        helpful: Math.max(0, Number(current.helpful) || 0) + (rating === 'helpful' ? 1 : 0),
+        unhelpful: Math.max(0, Number(current.unhelpful) || 0) + (rating === 'unhelpful' ? 1 : 0),
+        lastFeedbackAt: at
+      };
+      usage[path] = quality.usage[path];
+    }
+    await writeKnowledgeQuality(quality);
+  }
+
+  const evalStore = await readKnowledgeEval();
+  evalStore.candidates = evalStore.candidates || [];
+  const existing = evalStore.candidates.find((item) => String(item.question || '').toLocaleLowerCase() === question.toLocaleLowerCase());
+  const expected = rating === 'helpful' ? paths : [];
+  const note = cleanTaskText(raw && raw.note, 500) || (rating === 'helpful' ? '用户反馈：召回有帮助' : rating === 'unhelpful' ? '用户反馈：召回不准确，需补全或降权' : '用户反馈：未命中');
+  if (existing) {
+    existing.note = note;
+    if (expected.length) existing.expected = [...new Set([...(existing.expected || []), ...expected])].slice(0, 20);
+  } else {
+    evalStore.candidates.push(cleanEvalItem({ question, note, expected }));
+  }
+  evalStore.candidates = evalStore.candidates.slice(-200);
+  await writeKnowledgeEval(evalStore);
+  index = await scanKnowledgeVault();
+  return { ok: true, rating, paths, usage, candidates: evalStore.candidates.length, entries: index.entries.length };
+}
+
+function knowledgeToolArgs(args, required, optional = []) {
+  if (!args || typeof args !== 'object' || Array.isArray(args)) throw new TypeError('tool arguments must be an object');
+  const allowed = new Set([...required, ...optional]);
+  const unknown = Object.keys(args).filter((key) => !allowed.has(key));
+  if (unknown.length) throw new TypeError('unknown tool argument: ' + unknown[0]);
+  for (const key of required) {
+    if (typeof args[key] !== 'string' || !args[key].trim()) throw new TypeError(key + ' must be a non-empty string');
+  }
+  for (const key of optional) {
+    if (args[key] !== undefined && typeof args[key] !== 'string') throw new TypeError(key + ' must be a string');
+  }
+  return args;
+}
+
+function throwIfKnowledgeToolAborted(exec) {
+  if (!exec || !exec.signal || !exec.signal.aborted) return;
+  const error = new Error('knowledge tool call aborted');
+  error.name = 'AbortError';
+  throw error;
+}
+
+async function readPublishedKnowledgeEntry(relPath, exec) {
+  const target = knowledgeResolve(relPath);
+  if (!target) throw new Error('invalid knowledge path');
+  throwIfKnowledgeToolAborted(exec);
+  const index = await readKnowledgeIndex();
+  const entry = (index.entries || []).find((item) => item.path === target.relPath) || null;
+  if (!entry || entry.status !== 'published') throw new Error('knowledge entry is not published');
+  const info = await lstat(target.full);
+  if (info.isSymbolicLink() || !info.isFile()) throw new Error('knowledge entry must be a regular file');
+  if (info.size > KNOWLEDGE_MAX_ENTRY_BYTES) throw new Error('knowledge entry is too large');
+  const raw = await readFile(target.full, 'utf8');
+  throwIfKnowledgeToolAborted(exec);
+  const parsed = parseFrontmatter(raw);
+  // Legacy reviewed entries predate the status field. Their folder default and
+  // indexed status remain authoritative unless the file explicitly opts out.
+  if (parsed.status && parsed.status !== 'published') throw new Error('knowledge entry is not published');
+  const truncated = raw.length > KNOWLEDGE_TOOL_READ_MAX_CHARS;
+  const content = truncated ? raw.slice(0, KNOWLEDGE_TOOL_READ_MAX_CHARS) : raw;
+  return {
+    path: target.relPath,
+    title: cleanTaskText(parsed.title, 300) || cleanTaskText(entry.title, 300) || basename(target.file, '.md'),
+    confidence: KNOWLEDGE_CONFIDENCES.includes(entry.computedConfidence) ? entry.computedConfidence : KNOWLEDGE_CONFIDENCES.includes(entry.confidence) ? entry.confidence : 'medium',
+    content,
+    truncated,
+    estimatedTokens: Math.max(1, Math.ceil(content.length / 2.5))
+  };
+}
+
+function renderKnowledgeSearchTool(value) {
+  const lines = [
+    '知识库检索：覆盖 ' + value.coverage + '（' + value.coverageScore + '）· 动作 ' + value.action + ' · ' + value.iterations + ' 轮 · ' + value.latencyMs + 'ms'
+  ];
+  for (const result of value.results || []) {
+    lines.push('', '[' + result.id + '《' + result.title + '》· 置信度' + result.confidence + ']', '路径：' + result.path);
+    if (result.summary) lines.push('摘要：' + result.summary);
+  }
+  if (!value.results || !value.results.length) lines.push('', '未找到可引用的已发布知识条目。');
+  if (value.action === 'parallel-kb-web') lines.push('', '覆盖处于灰区：并行使用 web_search 补充证据，并明确说明冲突。');
+  if (value.action === 'web-primary') lines.push('', '覆盖不足：以 web_search 为主；知识库未支持的结论必须标记为未验证。');
+  lines.push('', '引用知识库结论时使用上方完整标签，不要虚构编号、标题或路径。');
+  return lines.join('\n');
+}
+
+function renderKnowledgeReadTool(value) {
+  const lines = [
+    '知识条目《' + value.title + '》· 置信度' + value.confidence,
+    '路径：' + value.path,
+    '',
+    value.content
+  ];
+  if (value.truncated) lines.push('', '[内容已按 token 上限截断]');
+  lines.push('', '引用时沿用 knowledge_search 为该路径返回的完整 [知识N《标题》· 置信度X] 标签。');
+  return lines.join('\n');
+}
+
+function makeKnowledgeSearchTool() {
+  return {
+    name: 'knowledge_search',
+    description: 'Search the user\'s published personal and project knowledge. Returns compact summaries, coverage routing, and citation labels; it never returns full note content.',
+    parameters: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        query: { type: 'string', description: 'A focused question to search for in the knowledge base.' },
+        project: { type: 'string', description: 'Optional project name used to select its retrieval profile.' }
+      },
+      required: ['query']
+    },
+    output: {
+      schema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          query: { type: 'string' },
+          coverage: { type: 'string', enum: ['sufficient', 'gray', 'insufficient'] },
+          coverageScore: { type: 'number' },
+          action: { type: 'string', enum: ['knowledge-only', 'parallel-kb-web', 'web-primary'] },
+          results: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                id: { type: 'string' }, title: { type: 'string' }, path: { type: 'string' },
+                confidence: { type: 'string', enum: ['high', 'medium', 'low'] }, summary: { type: 'string' }
+              },
+              required: ['id', 'title', 'path', 'confidence', 'summary']
+            }
+          },
+          estimatedTokens: { type: 'integer' }, retrievalTokens: { type: 'integer' },
+          latencyMs: { type: 'integer' }, iterations: { type: 'integer' }
+        },
+        required: ['query', 'coverage', 'coverageScore', 'action', 'results', 'estimatedTokens', 'retrievalTokens', 'latencyMs', 'iterations']
+      },
+      render: (_args, value) => [{ type: 'text', text: renderKnowledgeSearchTool(value) }],
+      presentationMeta: (_args, value) => ({ coverage: value.coverage, action: value.action, resultCount: value.results.length })
+    },
+    timeoutMs: 30000,
+    isConcurrencySafe: () => true,
+    async execute(rawArgs, exec) {
+      const args = knowledgeToolArgs(rawArgs, ['query'], ['project']);
+      const query = cleanTaskText(args.query, KNOWLEDGE_MAX_QUERY_CHARS);
+      if (!query) throw new TypeError('query must be a non-empty string');
+      throwIfKnowledgeToolAborted(exec);
+      const config = await readKnowledgeAutoConfig();
+      if (!config.enabled) throw new Error('knowledge retrieval is disabled');
+      const search = await runKnowledgeSearch(query, cleanTaskText(args.project, 300), {
+        topK: Math.max(config.topK, config.maxRefs),
+        tokenBudget: config.tokenBudget,
+        rerank: config.rerank,
+        routingMode: config.routing,
+        maxIterations: config.maxIterations,
+        thresholds: config.thresholds
+      });
+      throwIfKnowledgeToolAborted(exec);
+      if (search.error) throw new Error(search.error);
+      const minRank = { high: 2, medium: 1, low: 0 }[config.minConfidence] ?? 1;
+      const selected = (search.results || [])
+        .filter((entry) => knowledgeEntryConfidenceRank(entry) >= minRank)
+        .slice(0, config.maxRefs);
+      const coverage = knowledgeCoverageSignal(query, selected, config.thresholds);
+      const results = selected.map((entry, index) => ({
+        id: '知识' + (index + 1),
+        title: cleanTaskText(entry.title, 300),
+        path: entry.path,
+        confidence: KNOWLEDGE_CONFIDENCES.includes(entry.computedConfidence) ? entry.computedConfidence : KNOWLEDGE_CONFIDENCES.includes(entry.confidence) ? entry.confidence : 'medium',
+        summary: cleanTaskText(entry.summary || entry.snippet, 600)
+      }));
+      if (!results.length) {
+        try { await addKnowledgeEvalCandidate(query); } catch (e) { /* best effort */ }
+      }
+      return {
+        query,
+        coverage: coverage.level,
+        coverageScore: coverage.score,
+        action: coverage.action,
+        results,
+        estimatedTokens: Math.max(0, Math.ceil(results.reduce((sum, item) => sum + item.title.length + item.path.length + item.summary.length + 40, 0) / 2.5)),
+        retrievalTokens: Math.max(0, Math.round(search.retrievalTokens || search.estimatedTokens || 0)),
+        latencyMs: Math.max(0, Math.round(search.latencyMs || 0)),
+        iterations: clampInt(search.iterations, 1, 2, 1)
+      };
+    },
+    presentCall: (args) => ({ card: 'generic', title: cleanTaskText(args && args.query, 120) || '搜索知识库', kind: 'search', rawInput: cleanTaskText(args && args.query, 1000) }),
+    presentResult: () => ({ card: 'generic' })
+  };
+}
+
+function makeKnowledgeReadTool() {
+  return {
+    name: 'knowledge_read',
+    description: 'Read one published knowledge entry returned by knowledge_search when its summary is insufficient. Paths outside the knowledge index and unpublished entries are rejected.',
+    parameters: {
+      type: 'object', additionalProperties: false,
+      properties: { path: { type: 'string', description: 'Exact knowledge path returned by knowledge_search.' } },
+      required: ['path']
+    },
+    output: {
+      schema: {
+        type: 'object', additionalProperties: false,
+        properties: {
+          path: { type: 'string' }, title: { type: 'string' },
+          confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
+          content: { type: 'string' }, truncated: { type: 'boolean' }, estimatedTokens: { type: 'integer' }
+        },
+        required: ['path', 'title', 'confidence', 'content', 'truncated', 'estimatedTokens']
+      },
+      render: (_args, value) => [{ type: 'text', text: renderKnowledgeReadTool(value) }],
+      presentationMeta: (_args, value) => ({ path: value.path, title: value.title, truncated: value.truncated })
+    },
+    timeoutMs: 10000,
+    isConcurrencySafe: () => true,
+    async execute(rawArgs, exec) {
+      const args = knowledgeToolArgs(rawArgs, ['path']);
+      return readPublishedKnowledgeEntry(args.path, exec);
+    },
+    presentCall: (args) => ({ card: 'generic', title: cleanTaskText(args && args.path, 160) || '读取知识条目', kind: 'read', rawInput: cleanTaskText(args && args.path, 500) }),
+    presentResult: () => ({ card: 'generic' })
+  };
+}
+
+const KNOWLEDGE_TOOL_PROMPT = [
+  'Use knowledge_search for questions about the user\'s personal, project, workflow, or workbench knowledge. Do not call it for greetings, acknowledgements, or requests that do not depend on existing knowledge.',
+  'For freshness-sensitive questions that need both personal/project knowledge and current external facts, emit knowledge_search and web_search together in the same assistant tool-call batch so they execute concurrently.',
+  'Follow the knowledge_search coverage action: knowledge-only means answer from the returned entries; parallel-kb-web means use web_search too (in the same batch when it was already predictable, otherwise in the next batch); web-primary means use web_search as the primary source and mark unsupported knowledge-base claims as unverified.',
+  'Do not repeat knowledge_search with a near-duplicate query after it reports sufficient coverage. Use knowledge_read for a missing detail, or one focused follow-up search only when the returned entries are demonstrably off-topic.',
+  'Call knowledge_read only when a search summary is insufficient, and only with an exact path returned by knowledge_search.',
+  'Cite knowledge claims with the complete [知识N《标题》· 置信度X] label returned by knowledge_search. Never invent knowledge paths, titles, labels, or citations.',
+  'web_search is the only available Web retrieval tool. Never call web_fetch.',
+  'Every claim based on web_search must include a clickable [source title](URL) copied from that tool result. A bare source name, the word 来源, or a placeholder without its real URL is not a valid web citation.',
+  'Before sending the final answer, verify that every Web-backed claim has a real http(s) URL in Markdown link syntax. If you cannot provide that URL, omit the claim or mark it unverified instead of presenting it as fact.'
+].join('\n');
 
 function knowledgeResolve(relPath) {
   const parts = String(relPath || '').split('/');
@@ -3021,6 +4137,35 @@ function cleanSourceReference(raw) {
   };
 }
 
+function cleanKnowledgeAutoMeta(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  const coverage = value.coverage && typeof value.coverage === 'object' ? value.coverage : null;
+  return {
+    mode: cleanTaskText(value.mode, 80),
+    routes: Array.isArray(value.routes) ? value.routes.map((item) => cleanTaskText(item, 80)).filter(Boolean).slice(0, 8) : [],
+    vectorStatus: cleanTaskText(value.vectorStatus, 80),
+    estimatedTokens: Number.isFinite(Number(value.estimatedTokens)) ? Math.max(0, Math.round(Number(value.estimatedTokens))) : 0,
+    retrievalTokens: Number.isFinite(Number(value.retrievalTokens)) ? Math.max(0, Math.round(Number(value.retrievalTokens))) : 0,
+    latencyMs: Number.isFinite(Number(value.latencyMs)) ? Math.max(0, Math.round(Number(value.latencyMs))) : 0,
+    query: cleanTaskText(value.query, 1000),
+    iterations: Number.isSafeInteger(Number(value.iterations)) ? Math.max(1, Math.min(2, Number(value.iterations))) : 1,
+    coverage: coverage ? {
+      score: Number.isFinite(Number(coverage.score)) ? Math.max(0, Math.min(1, Number(coverage.score))) : 0,
+      maxConfidence: Number.isFinite(Number(coverage.maxConfidence)) ? Math.max(0, Math.min(1, Number(coverage.maxConfidence))) : 0,
+      hitCount: Number.isSafeInteger(Number(coverage.hitCount)) ? Math.max(0, Number(coverage.hitCount)) : 0,
+      lexicalCoverage: Number.isFinite(Number(coverage.lexicalCoverage)) ? Math.max(0, Math.min(1, Number(coverage.lexicalCoverage))) : 0,
+      level: ['sufficient', 'gray', 'insufficient'].includes(coverage.level) ? coverage.level : 'insufficient',
+      action: cleanTaskText(coverage.action, 40)
+    } : null,
+    at: typeof value.at === 'string' ? value.at : ''
+  };
+}
+
+function knowledgeAutoPrompt(refs, meta) {
+  if (!meta) return '';
+  return knowledgeAutoBuildBlock(Array.isArray(refs) ? refs : [], meta, { webFallback: true });
+}
+
 function cleanOrchestration(raw) {
   if (raw === null || typeof raw !== 'object') throw new Error('invalid orchestration record');
   const idea = cleanTaskText(raw.idea, 12000);
@@ -3038,6 +4183,9 @@ function cleanOrchestration(raw) {
     attachments: Array.isArray(raw.attachments) ? raw.attachments.map(cleanAttachment).filter((entry) => entry.id).slice(0, 12) : [],
     memory: Array.isArray(raw.memory) ? raw.memory.map(cleanMemorySnapshot).filter((entry) => entry.id).slice(0, 5) : [],
     sourceRefs: Array.isArray(raw.sourceRefs) ? raw.sourceRefs.map(cleanSourceReference).filter((entry) => entry.title).slice(0, 12) : [],
+    knowledgeRefs: Array.isArray(raw.knowledgeRefs) ? raw.knowledgeRefs.map(cleanKnowledgeRef).filter((entry) => entry.title).slice(0, 5) : [],
+    knowledgeMeta: raw.knowledgeMeta && typeof raw.knowledgeMeta === 'object' ? cleanKnowledgeAutoMeta(raw.knowledgeMeta) : null,
+    knowledgeCitationAudit: raw.knowledgeCitationAudit && typeof raw.knowledgeCitationAudit === 'object' ? raw.knowledgeCitationAudit : null,
     modelProbe: cleanModelProbe(raw.modelProbe),
     projectPath: String(raw.projectPath || ''),
     sourceSessionId: String(raw.sourceSessionId || ''),
@@ -3160,6 +4308,16 @@ function ideasForScope(ideas, projectPath, scope) {
   if (scope === 'all') return ideas;
   const key = scope === 'global' ? '' : taskProjectKey(projectPath);
   return ideas.filter((item) => taskProjectKey(item.projectPath) === key);
+}
+
+async function attachKnowledgeAuto(idea, sourceSessionId, projectPath) {
+  try {
+    const auto = await knowledgeAutoRetrieve(idea || '', sourceSessionId, projectPath);
+    if (auto && auto.inject) {
+      return { knowledgeRefs: auto.refs || [], knowledgeMeta: auto.meta || null };
+    }
+  } catch (e) { /* auto KB retrieval is best-effort; never block task creation */ }
+  return { knowledgeRefs: [], knowledgeMeta: null };
 }
 
 async function mutateTasks(body) {
@@ -3361,9 +4519,11 @@ async function mutateTasks(body) {
     if (index < 0) throw new Error('idea not found');
     const idea = store.ideas[index];
     if (idea.linkedOrchestrationId && store.orchestrations.some((item) => item.id === idea.linkedOrchestrationId)) throw new Error('idea already has an AI orchestration');
+    const autoKb = await attachKnowledgeAuto(idea.body, body.sourceSessionId || idea.sourceSessionId, idea.projectPath);
     const orchestration = cleanOrchestration({
       title: idea.title, idea: idea.body, projectPath: idea.projectPath,
-      sourceSessionId: body.sourceSessionId || idea.sourceSessionId, phase: 'idea', createdAt: now, updatedAt: now
+      sourceSessionId: body.sourceSessionId || idea.sourceSessionId, phase: 'idea', createdAt: now, updatedAt: now,
+      knowledgeRefs: autoKb.knowledgeRefs, knowledgeMeta: autoKb.knowledgeMeta
     });
     store.orchestrations.push(orchestration);
     store.ideas[index] = cleanIdea({ ...idea, status: 'promoted', linkedOrchestrationId: orchestration.id, updatedAt: now });
@@ -3372,6 +4532,7 @@ async function mutateTasks(body) {
     store.ideas = store.ideas.filter((item) => item.id !== body.id);
     if (store.ideas.length === before) throw new Error('idea not found');
   } else if (action === 'orchestration_create') {
+    const autoKb = await attachKnowledgeAuto(body.idea, body.sourceSessionId, body.projectPath);
     const orchestration = cleanOrchestration({
       title: body.title,
       idea: body.idea,
@@ -3384,7 +4545,9 @@ async function mutateTasks(body) {
       modelProbe: body.modelProbe,
       phase: 'idea',
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
+      knowledgeRefs: autoKb.knowledgeRefs,
+      knowledgeMeta: autoKb.knowledgeMeta
     });
     const taskId = randomUUID();
     store.tasks.push(cleanTask({
@@ -4047,6 +5210,7 @@ async function generateOrchestrationPlan(record, feedback, models, policy) {
   const prompt = [
     '项目路径：' + (record.projectPath || '全局任务'),
     projectContext ? '项目上下文：\n' + projectContext : '',
+    record.knowledgeMeta ? '知识库参考（自动检索，规划时优先参考并溯源）：\n' + knowledgeAutoPrompt(record.knowledgeRefs, record.knowledgeMeta) : '',
     '用户想法：\n' + record.idea,
     record.memory && record.memory.length ? '记忆快照（跨会话上下文，优先引用）：\n' + record.memory.map((entry) => '- [' + entry.title + '] ' + entry.summary + (entry.findings.length ? '\n  发现：' + entry.findings.slice(0, 3).join('；') : '')).join('\n') : '',
     record.attachments && record.attachments.length ? '已附加文件：\n' + record.attachments.map((entry) => '- ' + entry.name + '（' + entry.size + ' B，' + entry.mime + '）' + (entry.summary ? '\n  内容摘录：' + entry.summary.slice(0, 400) : '')).join('\n') : '',
@@ -4136,6 +5300,7 @@ async function workerPrompt(orchestration, worker) {
     poolPrompt,
     '这是工作台中已经由用户确认执行的一项多代理任务。只完成分配给你的工作包，不要擅自扩大范围。',
     '项目路径：' + (orchestration.projectPath || '全局任务'),
+    orchestration.knowledgeMeta ? '知识库参考（自动检索，与任务相关时优先参考并溯源）：\n' + knowledgeAutoPrompt(orchestration.knowledgeRefs, orchestration.knowledgeMeta) : '',
     (orchestration.attachments || []).length ? '已附加文件（需要时读取内容）：\n' + (orchestration.attachments || []).map((entry) => '- ' + entry.name + '（' + entry.size + ' B）' + (entry.summary ? '\n  ' + entry.summary.slice(0, 1200) : '')).join('\n') : '',
     (orchestration.sourceRefs || []).length ? '用户明确引用的来源：\n' + orchestration.sourceRefs.map((entry) => '- [来源: ' + entry.title + '] ' + entry.content).join('\n') : '',
     '总目标：\n' + orchestration.idea,
@@ -4143,6 +5308,7 @@ async function workerPrompt(orchestration, worker) {
     worker.acceptance ? '你的验收标准：\n' + worker.acceptance : '',
     dependencyContext ? '依赖任务的结果：\n' + dependencyContext : '',
     (orchestration.sourceRefs || []).length ? '凡是依赖上述引用资料的事实、判断或建议，必须紧邻标注 [来源: 对应名称]；无法从来源确认时明确写“未验证”，不得补造。' : '',
+    orchestration.knowledgeMeta ? '知识库引用规则：知识库是优先参考但不是唯一来源——知识库覆盖不全或需要更全面/更新的信息时，可结合自身知识或调用 web_search / web_fetch 联网补充；引用知识库内容时标注 [知识N《标题》· 置信度 X] 或 [来源: 标题]，引用联网内容时标注来源 URL；无法确认的内容标注“未验证”。' : '',
     '完成后给出结构清晰的交接报告：完成内容、证据/产物、验证结果、风险和建议。'
   ].filter(Boolean).join('\n\n');
 }
@@ -4275,11 +5441,12 @@ function coordinatorPrompt(orchestration) {
     '用户已经确认执行，现在所有子代理都已结束。请进行最终汇总和质量把关，但不要替用户宣告验收通过。',
     '项目路径：' + (orchestration.projectPath || '全局任务'),
     '原始想法：\n' + orchestration.idea,
+    orchestration.knowledgeMeta ? '知识库参考（自动检索，汇总时优先参考并溯源）：\n' + knowledgeAutoPrompt(orchestration.knowledgeRefs, orchestration.knowledgeMeta) : '',
     (orchestration.sourceRefs || []).length ? '用户明确引用的来源：\n' + orchestration.sourceRefs.map((entry) => '- [来源: ' + entry.title + '] ' + entry.content).join('\n') : '',
     orchestration.plan && orchestration.plan.strategy ? '执行策略：\n' + orchestration.plan.strategy : '',
     '子代理交接：\n' + results,
     orchestration.plan && orchestration.plan.acceptanceCriteria.length ? '最终验收标准：\n- ' + orchestration.plan.acceptanceCriteria.join('\n- ') : '',
-    (orchestration.sourceRefs || []).length ? '生成侧溯源门：依赖引用资料的结论必须紧邻标注 [来源: 对应名称]；无法确认就标记“未验证”。提交前自行检查至少出现一条有效来源标注。' : '',
+    ((orchestration.sourceRefs || []).length || orchestration.knowledgeMeta) ? '生成侧溯源门：依赖引用资料或知识库条目的结论必须紧邻标注 [来源: 对应名称] 或 [知识N《标题》· 置信度 X]；无法确认就标记“未验证”。提交前自行检查至少出现一条有效来源标注。' : '',
     '输出一份给用户验收的最终报告：结论、各子任务完成情况、产物/证据、验证结果、未完成项与风险、建议验收步骤。'
   ].filter(Boolean).join('\n\n');
 }
@@ -4392,15 +5559,18 @@ async function runOrchestration(orchestrationId) {
       const output = contentBlocksText(result.output);
       const successful = result.stopReason === 'completed';
       const workerFailures = orchestration.workers.filter((worker) => worker.status !== 'completed').length;
+      const knowledgeAutoConfig = await readKnowledgeAutoConfig();
       await queueOrchestrationPatch(orchestrationId, (item) => {
         if (item.phase === 'cancelled') return item;
         const mainAgent = { ...item.mainAgent, status: successful ? 'completed' : 'failed', output, error: successful ? '' : ('主代理结束原因：' + result.stopReason), completedAt };
-        const traceMissing = successful && (item.sourceRefs || []).length > 0 && !/\[来源:\s*[^\]]+\]/.test(output);
+        const citationAudit = successful && item.knowledgeMeta ? auditKnowledgeCitations(output, item.knowledgeRefs, knowledgeAutoConfig.auditLevel) : null;
+        const traceMissing = successful && ((item.sourceRefs || []).length > 0 || item.knowledgeMeta) && !/\[来源:\s*[^\]]+\]/.test(output) && !/\[知识\d+[^\]]*\]/.test(output);
         const warnings = [];
         if (successful && workerFailures > 0) warnings.push(workerFailures + ' 个子代理未正常完成，请在验收时重点检查。');
-        if (traceMissing) warnings.push('生成侧溯源门未通过：最终报告使用了引用资料，但没有找到 [来源: 名称] 标注，请要求主代理补充后再验收。');
+        if (traceMissing) warnings.push('生成侧溯源门未通过：最终报告使用了引用资料或知识库条目，但没有找到 [来源: 名称] 或 [知识N] 标注，请要求主代理补充后再验收。');
+        if (citationAudit && !citationAudit.valid) warnings.push('知识库引用审计未通过：' + [...citationAudit.missing, ...citationAudit.invalid.map((item) => item.id + ' ' + item.reason)].join('；'));
         const runtimeError = successful ? warnings.join('\n') : ('主代理结束原因：' + result.stopReason);
-        const next = { ...item, phase: successful ? 'review' : 'failed', mainAgent, finalReport: output, runtimeError, completedAt, updatedAt: completedAt };
+        const next = { ...item, phase: successful ? 'review' : 'failed', mainAgent, finalReport: output, runtimeError, knowledgeCitationAudit: citationAudit, completedAt, updatedAt: completedAt };
         return { ...next, runs: runsWithSnapshot(next, successful ? 'review' : 'failed', completedAt) };
       });
       await appendOrchestrationLog(orchestrationId, successful ? 'info' : 'error', successful ? '主代理完成汇总，进入验收' : '主代理汇总失败：' + result.stopReason, orchestration.mainAgent.id);
@@ -4434,6 +5604,7 @@ function continuationPrompt(orchestration, userMessage) {
       '你正在继续优化一项已经交付的任务。请基于已有成果继续工作，不要从头重做；可以按需调用子代理去修改、验证对应的部分，最后把更新后的完整结果交回。',
       '项目路径：' + (orchestration.projectPath || '全局任务'),
       '原始想法：\n' + orchestration.idea,
+      orchestration.knowledgeMeta ? '知识库参考（自动检索，继续优化时同样优先参考并溯源）：\n' + knowledgeAutoPrompt(orchestration.knowledgeRefs, orchestration.knowledgeMeta) : '',
       orchestration.plan && orchestration.plan.strategy ? '执行策略：\n' + orchestration.plan.strategy : '',
       orchestration.plan && orchestration.plan.acceptanceCriteria.length ? '最终验收标准：\n- ' + orchestration.plan.acceptanceCriteria.join('\n- ') : '',
       '子代理交接（最近结果）：\n' + results,
@@ -4931,6 +6102,7 @@ function makeRoutes() {
           const operation = taskMutationQueue.then(() => mutateTasks(body));
           taskMutationQueue = operation.catch(() => {});
           const store = await operation;
+          let knowledgeCapture = null;
           if (body.action === 'orchestration_cancel') {
             const controller = orchestrationControllers.get(body.id);
             if (controller) controller.abort('user cancelled');
@@ -4944,6 +6116,14 @@ function makeRoutes() {
           if (body.action === 'orchestration_continue') {
             void continueOrchestration(body.id).catch((error) => diag('orchestration continue failed: ' + String((error && error.stack) || error)));
           }
+          if (body.action === 'orchestration_accept') {
+            const accepted = store.orchestrations.find((item) => item.id === body.id) || null;
+            try {
+              knowledgeCapture = await captureAcceptedOrchestrationKnowledge(accepted);
+            } catch (error) {
+              diag('accepted orchestration knowledge capture failed: ' + String((error && error.stack) || error));
+            }
+          }
           const modelCatalog = await listOrchestrationModels();
           writeJson(res, 200, {
             ok: true,
@@ -4955,7 +6135,8 @@ function makeRoutes() {
             ideas: ideasForScope(store.ideas, projectPath, scope),
             orchestrations: orchestrationsForScope(store.orchestrations, projectPath, scope),
             orchestrationRuntime: orchestrationRuntimeInfo(),
-            modelCatalog
+            modelCatalog,
+            knowledgeCapture
           });
         } catch (error) {
           bad(res, 'task-mutation-failed', String((error && error.message) || error));
@@ -5548,12 +6729,51 @@ function makeRoutes() {
         try {
           const result = await runKnowledgeSearch(body.query, body.project, {
             topK: body.topK,
-            tokenBudget: body.tokenBudget
+            tokenBudget: body.tokenBudget,
+            routingMode: body.routingMode,
+            maxIterations: body.maxIterations,
+            thresholds: body.thresholds
           });
           if (result && !result.error && (!result.results || !result.results.length)) {
             try { await addKnowledgeEvalCandidate(body.query); } catch (e) { /* best effort */ }
           }
           writeJson(res, 200, result);
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/auto',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        const query = cleanTaskText(body.query, KNOWLEDGE_MAX_QUERY_CHARS);
+        if (!query) return bad(res, 'empty', 'query required');
+        try {
+          const result = await knowledgeAutoRetrieve(query, body.sessionId, body.project);
+          rememberKnowledgeChatContext(body.sessionId, result);
+          writeJson(res, 200, result);
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/auto/config',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        try {
+          if (req.method === 'POST') {
+            let body;
+            try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+            const current = await readKnowledgeAutoConfig();
+            const next = cleanKnowledgeAutoConfig({ ...current, ...(body || {}) });
+            await writeKnowledgeAutoConfig(next);
+            writeJson(res, 200, { config: next });
+          } else {
+            writeJson(res, 200, { config: await readKnowledgeAutoConfig() });
+          }
         } catch (error) { fail(res, error); }
       }
     },
@@ -5617,16 +6837,35 @@ function makeRoutes() {
         const question = cleanTaskText(body.question, 500);
         if (!question) return bad(res, 'empty', 'question required');
         try {
-          const store = await readKnowledgeEval();
-          store.candidates = store.candidates || [];
-          store.candidates.push(cleanEvalItem({
-            question,
-            note: cleanTaskText(body.note, 500),
-            expected: body.missed ? [] : []
-          }));
-          store.candidates = store.candidates.slice(-200);
-          await writeKnowledgeEval(store);
-          writeJson(res, 200, { ok: true, candidates: store.candidates.length });
+          writeJson(res, 200, await recordKnowledgeFeedback({ ...body, question }));
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/traces',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        try {
+          if (req.method === 'POST') {
+            let body;
+            try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+            if (body.action !== 'clear') return bad(res, 'bad-action', 'action must be clear');
+            const sessionId = cleanTaskText(body.sessionId, 160);
+            const store = await mutateKnowledgeTraceStore((next) => {
+              next.traces = sessionId ? next.traces.filter((trace) => trace.sessionId !== sessionId) : [];
+            });
+            return writeJson(res, 200, { ok: true, clearedSessionId: sessionId, summary: summarizeKnowledgeTraces(store.traces) });
+          }
+          if (req.method !== 'GET') return bad(res, 'method', 'GET or POST required');
+          const sessionId = cleanTaskText(paramOf(req, 'sessionId'), 160);
+          const tool = cleanTaskText(paramOf(req, 'tool'), 80);
+          const limit = clampInt(paramOf(req, 'limit'), 1, 1000, 200);
+          if (tool && !KNOWLEDGE_TRACE_TOOLS.has(tool)) return bad(res, 'bad-tool', 'unknown trace tool');
+          const store = await readKnowledgeTraceStore();
+          const filtered = store.traces.filter((trace) => (!sessionId || trace.sessionId === sessionId) && (!tool || trace.tool === tool));
+          const traces = filtered.slice(-limit);
+          writeJson(res, 200, { version: store.version, updatedAt: store.updatedAt, totalMatched: filtered.length, summary: summarizeKnowledgeTraces(traces), traces });
         } catch (error) { fail(res, error); }
       }
     },
@@ -5648,7 +6887,7 @@ function makeRoutes() {
         if (req.method !== 'POST') return bad(res, 'method', 'POST required');
         let body;
         try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
-        const item = cleanEvalItem({ question: body.question, expected: body.expected, answerHints: body.answerHints });
+        const item = cleanEvalItem({ question: body.question, expected: body.expected, answerHints: body.answerHints, expectedStrategy: body.expectedStrategy, expectedWeb: body.expectedWeb });
         if (!item.question) return bad(res, 'empty', 'question required');
         try {
           const store = await readKnowledgeEval();
@@ -5678,6 +6917,50 @@ function makeRoutes() {
     },
     {
       kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/eval/update',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        try {
+          const store = await readKnowledgeEval();
+          const index = (store.items || []).findIndex((item) => item.id === body.id);
+          if (index < 0) return bad(res, 'not-found', 'evaluation item not found');
+          store.items[index] = cleanEvalItem({ ...store.items[index], ...body.patch, id: store.items[index].id, createdAt: store.items[index].createdAt });
+          await writeKnowledgeEval(store);
+          writeJson(res, 200, { item: store.items[index], items: store.items });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/eval/candidate',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        try {
+          const store = await readKnowledgeEval();
+          const candidate = (store.candidates || []).find((item) => item.id === body.id);
+          if (!candidate) return bad(res, 'not-found', 'evaluation candidate not found');
+          if (body.action === 'promote') {
+            const expected = Array.isArray(body.expected) ? body.expected : candidate.expected;
+            if (!expected || !expected.length) return bad(res, 'expected-required', 'at least one expected path or title is required');
+            const item = cleanEvalItem({ ...candidate, id: randomUUID(), expected, answerHints: body.answerHints || candidate.answerHints });
+            store.items = [...(store.items || []), item].slice(-300);
+          } else if (body.action !== 'ignore') {
+            return bad(res, 'bad-action', 'action must be promote or ignore');
+          }
+          store.candidates = (store.candidates || []).filter((item) => item.id !== candidate.id);
+          await writeKnowledgeEval(store);
+          writeJson(res, 200, { ok: true, action: body.action, items: store.items, candidates: store.candidates });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
       path: '/api/dsh-workbench/knowledge/eval/run',
       handler: async (req, res) => {
         if (!fence(req, res)) return;
@@ -5686,6 +6969,22 @@ function makeRoutes() {
         try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
         try {
           writeJson(res, 200, await runKnowledgeEvalSet({ topK: body.topK }));
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/audit',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        const answer = cleanTaskText(body.answer, 30000);
+        if (!answer) return bad(res, 'empty', 'answer required');
+        try {
+          const config = await readKnowledgeAutoConfig();
+          writeJson(res, 200, auditKnowledgeCitations(answer, body.refs, body.level || config.auditLevel));
         } catch (error) { fail(res, error); }
       }
     },
@@ -5779,7 +7078,7 @@ function apply(ctx) {
   const register = (webServer) => {
     try {
       const routes = makeRoutes();
-      disposers = routes.map((route) => webServer.register(route));
+      disposers.push(...routes.map((route) => webServer.register(route)));
       diag('registered ' + routes.length + ' routes');
     } catch (error) {
       diag('register failed: ' + String((error && error.stack) || error));
@@ -5806,7 +7105,38 @@ function apply(ctx) {
       order: 50,
       text: (context) => conversationStylePrompt((context && context.agent && context.agent.id) || '')
     }), 'dsh-workbench: conversation style');
+    try {
+      const kbDispose = scoped.systemPrompt.section({
+        name: 'dsh-workbench:knowledge-context',
+        order: 60,
+        text: (context) => knowledgeChatContextSectionText(context)
+      });
+      disposers.push(kbDispose);
+      diag('knowledge-context section registered');
+    } catch (error) {
+      diag('knowledge-context section register failed: ' + String((error && error.stack) || error));
+    }
   });
+  ctx.inject(['tools', 'systemPrompt'], (scoped) => {
+    const toolDisposers = [];
+    try {
+      toolDisposers.push(scoped.tools.register(makeKnowledgeSearchTool()));
+      toolDisposers.push(scoped.tools.register(makeKnowledgeReadTool()));
+      toolDisposers.push(scoped.systemPrompt.section({ name: 'dsh-workbench:knowledge-tools', order: 108, text: KNOWLEDGE_TOOL_PROMPT }));
+      disposers.push(...toolDisposers);
+      diag('knowledge_search + knowledge_read tools registered');
+    } catch (error) {
+      for (const dispose of toolDisposers.reverse()) dispose();
+      diag('knowledge tools register failed: ' + String((error && error.stack) || error));
+    }
+  });
+  try {
+    const traceDispose = ctx.on('tools/execute', traceKnowledgeToolExecution);
+    if (typeof traceDispose === 'function') disposers.push(traceDispose);
+    diag('knowledge/Web tool trace listener registered');
+  } catch (error) {
+    diag('knowledge/Web tool trace listener register failed: ' + String((error && error.stack) || error));
+  }
   // `/todo` command: needs the command registry + the session-projection seam
   // to read the current list. Wrapped defensively: a registration failure must
   // never take the host (or the whole desktop) down.

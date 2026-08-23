@@ -437,6 +437,36 @@ const evalItems = [
   ['向量路什么时候开', '知识库-评测集']
 ];
 
+evalItems.push(
+  ['如何从任务面板发起一个多 AI 协作', '工作台-任务面板优化'],
+  ['生成协作方案时界面会不会被阻塞', '工作台-任务面板优化'],
+  ['在哪里调整强调色、背景图和界面风格', '工作台-风格页'],
+  ['会话表达方式会覆盖专家角色设定吗', '工作台-风格页'],
+  ['单 AI 会话怎样改成多 AI', '工作台-多AI协作'],
+  ['执行代理卡住后看门狗如何重试', '工作台-看门狗机制'],
+  ['跨会话继续任务时怎样引用记忆快照', '工作台-记忆快照'],
+  ['编排时固定专家名单和自动选专家如何选择', '工作台-候选专家池'],
+  ['账户、用量和告警信息去哪里看', '工作台-监控页'],
+  ['定时工作流和模板库在哪里配置', '工作台-工作流页'],
+  ['个人知识库的数据流和分层是怎样的', '知识库-v3-架构'],
+  ['搜索笔记时 BM25、图谱和向量怎么配合', '技能-知识库检索'],
+  ['知识召回结果如何进行溯源和可信度判断', '技能-知识库检索'],
+  ['如何把一段会话提炼成待审核知识', '技能-蒸馏入库'],
+  ['发布新版工作台前需要检查哪些事项', '工作流-部署发布'],
+  ['原生目录选择为什么需要单独修复', '工作台-原生文件夹选择'],
+  ['简历生成器目前完成到哪个阶段', '项目-简历生成器'],
+  ['订单服务选择 FastAPI 的技术依据是什么', 'FastAPI-订单中台决策'],
+  ['知识库向量检索支持哪些 provider', '技能-BGE本地向量'],
+  ['离线运行 BGE 向量模型有哪些依赖', '技能-BGE本地向量'],
+  ['怎样控制知识检索占用的上下文和 token', '知识库-v3-架构'],
+  ['知识库维护器会自动处理哪些问题', '知识库-维护器与自生长'],
+  ['没有召回结果的问题会被记录到哪里', '知识库-维护器与自生长'],
+  ['为什么要维护固定的知识检索回归题', '知识库-评测集'],
+  ['什么情况下值得启用向量检索或重排', '知识库-评测集']
+);
+
+if (evalItems.length !== 50) throw new Error('knowledge evaluation seed must contain exactly 50 items');
+
 let seeded = 0;
 for (const entry of entries) {
   const result = await api('/api/dsh-workbench/knowledge/write', 'POST', { folder: entry.folder, name: entry.name, content: entry.content });
@@ -446,7 +476,13 @@ for (const entry of entries) {
 
 let added = 0;
 for (const [question, expectedTitle] of evalItems) {
-  const result = await api('/api/dsh-workbench/knowledge/eval/add', 'POST', { question, expected: [expectedTitle], answerHints: '' });
+  const result = await api('/api/dsh-workbench/knowledge/eval/add', 'POST', {
+    question,
+    expected: [expectedTitle],
+    answerHints: '',
+    expectedStrategy: 'single',
+    expectedWeb: 'none'
+  });
   added += 1;
 }
 

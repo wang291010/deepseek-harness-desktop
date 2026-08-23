@@ -4,6 +4,7 @@ node_modules/
 
 # Local backups and temporary migration snapshots
 backups/
+deployment-backups/
 *.bak
 *.backup
 *.tmp
@@ -54,3 +55,10 @@ desktop.ini
 *.dll
 *.pak
 *.bin
+
+# Local working files (session transcripts, stray root manifests)
+/kb-session-transcript.txt
+/package.json
+
+# Standalone open-source release of the workbench plugin (own git repo)
+/dsh-workbench/

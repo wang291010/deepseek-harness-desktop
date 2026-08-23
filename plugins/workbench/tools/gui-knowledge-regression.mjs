@@ -42,6 +42,9 @@ function send(method, params = {}) {
   ]);
 }
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const cleanupPaths = new Set();
+const distillTitle = 'GUI蒸馏回归条目-' + Date.now();
+const distillFileName = new Date().toISOString().slice(0, 10) + '_' + distillTitle + '.md';
 
 async function evaluate(expression) {
   const result = await Promise.race([
@@ -125,10 +128,35 @@ try {
   }
   await shot('knowledge-dash.png');
 
+  console.log('step: adaptive RAG controls');
+  const vectorNav = await evaluate(`(() => {
+    const tab = [...document.querySelectorAll('button')].find((item) => item.textContent.trim() === '向量设置');
+    if (!tab) return false;
+    tab.click();
+    return true;
+  })()`);
+  if (!vectorNav) throw new Error('vector settings tab missing');
+  await wait(800);
+  const ragControls = await evaluate(`(() => {
+    const text = document.body.innerText;
+    return {
+      hasGate: text.includes('门控'),
+      hasRouting: text.includes('路由'),
+      hasRerank: text.includes('重排') && text.includes('本地 BGE'),
+      hasAudit: text.includes('审计') && text.includes('引用 + 逐句')
+    };
+  })()`);
+  if (!ragControls.hasGate || !ragControls.hasRouting || !ragControls.hasRerank || !ragControls.hasAudit) {
+    throw new Error('adaptive RAG controls missing: ' + JSON.stringify(ragControls));
+  }
+  await shot('knowledge-rag-settings.png');
+
   // seed one entry so search returns a real result card
   console.log('step: seed entry');
+  cleanupPaths.add('inbox/GUI回归测试条目.md');
   const seeded = await pageApi('/api/dsh-workbench/knowledge/write', 'POST', { folder: 'inbox', name: 'GUI回归测试条目', content: seedContent });
   if (!seeded.entry) throw new Error('seed entry failed');
+  cleanupPaths.add(seeded.entry.path);
 
   console.log('step: search tab');
   const searchNav = await evaluate(`(() => {
@@ -163,11 +191,12 @@ try {
     return {
       cardCount: cards.length,
       hasCitation: [...cards].some((card) => card.innerText.includes('溯源：')),
+      hasFeedback: [...cards].some((card) => card.innerText.includes('有帮助') && card.innerText.includes('没帮助')),
       hasRoute: document.body.innerText.includes('路由模式：'),
       snippet: cards.length ? cards[0].innerText.slice(0, 300) : document.body.innerText.slice(0, 300)
     };
   })()`);
-  if (searchState.cardCount < 1 || !searchState.hasCitation) {
+  if (searchState.cardCount < 1 || !searchState.hasCitation || !searchState.hasFeedback) {
     throw new Error('search regression failed: ' + JSON.stringify(searchState));
   }
   await shot('knowledge-search.png');
@@ -182,8 +211,12 @@ try {
   await wait(800);
   console.log('step: type distill content');
   await evaluate(`(() => {
+    const title = [...document.querySelectorAll('input')].find((item) => (item.placeholder || '').includes('标题（可选'));
     const area = [...document.querySelectorAll('textarea')].find((item) => (item.placeholder || '').includes('粘贴对话'));
-    if (!area) return false;
+    if (!title || !area) return false;
+    const inputSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    inputSetter.call(title, ${JSON.stringify(distillTitle)});
+    title.dispatchEvent(new Event('input', { bubbles: true }));
     const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
     setter.call(area, '回归测试：上线时先备份运行副本再复制新文件，重启后端口会变化。');
     area.dispatchEvent(new Event('input', { bubbles: true }));
@@ -191,6 +224,8 @@ try {
   })()`);
   await wait(300);
   console.log('step: run distill');
+  cleanupPaths.add('inbox/' + distillFileName);
+  cleanupPaths.add('atomic/' + distillFileName);
   await evaluate(`(() => {
     const button = [...document.querySelectorAll('button')].find((item) => item.textContent.trim() === '蒸馏入库');
     if (!button) return false;
@@ -212,6 +247,7 @@ try {
   if (!distillState.hasResult || !distillState.path) {
     throw new Error('distill regression failed: ' + JSON.stringify(distillState));
   }
+  cleanupPaths.add(distillState.path);
   await shot('knowledge-distill.png');
 
   // new entry form: click 新建条目 → form visible → fill → save → appears
@@ -246,6 +282,7 @@ try {
     return true;
   })()`);
   await wait(2500);
+  cleanupPaths.add('inbox/GUI新建条目.md');
   const newEntryState = await evaluate(`(() => ({
     visible: document.body.innerText.includes('GUI新建条目'),
     hasSummary: document.body.innerText.includes('GUI 回归新建条目')
@@ -262,7 +299,9 @@ try {
     { folder: 'inbox', name: '工作流-GUI示例', content: '---\ntitle: 工作流-GUI示例\ntype: workflow\ntags: [工作流]\nconfidence: high\nrelated: ""\nsummary: 示例工作流条目。\n---\n# 工作流-GUI示例\n示例工作流正文。' }
   ];
   for (const item of typedSeed) {
-    await pageApi('/api/dsh-workbench/knowledge/write', 'POST', item);
+    cleanupPaths.add(item.folder + '/' + item.name + '.md');
+    const written = await pageApi('/api/dsh-workbench/knowledge/write', 'POST', item);
+    cleanupPaths.add(written.entry?.path || item.folder + '/' + item.name + '.md');
   }
   await evaluate(`(() => {
     const tab = [...document.querySelectorAll('button')].find((item) => item.textContent.trim() === '检索');
@@ -305,18 +344,23 @@ try {
 
   // cleanup seeded entries
   console.log('step: cleanup');
-  await pageApi('/api/dsh-workbench/knowledge/remove', 'POST', { path: seeded.entry.path }).catch(() => {});
-  await pageApi('/api/dsh-workbench/knowledge/remove', 'POST', { path: distillState.path }).catch(() => {});
-  await pageApi('/api/dsh-workbench/knowledge/remove', 'POST', { path: 'inbox/GUI新建条目.md' }).catch(() => {});
-  for (const item of typedSeed) {
-    await pageApi('/api/dsh-workbench/knowledge/remove', 'POST', { path: item.folder + '/' + item.name + '.md' }).catch(() => {});
+  for (const path of cleanupPaths) {
+    const removed = await pageApi('/api/dsh-workbench/knowledge/remove', 'POST', { path })
+      .then(() => true, () => false);
+    if (removed) cleanupPaths.delete(path);
   }
   await pageApi('/api/dsh-workbench/knowledge/remove', 'POST', { path: 'inbox/NodeProbe条目.md' }).catch(() => {});
 
-  console.log(JSON.stringify({ dash: dashState, search: searchState, distill: distillState, newEntry: newEntryState, overview: overviewState }, null, 2));
+  console.log(JSON.stringify({ dash: dashState, ragControls, search: searchState, distill: distillState, newEntry: newEntryState, overview: overviewState }, null, 2));
   console.log('knowledge GUI regression passed');
   process.exit(0);
 } finally {
+  for (const path of cleanupPaths) {
+    try {
+      await pageApi('/api/dsh-workbench/knowledge/remove', 'POST', { path });
+    } catch (error) {
+      console.error('cleanup failed for ' + path + ': ' + (error instanceof Error ? error.message : String(error)));
+    }
+  }
   try { ws.close(); } catch (e) { /* ignore */ }
 }
-  console.log('step: distill tab');

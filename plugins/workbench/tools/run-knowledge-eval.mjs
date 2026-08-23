@@ -86,6 +86,16 @@ if (!(store.items || []).length) {
 } else {
   const report = await call('/api/dsh-workbench/knowledge/eval/run', 'POST', { topK: 5 });
   console.log('recall@5 = ' + report.recallAtK + '  平均 token = ' + report.avgTokens + '  平均耗时 = ' + report.avgLatencyMs + 'ms');
+  console.log('平均覆盖 = ' + report.avgCoverage + '  平均检索 token = ' + report.avgRetrievalTokens + '  联网回退率 = ' + report.webFallbackRate + '  迭代率 = ' + report.iterativeRate);
+  if (report.onlineAudit) {
+    console.log('在线引用审计 = ' + report.onlineAudit.citationSamples + ' 条  有效率 = ' + (report.onlineAudit.citationValidRate ?? '待采样') + '  groundedness = ' + (report.onlineAudit.groundedness ?? '待采样'));
+  }
+  if (report.acceptance) {
+    console.log('验收门槛：' + (report.acceptance.ready ? '通过' : '未就绪'));
+    for (const check of report.acceptance.checks || []) {
+      console.log('  ' + (check.passed ? '通过' : '未通过') + ' ' + check.label + '：' + (check.actual ?? '无样本') + ' / 目标 ' + check.target);
+    }
+  }
   for (const item of report.results || []) {
     console.log('  ' + (item.hits === item.expected ? '✅' : '❌') + ' [' + item.hits + '/' + item.expected + '] ' + item.question.slice(0, 60));
   }

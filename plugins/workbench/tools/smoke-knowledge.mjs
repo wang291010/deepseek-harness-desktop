@@ -198,11 +198,13 @@ try {
   assert.equal(profile.profile.topK, 5);
   const savedProfile = await call('/api/dsh-workbench/knowledge/profile', 'POST', {
     project: 'D:\\proj',
-    profile: { mode: 'vector', topK: 7, rerank: 'none', routes: { bm25: true, graph: true, vector: true, hyde: false } }
+    profile: { mode: 'vector', topK: 7, rerank: 'local', routes: { bm25: true, graph: true, vector: true, hyde: false } }
   });
   assert.equal(savedProfile.profile.topK, 7);
+  assert.equal(savedProfile.profile.rerank, 'local');
   const vectorEnabledSearch = await call('/api/dsh-workbench/knowledge/search', 'POST', { query: 'FastAPI', project: 'D:\\proj' });
   assert.equal(vectorEnabledSearch.vectorStatus, 'disabled', 'profile enables vector but provider is none');
+  assert.ok(['disabled', 'skipped'].includes(vectorEnabledSearch.rerankStatus), 'local rerank should fall back when local BGE is disabled');
 
   // configure the pluggable vector provider (mock "paid model" endpoint) and rebuild vectors
   const configuredVector = await call('/api/dsh-workbench/knowledge/vector', 'POST', {
@@ -251,6 +253,10 @@ try {
   assert.equal(evalRun.items, 1);
   assert.equal(evalRun.recallAtK, 1, 'fastapi entry should be recalled');
   assert.ok(evalRun.avgTokens > 0);
+  assert.equal(evalRun.acceptance.ready, false, 'a one-item smoke set must not claim production acceptance');
+  assert.equal(evalRun.acceptance.checks.find((check) => check.id === 'recall-at-k').passed, true);
+  assert.equal(evalRun.acceptance.checks.find((check) => check.id === 'dataset-size').passed, false);
+  assert.equal(evalRun.onlineAudit.groundednessSamples, 0);
   const evalAfterRun = await call('/api/dsh-workbench/knowledge/eval', 'GET');
   assert.ok((evalAfterRun.history || []).length >= 1, 'eval history should be stored');
   const emptySearch = await call('/api/dsh-workbench/knowledge/search', 'POST', { query: 'zzzznomatchxyz' });
@@ -434,9 +440,10 @@ try {
   assert.equal(restored.entry.status, 'published');
 
   const vectorRouteSearch = await call('/api/dsh-workbench/knowledge/search', 'POST', { query: '订单中台为什么选择 FastAPI 异步消息架构', topK: 5 });
-  assert.ok(['bm25-graph', 'graph', 'vector', 'hybrid'].includes(vectorRouteSearch.mode), 'mode should be one of the route profiles');
+  assert.ok(['bm25-graph', 'graph', 'vector', 'hybrid', 'iterative'].includes(vectorRouteSearch.mode), 'mode should be one of the route profiles');
   const relationSearch = await call('/api/dsh-workbench/knowledge/search', 'POST', { query: 'FastAPI 和 异步消息之间是什么关系', topK: 5 });
-  assert.equal(relationSearch.mode, 'graph', 'relation-style query should route to graph');
+  assert.equal(relationSearch.routing.mode, 'graph', 'relation-style query should classify to graph');
+  assert.ok(['graph', 'iterative'].includes(relationSearch.mode), 'relation-style query should use graph or bounded iteration');
 
   const maintainReport = await call('/api/dsh-workbench/knowledge/maintain', 'POST');
   assert.ok(Array.isArray(maintainReport.archived), 'maintain should report archived list');

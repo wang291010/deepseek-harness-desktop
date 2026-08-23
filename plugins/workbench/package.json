@@ -14,7 +14,10 @@
     "test:client-load": "node tools/smoke-client-load.mjs",
     "test:watchdog": "node tools/smoke-watchdog.mjs",
     "test:collab": "node tools/smoke-collab.mjs",
-    "test:memory": "node tools/smoke-memory.mjs"
+    "test:workflow": "node tools/smoke-workflow.mjs",
+    "test:memory": "node tools/smoke-memory.mjs",
+    "test:knowledge": "node tools/smoke-knowledge.mjs",
+    "test:knowledge-auto": "node tools/smoke-knowledge-auto.mjs"
   },
   "exports": {
     ".": "./lib/host/index.js",
@@ -41,8 +44,8 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-client-runtime": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-client-ui-primitives": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-client-runtime": "^0.1.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-primitives": "^0.1.1-rc.2",
     "react": "^18.3.1"
   },
   "devDependencies": {

@@ -18,6 +18,11 @@ const ctx = {
       });
     } else if (names.includes('subagents')) {
       callback({ subagents: { list: () => [] }, agents: {} });
+    } else if (names.includes('tools')) {
+      callback({
+        tools: { register: () => () => {} },
+        systemPrompt: { section(definition) { sections.push(definition); return () => {}; } }
+      });
     } else if (names.includes('systemPrompt')) {
       callback({
         effect(fn) { return fn(); },
@@ -57,8 +62,9 @@ try {
   const initial = await call('/api/dsh-workbench/style/read', 'GET');
   assert.equal(initial.version, 1);
   assert.equal(initial.settings.accent, '#ff9f0a');
-  assert.equal(sections.length, 1);
-  assert.equal(sections[0].text(), '');
+  const styleSection = sections.find((section) => section.name === 'dsh-workbench:conversation-style');
+  assert.ok(styleSection, 'conversation style prompt section should be registered');
+  assert.equal(styleSection.text(), '');
 
   const saved = await call('/api/dsh-workbench/style/write', 'POST', {
     settings: {
@@ -83,7 +89,7 @@ try {
   assert.equal(saved.settings.density, 'comfortable');
   assert.equal(saved.settings.wallpaper, '');
   assert.equal(saved.presets[0].settings.wallpaper, '');
-  assert.equal(sections[0].text(), 'Conversation style selected by the user:\n用简洁中文回答');
+  assert.equal(styleSection.text(), 'Conversation style selected by the user:\n用简洁中文回答');
 
   const persisted = JSON.parse(await readFile(join(home, 'dsh-workbench-style.json'), 'utf8'));
   assert.equal(persisted.revision, 1);
@@ -95,14 +101,14 @@ try {
   assert.equal(sessionSaved.conversationStyle, 'concise');
   const sessionRead = await call('/api/dsh-workbench/style/session', 'GET', undefined, '?sessionId=session-1');
   assert.equal(sessionRead.conversationStyle, 'concise');
-  assert.ok(sections[0].text({ agent: { id: 'session-1' } }).includes('be concise'), 'session style should inject for that session');
-  assert.equal(sections[0].text({ agent: { id: 'session-2' } }), 'Conversation style selected by the user:\n用简洁中文回答', 'other sessions keep the global style');
+  assert.ok(styleSection.text({ agent: { id: 'session-1' } }).includes('be concise'), 'session style should inject for that session');
+  assert.equal(styleSection.text({ agent: { id: 'session-2' } }), 'Conversation style selected by the user:\n用简洁中文回答', 'other sessions keep the global style');
 
   // global style write must keep session overrides.
   await call('/api/dsh-workbench/style/write', 'POST', { settings: { accent: '#ff0000' } });
   const sessionAfter = await call('/api/dsh-workbench/style/session', 'GET', undefined, '?sessionId=session-1');
   assert.equal(sessionAfter.conversationStyle, 'concise');
-  assert.ok(sections[0].text({ agent: { id: 'session-1' } }).includes('be concise'));
+  assert.ok(styleSection.text({ agent: { id: 'session-1' } }).includes('be concise'));
   console.log('style smoke test passed');
 } finally {
   await rm(home, { recursive: true, force: true });
