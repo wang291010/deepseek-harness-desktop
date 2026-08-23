@@ -613,6 +613,10 @@ window.__ModuleLoader__.load({
       ".wb-task-detail-head{display:flex;align-items:center;justify-content:space-between;min-height:62px;padding:0 16px;border-bottom:1px solid var(--dsw-alias-border-l1)}",
       ".wb-task-detail-head strong{font-size:14px;color:var(--dsw-alias-label-primary)}",
       ".wb-chat-dual-warn{position:absolute;top:50px;left:50%;transform:translateX(-50%);z-index:20;padding:6px 12px;border:1px solid #ff9f0a;border-radius:8px;background:color-mix(in srgb,#ff9f0a 14%,var(--dsw-alias-bg-layer-2));color:var(--dsw-alias-label-primary);font-size:11px;box-shadow:var(--dsw-shadow-lv2)}.wb-chat-mode-switch{display:flex;gap:4px;margin:8px 0 4px;padding:3px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-1)}.wb-chat-mode-switch button{flex:1;height:24px;border:0;border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);font:10px inherit;cursor:pointer}.wb-chat-mode-switch .wb-chat-mode-active{background:var(--dsw-alias-button-elevated-fill);color:var(--dsw-alias-label-primary);font-weight:600}.wb-chat-tool-active{border-color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill))!important;color:var(--dsw-alias-label-primary)!important}.wb-chat-model-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}.wb-chat-model-head strong{font-size:11px;color:var(--dsw-alias-label-primary)}.wb-chat-model-list{display:grid;gap:3px;max-height:220px;overflow:auto;margin-top:6px}.wb-chat-model-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;padding:4px 6px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:var(--dsw-alias-bg-layer-1);font-size:10px}.wb-chat-model-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-secondary)}.wb-chat-model-row strong{font-size:10px}.wb-chat-model-row small{grid-column:1/-1;color:var(--dsw-alias-label-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wb-chat-flow{display:flex;flex-direction:column;gap:10px;padding:14px 16px;max-width:780px;margin:0 auto}.wb-chat-msg{max-width:78%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word}.wb-chat-msg-user{align-self:flex-end;background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-button-primary-label,#fff);border-bottom-right-radius:4px}.wb-chat-msg-assistant{align-self:flex-start;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-bottom-left-radius:4px}.wb-chat-msg-head{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:10px;color:var(--dsw-alias-label-tertiary)}.wb-chat-msg-head strong{color:var(--dsw-alias-label-secondary);font-weight:600}.wb-chat-msg-actions{display:flex;gap:8px;margin-top:7px}.wb-chat-msg-actions button{border:0;padding:0;background:transparent;color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));font:10px inherit;cursor:pointer}.wb-chat-agent-busy{border-color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));background:color-mix(in srgb,var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill)) 10%,var(--dsw-alias-bg-layer-1))}.wb-chat-agents{display:grid;gap:5px;max-width:420px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 96%,transparent);box-shadow:var(--dsw-shadow-lv2)}.wb-chat-agents-head{width:100%;display:flex;align-items:center;gap:7px;padding:2px 0;border:0;background:transparent;color:var(--dsw-alias-label-tertiary);font:10px inherit;text-align:left;cursor:pointer}.wb-chat-agents-head span{color:var(--dsw-alias-label-secondary)}.wb-chat-agents-head small{margin-left:auto}.wb-chat-agents-head svg{transition:transform .18s ease}.wb-chat-agents-collapsed .wb-chat-agents-head svg{transform:rotate(90deg)}.wb-chat-agents-body{display:grid;gap:5px}",
+      ".wb-chat-card{max-width:82%;align-self:flex-start;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-2);overflow:hidden}.wb-chat-card-head{width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;border:0;background:transparent;color:var(--dsw-alias-label-primary);font:11px inherit;text-align:left;cursor:pointer}.wb-chat-card-head strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wb-chat-card-head small{color:var(--dsw-alias-label-tertiary);white-space:nowrap}.wb-chat-card-body{max-height:260px;overflow:auto;padding:8px 10px;border-top:1px solid var(--dsw-alias-border-l1);display:grid;gap:6px;font-size:10px}.wb-chat-card-agent{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 8px;padding:6px 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:7px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-secondary)}.wb-chat-card-agent small{grid-column:1/-1;color:var(--dsw-alias-label-tertiary);white-space:pre-wrap}.wb-chat-card-actions{display:flex;gap:6px;flex-wrap:wrap;padding:7px 10px;border-top:1px solid var(--dsw-alias-border-l1)}.wb-chat-card-actions button{height:24px;padding:0 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);font:10px inherit;cursor:pointer}.wb-chat-card-actions button:hover{background:var(--dsw-alias-interactive-bg-hover)}.wb-chat-card-write{border-color:#ff9f0a}.wb-chat-card-write .wb-chat-card-head small{color:#ff9f0a}.wb-chat-ok{color:#30d158!important}.wb-chat-err{color:#ff453a!important}.wb-chat-run{color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill))!important}.wb-chat-elapsed{font-size:9px;color:var(--dsw-alias-label-tertiary)}",
+      ".wb-chat-drawer{position:absolute;top:0;right:0;bottom:0;z-index:30;width:min(480px,calc(100% - 32px));display:flex;flex-direction:column;border-left:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2);box-shadow:var(--dsw-shadow-lv3);animation:wb-task-detail-in .16s ease-out}.wb-chat-drawer-head{display:flex;align-items:center;justify-content:space-between;min-height:52px;padding:0 14px;border-bottom:1px solid var(--dsw-alias-border-l1)}.wb-chat-drawer-head strong{font-size:13px;color:var(--dsw-alias-label-primary)}.wb-chat-drawer-head button{border:0;background:transparent;color:var(--dsw-alias-label-secondary);font:11px inherit;cursor:pointer}.wb-chat-drawer-tabs{display:flex;gap:2px;padding:0 10px;border-bottom:1px solid var(--dsw-alias-border-l1)}.wb-chat-drawer-tabs button{height:32px;padding:0 10px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--dsw-alias-label-secondary);font:11px inherit;cursor:pointer}.wb-chat-drawer-tabs .wb-chat-drawer-tab-active{border-bottom-color:var(--dsw-alias-accent-fill,var(--dsw-alias-button-primary-fill));color:var(--dsw-alias-label-primary);font-weight:650}.wb-chat-drawer-body{flex:1;min-height:0;overflow:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px;font-size:11px;color:var(--dsw-alias-label-secondary);line-height:1.6}.wb-chat-drawer-body h4{margin:8px 0 4px;font-size:11px;color:var(--dsw-alias-label-primary)}.wb-chat-drawer-body pre{white-space:pre-wrap;word-break:break-word;margin:0;font-family:inherit;font-size:10px;color:var(--dsw-alias-label-secondary)}.wb-chat-drawer-row{padding:7px 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:7px;background:var(--dsw-alias-bg-layer-1)}",
+      ".wb-approval-overlay{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:2147482900;width:min(560px,calc(100vw - 32px));padding:10px 12px;border:1px solid #ff9f0a;border-radius:10px;background:color-mix(in srgb,#ff9f0a 10%,var(--dsw-alias-bg-layer-2));box-shadow:var(--dsw-shadow-lv3);display:grid;gap:7px;color:var(--dsw-alias-label-primary);font-size:11px}.wb-approval-overlay-head{display:flex;align-items:center;gap:7px}.wb-approval-overlay-head small{margin-left:auto;color:var(--dsw-alias-label-tertiary)}.wb-approval-overlay-actions{display:flex;justify-content:flex-end;gap:7px}.wb-approval-overlay-actions button{height:26px;padding:0 10px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:11px inherit;cursor:pointer}.wb-approval-overlay-actions .wb-approval-allow{border-color:transparent;background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-button-primary-label,#fff)}",
+      ".wb-tb-collab-agents{display:grid;gap:5px}.wb-tb-card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.wb-tb-card-actions button{height:26px;padding:0 9px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);font:10px inherit;cursor:pointer}.wb-tb-card-actions button:hover{background:var(--dsw-alias-interactive-bg-hover)}.wb-tb-card-actions .wb-tb-action-primary{border-color:transparent;background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-button-primary-label,#fff)}.wb-chat-agent-retry{grid-column:1/-1;justify-self:start;height:20px;padding:0 7px;border:1px solid var(--dsw-alias-border-l2);border-radius:5px;background:transparent;color:var(--dsw-alias-label-secondary);font:9px inherit;cursor:pointer}.wb-chat-agent-retry:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}",
       ".wb-task-detail-body{flex:1;min-height:0;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:13px}",
       ".wb-task-field{display:flex;flex-direction:column;gap:5px}",
       ".wb-task-field label{font-size:10px;font-weight:650;color:var(--dsw-alias-label-tertiary)}",
@@ -1043,6 +1047,7 @@ window.__ModuleLoader__.load({
     // =====================================================================
     var WB_TB_TABS = [
       { id: "info", label: "详细信息" },
+      { id: "collab", label: "协作" },
       { id: "project", label: "项目配置" },
       { id: "git", label: "Git图谱" },
       { id: "files", label: "文件视图" },
@@ -1658,7 +1663,7 @@ window.__ModuleLoader__.load({
       const nextStatus = task.status === "completed" ? "pending" : (task.status === "in_progress" || task.status === "blocked") ? "completed" : "in_progress";
       const checkClass = task.status === "in_progress" ? " wb-focus-check-active" : task.status === "blocked" ? " wb-focus-check-blocked" : "";
       return jsxRuntime.jsxs("div", { className: "wb-focus-row", children: [
-        jsxRuntime.jsx("button", { type: "button", className: "wb-focus-check" + checkClass, title: task.status === "completed" ? "恢复任务" : task.status === "pending" || task.status === "inbox" ? "开始任务" : "完成任务", onClick: () => store.update(task.id, { status: nextStatus }).catch(() => {}), children: task.status === "completed" ? "✓" : task.status === "blocked" ? "!" : task.status === "in_progress" ? "›" : "" }),
+        jsxRuntime.jsx("button", { type: "button", className: "wb-focus-check" + checkClass, title: task.status === "completed" ? "恢复任务" : task.status === "pending" || task.status === "inbox" ? "开始任务" : "完成任务", onClick: () => store.update(task.id, { status: nextStatus, ...(task.orchestrationId ? { locked: true } : {}) }).catch(() => {}), children: task.status === "completed" ? "✓" : task.status === "blocked" ? "!" : task.status === "in_progress" ? "›" : "" }),
         jsxRuntime.jsxs("div", { className: "wb-focus-main", onClick: () => onOpen(task), children: [
           jsxRuntime.jsx("div", { className: "wb-focus-title", children: task.title }),
           jsxRuntime.jsxs("div", { className: "wb-focus-meta", children: [
@@ -1744,7 +1749,7 @@ window.__ModuleLoader__.load({
         durationMinutes: Number(draft.durationMinutes) || 0,
         labels: String(draft.labelsText === undefined ? (draft.labels || []).join(",") : draft.labelsText).split(/[,，]/).map((item) => item.trim()).filter(Boolean),
         blockedReason: draft.blockedReason,
-        locked: Boolean(draft.locked)
+        locked: Boolean(draft.locked) || (task.orchestrationId && draft.status !== task.status)
       }).catch(() => {});
       const handoff = () => {
         const session = wbSessionOf(store.sessionId);
@@ -1844,7 +1849,7 @@ window.__ModuleLoader__.load({
       const start = (item) => {
         const count = Array.isArray(item.workers) ? item.workers.length : 0;
         if (!window.confirm("确认执行“" + item.title + "”吗？\n\n将启动 1 个主代理和 " + count + " 个子代理，并可能读写所选项目。")) return;
-        store.mutate("orchestration_start", { id: item.id }).catch(() => {});
+        store.mutate("orchestration_start", { id: item.id, ...(item.sourceSessionId ? {} : { sourceSessionId: store.sessionId || '' }) }).catch(() => {});
       };
       const requestChanges = (item) => {
         const value = String(feedbacks[item.id] || "").trim();
@@ -2083,7 +2088,7 @@ window.__ModuleLoader__.load({
       const start = () => {
         if (!selected) return;
         if (!window.confirm("确认执行“" + selected.title + "”吗？\n\n将启动主代理和 " + (selected.workers || []).length + " 个子代理，并可能读写所选项目。")) return;
-        store.mutate("orchestration_start", { id: selected.id }).catch(() => {});
+        store.mutate("orchestration_start", { id: selected.id, ...(selected.sourceSessionId ? {} : { sourceSessionId: store.sessionId || '' }) }).catch(() => {});
       };
       const resume = () => {
         if (!selected) return;
@@ -2211,7 +2216,7 @@ window.__ModuleLoader__.load({
             ] }),
             panelTab === "decision" && jsxRuntime.jsxs(React.Fragment, { children: [
               jsxRuntime.jsxs("div", { className: "wb-orch-runtime", children: [jsxRuntime.jsx("span", { className: store.orchestrationRuntime.available ? "wb-orch-dot wb-orch-dot-on" : "wb-orch-dot" }), jsxRuntime.jsx("strong", { children: store.orchestrationRuntime.available ? "代理运行时已就绪" : "代理运行时未就绪" }), jsxRuntime.jsx("small", { children: (store.orchestrationRuntime.providers || []).join(" · ") || "当前只能保存和规划" })] }),
-            jsxRuntime.jsxs("section", { className: "wb-collab-decision-card", children: [jsxRuntime.jsx("strong", { children: "模型分配策略" }), jsxRuntime.jsx("select", { value: policy, disabled: selected.phase === "running", onChange: (e) => setPolicy(e.target.value), children: [jsxRuntime.jsx("option", { value: "balanced", children: "智能平衡" }), jsxRuntime.jsx("option", { value: "quality", children: "质量优先" }), jsxRuntime.jsx("option", { value: "economy", children: "成本优先" }), jsxRuntime.jsx("option", { value: "manual", children: "全部手动" })] }), jsxRuntime.jsx("small", { children: (store.modelCatalog || []).length ? "已发现 " + store.modelCatalog.length + " 个可用模型；生成方案后仍可逐个调整。" : "没有读取到模型目录，所有代理将继承主会话。" })] }),
+            jsxRuntime.jsxs("section", { className: "wb-collab-decision-card", children: [jsxRuntime.jsx("strong", { children: "模型分配策略" }), jsxRuntime.jsx("select", { value: policy, disabled: selected.phase === "running", onChange: (e) => setPolicy(e.target.value), children: [jsxRuntime.jsx("option", { value: "balanced", children: "智能平衡" }), jsxRuntime.jsx("option", { value: "quality", children: "质量优先" }), jsxRuntime.jsx("option", { value: "economy", children: "成本优先" }), jsxRuntime.jsx("option", { value: "main-manual", children: "主代理手动 · 子代理自动" }), jsxRuntime.jsx("option", { value: "manual", children: "全部手动" })] }), jsxRuntime.jsx("small", { children: (store.modelCatalog || []).length ? "已发现 " + store.modelCatalog.length + " 个可用模型；生成方案后仍可逐个调整。" : "没有读取到模型目录，所有代理将继承主会话。" })] }),
             jsxRuntime.jsxs("section", { className: "wb-collab-decision-card", children: [jsxRuntime.jsx("strong", { children: selected.phase === "review" ? "验收意见" : "给编排 AI 的反馈" }), jsxRuntime.jsx("textarea", { value: feedback, disabled: selected.phase === "running", placeholder: selected.phase === "review" ? "写下需要修改的地方；符合预期可直接通过。" : "反馈将用于生成一份修改后的新方案，不会在子代理执行时重复注入。例如：减少代理数量；让安全审查与体验审查并行…", onChange: (e) => setFeedback(e.target.value) }), selected.phase !== "review" && jsxRuntime.jsx("small", { className: "wb-orch-feedback-hint", children: "提交后按反馈生成新方案版本；执行按新方案进行，子代理不再收到反馈原文。" })] }),
             (selected.phase === "review" || selected.phase === "accepted") && jsxRuntime.jsxs("section", { className: "wb-collab-decision-card", children: [
               jsxRuntime.jsx("strong", { children: "继续与主代理对话" }),
@@ -2332,7 +2337,7 @@ window.__ModuleLoader__.load({
             }
           }
         }
-        store.update(id, { status }).catch(() => {});
+        store.update(id, { status, ...(task.orchestrationId ? { locked: true } : {}) }).catch(() => {});
       };
       React.useEffect(() => {
         const onKeyDown = (event) => {
@@ -2954,6 +2959,54 @@ window.__ModuleLoader__.load({
       ] });
     }
 
+    function ToolbarCollab({ sessionId, projectPath }) {
+      const store = useWorkbenchTasks(sessionId, projectPath);
+      const sessionItems = store.orchestrations.filter((item) => item.sourceSessionId === sessionId);
+      const active = sessionItems.find((item) => ["planning", "planned", "running", "refining"].includes(item.phase)) || null;
+      const latest = sessionItems.slice().sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))[0] || null;
+      const shown = active || latest;
+      React.useEffect(() => {
+        if (!active) return;
+        const timer = window.setInterval(() => store.refresh(), 1500);
+        return () => window.clearInterval(timer);
+      }, [active && active.id, store.refresh]);
+      if (!shown) {
+        return jsxRuntime.jsxs("div", { className: "wb-tb-card", children: [
+          jsxRuntime.jsx("div", { className: "wb-tb-card-title", children: "协作" }),
+          jsxRuntime.jsx("div", { className: "wb-tb-empty", children: "当前会话还没有 AI 协作任务。多 AI 模式下发送复杂任务后，这里会实时显示子代理运行情况。" })
+        ] });
+      }
+      const agents = [shown.mainAgent, ...(shown.workers || [])].filter(Boolean);
+      const busy = ["planning", "running", "refining"].includes(shown.phase);
+      const statusLabel = WB_ORCHESTRATION_PHASE[shown.phase] || shown.phase;
+      return jsxRuntime.jsxs("div", { className: "wb-tb-card", children: [
+        jsxRuntime.jsxs("div", { children: [
+          jsxRuntime.jsx("div", { className: "wb-tb-card-title", children: "协作 · 子代理运行情况" }),
+          jsxRuntime.jsxs("div", { className: "wb-tb-status", children: [
+            jsxRuntime.jsx("span", { className: busy ? "wb-chat-run" : shown.phase === "failed" ? "wb-chat-err" : shown.phase === "accepted" ? "wb-chat-ok" : "", children: busy ? "● 运行中" : statusLabel }),
+            jsxRuntime.jsx("span", { children: (shown.title || shown.idea || "").slice(0, 26) })
+          ] }),
+          jsxRuntime.jsxs("div", { className: "wb-tb-progress-meta", children: [
+            jsxRuntime.jsx("span", { children: busy ? "执行中" : statusLabel }),
+            jsxRuntime.jsx("span", { children: wbOrchElapsed(shown) || "—" })
+          ] }),
+          jsxRuntime.jsx("div", { className: "wb-tb-progress", children: jsxRuntime.jsx("span", { className: "wb-tb-progress-fill", style: { width: wbChatProgress(shown) + "%" } }) })
+        ] }),
+        jsxRuntime.jsx("div", { className: "wb-tb-collab-agents", children: agents.map((agent, index) => jsxRuntime.jsxs("div", { className: "wb-chat-card-agent", children: [
+          jsxRuntime.jsxs("span", { children: [jsxRuntime.jsx("strong", { children: (index === 0 ? "主 · " : "") + agent.name }), agent.readOnly === false && jsxRuntime.jsx("span", { className: "wb-chat-elapsed", children: " · 可写" })] }),
+          jsxRuntime.jsxs("span", { className: wbAgentStatusClass(agent.status), children: [(WB_ORCHESTRATION_AGENT_STATUS[agent.status] || agent.status), wbAgentElapsed(agent) ? " · " + wbAgentElapsed(agent) : ""] }),
+          agent.error ? jsxRuntime.jsx("small", { children: "失败原因：" + agent.error }) : jsxRuntime.jsx("small", { children: "模型：" + (agent.usedModel || agent.model || "继承主会话模型") + (agent.modelReason ? " · " + agent.modelReason : "") }),
+          agent.status === "failed" && (shown.phase === "failed" || shown.phase === "cancelled") && jsxRuntime.jsx("button", { type: "button", className: "wb-chat-agent-retry", onClick: () => store.mutate("orchestration_worker_retry", { id: shown.id, workerId: agent.id }).catch((error) => store.setErr(String((error && error.message) || error))), children: "重试此子代理" })
+        ] }, agent.id || index)) }),
+        jsxRuntime.jsxs("div", { className: "wb-tb-card-actions", children: [
+          (shown.phase === "running" || shown.phase === "refining") && jsxRuntime.jsx("button", { type: "button", onClick: () => store.mutate("orchestration_cancel", { id: shown.id }).catch((error) => store.setErr(String((error && error.message) || error))), children: "停止" }),
+          (shown.phase === "failed" || shown.phase === "cancelled") && jsxRuntime.jsx("button", { type: "button", onClick: () => store.mutate("orchestration_resume", { id: shown.id, ...(shown.sourceSessionId ? {} : { sourceSessionId: store.sessionId || '' }) }).catch((error) => store.setErr(String((error && error.message) || error))), children: "继续执行" }),
+          jsxRuntime.jsx("button", { type: "button", onClick: () => window.dispatchEvent(new CustomEvent("wb:open-chat-drawer", { detail: { id: shown.id } })), children: "详情抽屉" }),
+          jsxRuntime.jsx("button", { type: "button", className: "wb-tb-action-primary", onClick: () => window.dispatchEvent(new CustomEvent("wb:open-task-center", { detail: { view: "orchestrate", id: shown.id } })), children: "任务中心" })
+        ] })
+      ] });
+    }
+
     function WbToolbar({ useSessions, onClose }) {
       // Read primitive values only: a raw object selector would retrigger every render.
       const currentId = useSessions((s) => (s.current === void 0 ? void 0 : s.byId[s.current] ? s.current : void 0));
@@ -2988,6 +3041,7 @@ window.__ModuleLoader__.load({
         ] }),
         jsxRuntime.jsx("div", { className: "wb-tb-scroll", children: [
           tab === "info" && jsxRuntime.jsx(ToolbarInfo, { summary, preset, st, sessionId: currentId }),
+          tab === "collab" && jsxRuntime.jsx(ToolbarCollab, { sessionId: currentId, projectPath: summary && summary.cwd }),
           tab === "project" && jsxRuntime.jsx(ProjectConfigPanel, { sessionId: currentId, projectPath: summary && summary.cwd }),
           tab === "files" && jsxRuntime.jsx(ToolbarFiles, { cwd: summary && summary.cwd }),
           tab === "git" && jsxRuntime.jsx(ToolbarGit, { cwd: summary && summary.cwd }),
@@ -3020,14 +3074,126 @@ window.__ModuleLoader__.load({
       try { localStorage.setItem("wb.chatFlow." + (sessionId || "none"), JSON.stringify(list.slice(-WB_CHAT_FLOW_MAX))); } catch (e) { /* ignore */ }
     }
 
+    function wbAgentElapsed(agent) {
+      const start = agent && agent.startedAt ? Date.parse(agent.startedAt) : 0;
+      if (!start) return "";
+      const end = agent && agent.completedAt ? Date.parse(agent.completedAt) : Date.now();
+      const sec = Math.max(0, Math.round((end - start) / 1000));
+      if (sec < 60) return sec + "s";
+      const min = Math.floor(sec / 60);
+      return min + "m" + (sec % 60 ? " " + (sec % 60) + "s" : "");
+    }
+    function wbOrchElapsed(orchestration) {
+      const start = orchestration && orchestration.startedAt ? Date.parse(orchestration.startedAt) : 0;
+      if (!start) return "";
+      const end = orchestration && orchestration.completedAt ? Date.parse(orchestration.completedAt) : Date.now();
+      const sec = Math.max(0, Math.round((end - start) / 1000));
+      if (sec < 60) return "已用 " + sec + "s";
+      const min = Math.floor(sec / 60);
+      return "已用 " + min + "m" + (sec % 60 ? " " + (sec % 60) + "s" : "");
+    }
+    function wbAgentStatusClass(status) {
+      if (["completed", "accepted"].includes(status)) return "wb-chat-ok";
+      if (["failed", "cancelled"].includes(status)) return "wb-chat-err";
+      if (["running", "planning", "working"].includes(status)) return "wb-chat-run";
+      return "";
+    }
+
+    function OrchestrationDrawer({ orchestration, onClose, onOpenTaskCenter, onRetryWorker }) {
+      const [tab, setTab] = React.useState("plan");
+      if (!orchestration) return null;
+      const agents = [orchestration.mainAgent, ...(orchestration.workers || [])].filter(Boolean);
+      const busy = ["planning", "running", "refining"].includes(orchestration.phase);
+      const tabs = [
+        { id: "plan", label: "方案" },
+        { id: "agents", label: "代理状态" },
+        { id: "log", label: "日志" },
+        { id: "memory", label: "记忆" },
+        { id: "decisions", label: "决策" }
+      ];
+      return jsxRuntime.jsxs("aside", { className: "wb-chat-drawer", "aria-label": "协作详情", children: [
+        jsxRuntime.jsxs("div", { className: "wb-chat-drawer-head", children: [
+          jsxRuntime.jsxs("strong", { children: [orchestration.title || "AI 协作详情", busy && jsxRuntime.jsx("span", { className: "wb-chat-elapsed", children: " · 执行中" })] }),
+          jsxRuntime.jsx("button", { type: "button", onClick: onClose, children: "关闭 ✕" })
+        ] }),
+        jsxRuntime.jsx("div", { className: "wb-chat-drawer-tabs", children: tabs.map((entry) => jsxRuntime.jsx("button", { type: "button", className: tab === entry.id ? "wb-chat-drawer-tab-active" : "", onClick: () => setTab(entry.id), children: entry.label }, entry.id)) }),
+        jsxRuntime.jsxs("div", { className: "wb-chat-drawer-body", children: [
+          tab === "plan" && jsxRuntime.jsxs(React.Fragment, { children: [
+            jsxRuntime.jsx("h4", { children: "总目标" }),
+            jsxRuntime.jsx("pre", { children: orchestration.idea }),
+            orchestration.plan && jsxRuntime.jsxs(React.Fragment, { children: [
+              orchestration.plan.title && jsxRuntime.jsxs("div", { className: "wb-chat-drawer-row", children: [jsxRuntime.jsx("strong", { children: "方案标题" }), jsxRuntime.jsx("pre", { children: orchestration.plan.title })] }),
+              orchestration.plan.summary && jsxRuntime.jsxs("div", { className: "wb-chat-drawer-row", children: [jsxRuntime.jsx("strong", { children: "方案摘要" }), jsxRuntime.jsx("pre", { children: orchestration.plan.summary })] }),
+              orchestration.plan.strategy && jsxRuntime.jsxs("div", { className: "wb-chat-drawer-row", children: [jsxRuntime.jsx("strong", { children: "执行策略" }), jsxRuntime.jsx("pre", { children: orchestration.plan.strategy })] }),
+              jsxRuntime.jsxs("div", { className: "wb-chat-drawer-row", children: [
+                jsxRuntime.jsx("strong", { children: "并行上限" }),
+                jsxRuntime.jsx("span", { children: String(orchestration.maxParallel || 3) + "（可调 1-4）" })
+              ] }),
+              orchestration.plan.acceptanceCriteria && orchestration.plan.acceptanceCriteria.length > 0 && jsxRuntime.jsxs("div", { className: "wb-chat-drawer-row", children: [
+                jsxRuntime.jsx("strong", { children: "验收清单" }),
+                jsxRuntime.jsx("pre", { children: orchestration.plan.acceptanceCriteria.map((entry, index) => (index + 1) + ". " + entry).join("\n") })
+              ] })
+            ] })
+          ] }),
+          tab === "agents" && jsxRuntime.jsxs(React.Fragment, { children: [
+            jsxRuntime.jsx("h4", { children: "阶段：" + (WB_ORCHESTRATION_PHASE[orchestration.phase] || orchestration.phase) }),
+            agents.map((agent, index) => jsxRuntime.jsxs("div", { className: "wb-chat-drawer-row", children: [
+              jsxRuntime.jsxs("div", { children: [
+                jsxRuntime.jsx("strong", { children: (index === 0 ? "主 · " : "子 · ") + agent.name }),
+                jsxRuntime.jsx("span", { className: wbAgentStatusClass(agent.status), children: WB_ORCHESTRATION_AGENT_STATUS[agent.status] || agent.status })
+              ] }),
+              jsxRuntime.jsx("small", { children: "模型：" + (agent.usedModel || agent.model || "继承主会话模型") + (agent.modelReason ? " · " + agent.modelReason : "") + (wbAgentElapsed(agent) ? " · " + wbAgentElapsed(agent) : "") }),
+              agent.error ? jsxRuntime.jsx("pre", { children: "错误：" + agent.error }) : null,
+              agent.output ? jsxRuntime.jsx("pre", { children: agent.output }) : null,
+              agent.status === "failed" && (orchestration.phase === "failed" || orchestration.phase === "cancelled") && jsxRuntime.jsx("button", { type: "button", className: "wb-chat-agent-retry", onClick: () => typeof onRetryWorker === "function" && onRetryWorker(agent.id), children: "重试此子代理" })
+            ] }, agent.id || index))
+          ] }),
+          tab === "log" && jsxRuntime.jsxs(React.Fragment, { children: [
+            jsxRuntime.jsx("h4", { children: "运行日志（" + (orchestration.log || []).length + " 条）" }),
+            (orchestration.log || []).slice().reverse().map((entry, index) => jsxRuntime.jsxs("div", { className: "wb-chat-drawer-row", children: [
+              jsxRuntime.jsx("small", { children: (entry.level || "info").toUpperCase() + " · " + (entry.time || "") }),
+              jsxRuntime.jsx("pre", { children: entry.message || "" })
+            ] }, index))
+          ] }),
+          tab === "memory" && jsxRuntime.jsxs(React.Fragment, { children: [
+            jsxRuntime.jsx("h4", { children: "记忆快照（" + (orchestration.memory || []).length + " 条）" }),
+            (orchestration.memory || []).map((entry) => jsxRuntime.jsxs("div", { className: "wb-chat-drawer-row", children: [
+              jsxRuntime.jsx("strong", { children: entry.title || "记忆" }),
+              jsxRuntime.jsx("pre", { children: entry.summary || entry.content || "" })
+            ] }, entry.id))
+          ] }),
+          tab === "decisions" && jsxRuntime.jsxs(React.Fragment, { children: [
+            jsxRuntime.jsx("h4", { children: "决策记录" }),
+            orchestration.planVersions && orchestration.planVersions.map((version, index) => jsxRuntime.jsxs("div", { className: "wb-chat-drawer-row", children: [
+              jsxRuntime.jsx("strong", { children: "方案 v" + version.version + (index === orchestration.planVersions.length - 1 ? "（当前）" : "") }),
+              version.feedback ? jsxRuntime.jsx("pre", { children: "修改意见：" + version.feedback }) : null,
+              version.createdAt ? jsxRuntime.jsx("small", { children: "生成于 " + version.createdAt }) : null
+            ] }, version.version)),
+            (orchestration.runs || []).length > 0 && jsxRuntime.jsxs(React.Fragment, { children: [
+              jsxRuntime.jsx("h4", { children: "执行轮次" }),
+              (orchestration.runs || []).slice().reverse().map((run) => jsxRuntime.jsxs("div", { className: "wb-chat-drawer-row", children: [
+                jsxRuntime.jsx("strong", { children: "第 " + run.attempt + " 轮 · " + (run.status || "") }),
+                run.reviewNote ? jsxRuntime.jsx("pre", { children: "验收意见：" + run.reviewNote }) : null
+              ] }, run.id || run.attempt))
+            ] }),
+            orchestration.acceptedNote ? jsxRuntime.jsxs("div", { className: "wb-chat-drawer-row", children: [jsxRuntime.jsx("strong", { children: "验收记录" }), jsxRuntime.jsx("pre", { children: orchestration.acceptedNote })] }) : null,
+            orchestration.runtimeError ? jsxRuntime.jsxs("div", { className: "wb-chat-drawer-row", children: [jsxRuntime.jsx("strong", { children: "最近异常" }), jsxRuntime.jsx("pre", { children: orchestration.runtimeError })] }) : null
+          ] }),
+          jsxRuntime.jsx("div", { className: "wb-chat-card-actions", children: jsxRuntime.jsx("button", { type: "button", onClick: () => typeof onOpenTaskCenter === "function" && onOpenTaskCenter(orchestration.id), children: "在任务中心打开完整记录" }) })
+        ] })
+      ] });
+    }
+
     function MultiAiConversationShell({ sessionId, projectPath, children }) {
       const store = useWorkbenchTasks(sessionId, projectPath);
       const modeKey = "wb.chatMode." + (sessionId || "none");
       const strategyKey = "wb.chatStrategy." + (sessionId || "none");
       const activeKey = "wb.chatActive." + (sessionId || "none");
       const autoStartKey = "wb.chatAutoStart." + (sessionId || "none");
+      const modelPolicyKey = "wb.chatModelPolicy." + (sessionId || "none");
       const [mode, setMode] = React.useState("single");
       const [strategy, setStrategy] = React.useState("auto");
+      const [modelPolicy, setModelPolicy] = React.useState("balanced");
       const [draft, setDraft] = React.useState("");
       const [activeId, setActiveId] = React.useState("");
       const [files, setFiles] = React.useState([]);
@@ -3039,21 +3205,24 @@ window.__ModuleLoader__.load({
       const [submitting, setSubmitting] = React.useState(false);
       const [flowMessages, setFlowMessages] = React.useState([]);
       const [flowTarget, setFlowTarget] = React.useState(null);
-      const [agentsCollapsed, setAgentsCollapsed] = React.useState(false);
       const [modelPanelOpen, setModelPanelOpen] = React.useState(false);
       const [modelProbeState, setModelProbeState] = React.useState(null);
       const [modelProbeAll, setModelProbeAll] = React.useState(false);
+      const [expandedCards, setExpandedCards] = React.useState(() => { try { const raw = JSON.parse(localStorage.getItem("wb.chatExpanded") || "[]"); return new Set(Array.isArray(raw) ? raw : []); } catch (e) { return new Set(); } });
+      const [writeGateId, setWriteGateId] = React.useState("");
+      const [drawerId, setDrawerId] = React.useState("");
+      const [approvalPending, setApprovalPending] = React.useState(null);
       const fileInputRef = React.useRef(null);
       const autoStartRef = React.useRef(new Set());
       const startingRef = React.useRef(new Set());
-      const userCollapsedRef = React.useRef(false);
+      const writeDecidedRef = React.useRef(new Set());
 
       React.useEffect(() => {
-        let nextMode = "single"; let nextStrategy = "auto"; let nextActive = ""; let nextAutoStart = "";
-        try { nextMode = localStorage.getItem(modeKey) === "multi" ? "multi" : "single"; nextStrategy = localStorage.getItem(strategyKey) === "always" ? "always" : "auto"; nextActive = localStorage.getItem(activeKey) || ""; nextAutoStart = localStorage.getItem(autoStartKey) || ""; } catch (e) { /* defaults */ }
+        let nextMode = "single"; let nextStrategy = "auto"; let nextActive = ""; let nextAutoStart = ""; let nextPolicy = "balanced";
+        try { nextMode = localStorage.getItem(modeKey) === "multi" ? "multi" : "single"; nextStrategy = localStorage.getItem(strategyKey) === "always" ? "always" : "auto"; nextActive = localStorage.getItem(activeKey) || ""; nextAutoStart = localStorage.getItem(autoStartKey) || ""; nextPolicy = ["balanced", "main-manual", "manual"].includes(localStorage.getItem(modelPolicyKey)) ? localStorage.getItem(modelPolicyKey) : "balanced"; } catch (e) { /* defaults */ }
         autoStartRef.current = new Set(nextAutoStart ? [nextAutoStart] : []);
-        setMode(nextMode); setStrategy(nextStrategy); setActiveId(nextActive); setDraft(""); setReferences([]); setAttachments([]);
-      }, [modeKey, strategyKey, activeKey, autoStartKey]);
+        setMode(nextMode); setStrategy(nextStrategy); setModelPolicy(nextPolicy); setActiveId(nextActive); setDraft(""); setReferences([]); setAttachments([]);
+      }, [modeKey, strategyKey, activeKey, autoStartKey, modelPolicyKey]);
       React.useEffect(() => {
         const onChange = (event) => {
           const detail = event && event.detail;
@@ -3073,6 +3242,14 @@ window.__ModuleLoader__.load({
         return () => window.clearInterval(timer);
       }, [mode, sessionId]);
       React.useEffect(() => {
+        const onOpenDrawer = (event) => {
+          const detail = event && event.detail;
+          if (detail && detail.id) setDrawerId(detail.id);
+        };
+        window.addEventListener("wb:open-chat-drawer", onOpenDrawer);
+        return () => window.removeEventListener("wb:open-chat-drawer", onOpenDrawer);
+      }, []);
+      React.useEffect(() => {
         if (!refOpen || !projectPath) { setFiles([]); return; }
         let alive = true;
         wbListProjectFiles(projectPath).then((items) => { if (alive) setFiles(items); }).catch(() => {});
@@ -3081,31 +3258,98 @@ window.__ModuleLoader__.load({
       const sessionItems = store.orchestrations.filter((item) => item.sourceSessionId === sessionId);
       const active = sessionItems.find((item) => item.id === activeId) || null;
       const activeBusy = active && ["planning", "running", "refining"].includes(active.phase);
-      const toggleAgents = () => { const next = !agentsCollapsed; userCollapsedRef.current = next; setAgentsCollapsed(next); };
-      React.useEffect(() => {
-        if (!active) return;
-        userCollapsedRef.current = false;
-      }, [active && active.id]);
-      React.useEffect(() => {
-        if (!active) return;
-        if (activeBusy) { if (!userCollapsedRef.current) setAgentsCollapsed(false); return; }
-        if (["review", "accepted", "failed", "cancelled"].includes(active.phase)) setAgentsCollapsed(true);
-      }, [active && active.id, activeBusy, active && active.phase]);
       React.useEffect(() => {
         if (!activeBusy) return;
         const timer = window.setInterval(() => store.refresh(), 1500);
         return () => window.clearInterval(timer);
       }, [activeBusy, store.refresh]);
+      const startActiveOrchestration = (entry, override) => {
+        const id = entry && entry.id;
+        if (!id || startingRef.current.has(id)) return;
+        startingRef.current.add(id);
+        store.mutate("orchestration_start", { id, ...(override === "enforce" ? { readOnlyOverride: "enforce" } : {}), ...(entry.sourceSessionId ? {} : { sourceSessionId: store.sessionId || '' }) }).then(() => {
+          autoStartRef.current.delete(id);
+          try { localStorage.removeItem(autoStartKey); } catch (e) {}
+        }).catch((error) => store.setErr(String((error && error.message) || error))).finally(() => startingRef.current.delete(id));
+      };
       React.useEffect(() => {
         if (!active || active.phase !== "planned" || !autoStartRef.current.has(active.id) || startingRef.current.has(active.id)) return;
-        startingRef.current.add(active.id);
-        store.mutate("orchestration_start", { id: active.id }).then(() => {
-          autoStartRef.current.delete(active.id);
-          try { localStorage.removeItem(autoStartKey); } catch (e) {}
-        }).catch((error) => store.setErr(String((error && error.message) || error))).finally(() => startingRef.current.delete(active.id));
+        const writeWorkers = (active.workers || []).filter((worker) => worker.readOnly === false);
+        if (writeWorkers.length > 0 && !writeDecidedRef.current.has(active.id)) {
+          setWriteGateId((current) => (current === active.id ? current : active.id));
+          return;
+        }
+        startActiveOrchestration(active, "");
+      }, [active && active.id, active && active.phase, writeGateId]);
+      React.useEffect(() => {
+        if (!active || !["review", "accepted", "failed", "cancelled"].includes(active.phase)) return;
+        if (!expandedCards.has(active.id)) return;
+        setExpandedCards((current) => {
+          if (!current.has(active.id)) return current;
+          const next = new Set(current);
+          next.delete(active.id);
+          try { localStorage.setItem("wb.chatExpanded", JSON.stringify([...next])); } catch (e) {}
+          return next;
+        });
       }, [active && active.id, active && active.phase]);
+      const decideWriteGate = (override) => {
+        if (!active || !active.id) return;
+        writeDecidedRef.current.add(active.id);
+        setWriteGateId("");
+        startActiveOrchestration(active, override);
+      };
+      const toggleCard = (id) => {
+        setExpandedCards((current) => {
+          const next = new Set(current);
+          if (next.has(id)) next.delete(id); else next.add(id);
+          try { localStorage.setItem("wb.chatExpanded", JSON.stringify([...next])); } catch (e) {}
+          return next;
+        });
+      };
+      React.useEffect(() => {
+        if (mode !== "multi" || !sessionId) { setApprovalPending(null); return; }
+        const timer = window.setInterval(() => {
+          try {
+            let found = null;
+            const snapshot = WB_SVC.sessions && typeof WB_SVC.sessions.list.getSnapshot === "function" ? WB_SVC.sessions.list.getSnapshot() : null;
+            const byId = snapshot && snapshot.byId ? snapshot.byId : {};
+            for (const id of Object.keys(byId)) {
+              const inst = wbSessionOf(id);
+              if (!inst || typeof inst.getSnapshot !== "function") continue;
+              const state = inst.getSnapshot();
+              const pending = state && state.pending;
+              if (!pending) continue;
+              for (const item of pending.values ? pending.values() : []) {
+                if (item && item.kind === "approval") { found = item; break; }
+              }
+              if (found) break;
+            }
+            setApprovalPending((current) => {
+              if (!found) return null;
+              return current === found ? current : found;
+            });
+          } catch (e) { /* best-effort approval polling */ }
+        }, 1200);
+        return () => window.clearInterval(timer);
+      }, [mode, sessionId]);
+      const respondApproval = (outcome) => {
+        const item = approvalPending;
+        if (!item) return;
+        try {
+          item.respond({ ok: true, value: { sessionId: item.payload.sessionId, approvalId: item.payload.approvalId, outcome } });
+        } catch (e) { /* already settled */ }
+        setApprovalPending(null);
+      };
 
       const selectStrategy = (next) => { setStrategy(next); try { localStorage.setItem(strategyKey, next); } catch (e) {} };
+      const cycleModelPolicy = () => {
+        const order = ["balanced", "main-manual", "manual"];
+        const next = order[(order.indexOf(modelPolicy) + 1) % order.length];
+        setModelPolicy(next);
+        try { localStorage.setItem(modelPolicyKey, next); } catch (e) {}
+      };
+      const MODEL_POLICY_LABEL = { balanced: "全自动", "main-manual": "主手动", manual: "全手动" };
+      const MODEL_POLICY_TITLE = { balanced: "所有代理模型自动分配", "main-manual": "主代理手动选择，子代理自动分配", manual: "主代理和子代理都手动选择" };
       const rememberActive = (id) => { setActiveId(id); try { localStorage.setItem(activeKey, id); } catch (e) {} };
       const rememberAutoStart = (id) => { autoStartRef.current.add(id); try { localStorage.setItem(autoStartKey, id); } catch (e) {} };
       const pushFlowMessage = (entry) => { const next = wbReadChatFlow(sessionId); next.push(entry); wbWriteChatFlow(sessionId, next); setFlowMessages(next); };
@@ -3136,6 +3380,26 @@ window.__ModuleLoader__.load({
       const submit = () => {
         const text = draft.trim();
         if (!text || !sessionId || submitting || activeBusy) return;
+        if (quick) {
+          setSubmitting(true); store.setErr("");
+          const inst = wbSessionOf(sessionId);
+          if (!inst || typeof inst.prompt !== "function") {
+            store.setErr("当前会话不可用，无法直发主代理；请刷新后重试");
+            setSubmitting(false);
+            return;
+          }
+          setDraft(""); setReferences([]); setAttachments([]);
+          inst.prompt([{ type: "text", text }], "queue")
+            .then((result) => {
+              if (!result || !result.ok) {
+                const raw = result && result.error;
+                store.setErr(raw ? String(raw.message || raw.code || (typeof raw === "string" ? raw : JSON.stringify(raw))) : "直发主代理失败");
+              }
+            })
+            .catch((error) => store.setErr(String((error && error.message) || error)))
+            .finally(() => setSubmitting(false));
+          return;
+        }
         const sourceRefs = references.map((entry) => ({ kind: entry.kind, title: entry.title, content: entry.content }));
         setSubmitting(true); store.setErr("");
         store.mutate("orchestration_create", { title: text.split(/\r?\n/)[0].slice(0, 120), idea: text, quick, attachments: attachments.map((entry) => entry.id), sourceRefs })
@@ -3145,53 +3409,100 @@ window.__ModuleLoader__.load({
             rememberActive(created.id); rememberAutoStart(created.id);
             setDraft(""); setReferences([]); setAttachments([]);
             pushFlowMessage({ id: created.id + "-user-" + Date.now(), role: "user", text, orchestrationId: created.id, time: new Date().toISOString() });
-            return store.mutate("orchestration_plan", { id: created.id, modelPolicy: "balanced", probeModels: true });
+            return store.mutate("orchestration_plan", { id: created.id, modelPolicy, probeModels: true });
           })
           .catch((error) => store.setErr(String((error && error.message) || error)))
           .finally(() => setSubmitting(false));
       };
-      const agents = active ? [active.mainAgent, ...(active.workers || [])].filter(Boolean) : [];
       const flowRows = flowMessages.map((message) => {
         const orchestration = message.orchestrationId ? store.orchestrations.find((item) => item.id === message.orchestrationId) : null;
         return { ...message, orchestration };
       });
+      const drawerOrchestration = drawerId ? store.orchestrations.find((item) => item.id === drawerId) || null : null;
+      const approvalWorkerName = (() => {
+        const sid = approvalPending && approvalPending.payload ? approvalPending.payload.sessionId : "";
+        if (!sid) return "";
+        for (const item of store.orchestrations) {
+          const worker = (item.workers || []).find((entry) => entry.sessionId === sid);
+          if (worker) return worker.name;
+        }
+        return "";
+      })();
       React.useEffect(() => { if (flowTarget && flowTarget.parentElement) flowTarget.parentElement.scrollTop = flowTarget.parentElement.scrollHeight; }, [flowRows.length, flowTarget]);
 
       return jsxRuntime.jsxs("div", { className: "wb-chat-shell" + (mode === "multi" ? " wb-chat-shell-multi" : ""), children: [
         store.sessionClients > 1 && jsxRuntime.jsx("div", { className: "wb-chat-dual-warn", children: "⚠ 另一客户端正在使用此会话，请勿同时操作" }),
         jsxRuntime.jsx("div", { className: "wb-chat-native", children }),
-        mode === "multi" && flowTarget && ReactDOM.createPortal(jsxRuntime.jsx("div", { className: "wb-chat-flow", children: flowRows.map((row) => jsxRuntime.jsxs(React.Fragment, { children: [
-          jsxRuntime.jsxs("div", { className: "wb-chat-msg wb-chat-msg-user", children: [
-            jsxRuntime.jsx("div", { children: row.text }),
-            row.orchestration && row.orchestration.knowledgeRefs && row.orchestration.knowledgeRefs.length ? jsxRuntime.jsx("small", { className: "wb-chat-meta", children: "🔍 已自动检索知识库 " + row.orchestration.knowledgeRefs.length + " 条（" + ((row.orchestration.knowledgeMeta && row.orchestration.knowledgeMeta.routes) || []).join(" + ") + "），引用将带 [知识N] 溯源" }) : null
-          ] }),
-          row.orchestration && (row.orchestration.finalReport || row.orchestration.phase === "failed") && jsxRuntime.jsxs("div", { className: "wb-chat-msg wb-chat-msg-assistant", children: [
-            jsxRuntime.jsxs("div", { className: "wb-chat-msg-head", children: [
-              jsxRuntime.jsx("strong", { children: "主代理" }),
-              jsxRuntime.jsx("span", { children: (row.orchestration.mainAgent && (row.orchestration.mainAgent.usedModel || row.orchestration.mainAgent.model)) || "继承主会话模型" }),
-              jsxRuntime.jsx("span", { children: wbDateLabel(row.orchestration.updatedAt) })
+        mode === "multi" && flowTarget && flowRows.length > 0 && ReactDOM.createPortal(jsxRuntime.jsx("div", { className: "wb-chat-flow", children: flowRows.map((row) => {
+          const orch = row.orchestration;
+          const phase = orch && orch.phase;
+          const orchWorkers = orch ? (orch.workers || []) : [];
+          const doneCount = orchWorkers.filter((worker) => ["completed", "failed", "cancelled"].includes(worker.status)).length;
+          const writeWorkers = orchWorkers.filter((worker) => worker.readOnly === false);
+          const cardExpanded = orch && expandedCards.has(orch.id);
+          const showGate = orch && phase === "planned" && writeGateId === orch.id && writeWorkers.length > 0;
+          let headLine = "";
+          if (orch) {
+            if (phase === "planning") headLine = "✍️ 正在生成方案…";
+            else if (phase === "planned") headLine = "📋 方案已生成 · " + orchWorkers.length + " 个子代理待执行" + (writeWorkers.length ? " · 含写操作需确认" : "");
+            else if (phase === "running") headLine = "⏳ " + orchWorkers.length + " 个子代理并行中 · " + doneCount + "/" + orchWorkers.length + " 完成" + (wbOrchElapsed(orch) ? " · " + wbOrchElapsed(orch) : "");
+            else if (phase === "refining") headLine = "🔄 子代理已完成 · 主代理正在汇总" + (wbOrchElapsed(orch) ? " · " + wbOrchElapsed(orch) : "");
+            else if (phase === "review") headLine = "✅ 子代理已完成 · 等待你验收";
+            else if (phase === "accepted") headLine = "✅ 已验收 · " + (wbOrchElapsed(orch) || "完成");
+            else if (phase === "failed") headLine = "⚠ 执行异常 · " + doneCount + "/" + orchWorkers.length + " 成功";
+            else if (phase === "cancelled") headLine = "⏹ 已终止";
+          }
+          return jsxRuntime.jsxs(React.Fragment, { children: [
+            jsxRuntime.jsxs("div", { className: "wb-chat-msg wb-chat-msg-user", children: [
+              jsxRuntime.jsx("div", { children: row.text }),
+              orch && orch.knowledgeRefs && orch.knowledgeRefs.length ? jsxRuntime.jsx("small", { className: "wb-chat-meta", children: "🔍 已自动检索知识库 " + orch.knowledgeRefs.length + " 条（" + ((orch.knowledgeMeta && orch.knowledgeMeta.routes) || []).join(" + ") + "），引用将带 [知识N] 溯源" }) : null
             ] }),
-            row.orchestration.finalReport ? jsxRuntime.jsx("div", { children: row.orchestration.finalReport }) : jsxRuntime.jsx(WbErrNote, { message: "执行失败：" + (row.orchestration.runtimeError || "主代理未返回结果，请到任务中心查看详细日志") }),
-            row.orchestration.finalReport && row.orchestration.runtimeError && jsxRuntime.jsx(WbErrNote, { message: row.orchestration.runtimeError }),
-            jsxRuntime.jsx("div", { className: "wb-chat-msg-actions", children: jsxRuntime.jsx("button", { type: "button", onClick: () => window.dispatchEvent(new CustomEvent("wb:open-task-center", { detail: { view: "orchestrate", id: row.orchestration.id } })), children: "在任务中心查看完整记录" }) })
-          ] })
-        ] }, row.id)) }), flowTarget),
+            orch && showGate && jsxRuntime.jsxs("div", { className: "wb-chat-card wb-chat-card-write", children: [
+              jsxRuntime.jsxs("div", { className: "wb-chat-card-head", children: [jsxRuntime.jsx("strong", { children: "✋ 写操作确认" }), jsxRuntime.jsx("small", { children: writeWorkers.length + " 个子代理需要写权限" })] }),
+              jsxRuntime.jsx("div", { className: "wb-chat-card-body", children: jsxRuntime.jsx("div", { children: "方案包含写操作子代理：" + writeWorkers.map((worker) => worker.name).join("、") + "。并行子代理默认只读执行，仅在你允许后才会执行文件写入或命令。" }) }),
+              jsxRuntime.jsx("div", { className: "wb-chat-card-actions", children: [
+                jsxRuntime.jsx("button", { type: "button", onClick: () => decideWriteGate("enforce"), children: "仅读执行" }),
+                jsxRuntime.jsx("button", { type: "button", onClick: () => decideWriteGate("allow"), children: "允许写操作" })
+              ] })
+            ] }),
+            orch && !showGate && phase !== "idea" && jsxRuntime.jsxs("div", { className: "wb-chat-card" + (phase === "failed" ? " wb-chat-card-write" : ""), children: [
+              jsxRuntime.jsxs("button", { type: "button", className: "wb-chat-card-head", onClick: () => toggleCard(orch.id), children: [
+                jsxRuntime.jsx("strong", { children: headLine }),
+                jsxRuntime.jsx("small", { children: cardExpanded ? "收起" : "展开" })
+              ] }),
+              cardExpanded && jsxRuntime.jsx("div", { className: "wb-chat-card-body", children: [
+                orchWorkers.map((worker, index) => jsxRuntime.jsxs("div", { className: "wb-chat-card-agent", children: [
+                  jsxRuntime.jsxs("span", { children: [jsxRuntime.jsx("strong", { children: worker.name }), worker.readOnly === false && jsxRuntime.jsx("span", { className: "wb-chat-elapsed", children: " · 可写" })] }),
+                  jsxRuntime.jsxs("span", { className: wbAgentStatusClass(worker.status), children: [(WB_ORCHESTRATION_AGENT_STATUS[worker.status] || worker.status), wbAgentElapsed(worker) ? " · " + wbAgentElapsed(worker) : ""] }),
+                  jsxRuntime.jsx("small", { children: "模型：" + (worker.usedModel || worker.model || "继承主会话模型") + (worker.modelReason ? " · " + worker.modelReason : "") }),
+                  worker.error ? jsxRuntime.jsx("small", { children: "失败原因：" + worker.error }) : null,
+                  worker.status === "failed" && (phase === "failed" || phase === "cancelled") && jsxRuntime.jsx("button", { type: "button", className: "wb-chat-agent-retry", onClick: () => store.mutate("orchestration_worker_retry", { id: orch.id, workerId: worker.id }).catch((error) => store.setErr(String((error && error.message) || error))), children: "重试此子代理" })
+                ] }, worker.id || index)),
+                jsxRuntime.jsx("div", { className: "wb-chat-elapsed", children: "预计 LLM 调用 ≈ " + (orchWorkers.length + 2) + " 次（方案 1 + 子代理 " + orchWorkers.length + " + 主代理汇总） · 预估 token 量级 ≈ " + (orchWorkers.length * 3 + 3) + " 万" })
+              ] }),
+              jsxRuntime.jsx("div", { className: "wb-chat-card-actions", children: [
+                (phase === "running" || phase === "refining") && jsxRuntime.jsx("button", { type: "button", onClick: () => store.mutate("orchestration_cancel", { id: orch.id }).catch((error) => store.setErr(String((error && error.message) || error))), children: "停止" }),
+                (phase === "failed" || phase === "cancelled") && jsxRuntime.jsx("button", { type: "button", onClick: () => store.mutate("orchestration_resume", { id: orch.id, ...(orch.sourceSessionId ? {} : { sourceSessionId: store.sessionId || '' }) }).catch((error) => store.setErr(String((error && error.message) || error))), children: "继续执行" }),
+                jsxRuntime.jsx("button", { type: "button", onClick: () => setDrawerId(orch.id), children: "详情抽屉" }),
+                jsxRuntime.jsx("button", { type: "button", onClick: () => window.dispatchEvent(new CustomEvent("wb:open-task-center", { detail: { view: "orchestrate", id: orch.id } })), children: "任务中心" })
+              ] })
+            ] }),
+            orch && (orch.finalReport || orch.phase === "failed") && jsxRuntime.jsxs("div", { className: "wb-chat-msg wb-chat-msg-assistant", children: [
+              jsxRuntime.jsxs("div", { className: "wb-chat-msg-head", children: [
+                jsxRuntime.jsx("strong", { children: "主代理" }),
+                jsxRuntime.jsx("span", { children: (orch.mainAgent && (orch.mainAgent.usedModel || orch.mainAgent.model)) || "继承主会话模型" }),
+                jsxRuntime.jsx("span", { children: wbDateLabel(orch.updatedAt) })
+              ] }),
+              orch.finalReport ? jsxRuntime.jsx("div", { children: orch.finalReport }) : jsxRuntime.jsx(WbErrNote, { message: "执行失败：" + (orch.runtimeError || "主代理未返回结果，请到任务中心查看详细日志") }),
+              orch.finalReport && orch.runtimeError && jsxRuntime.jsx(WbErrNote, { message: orch.runtimeError }),
+              jsxRuntime.jsxs("div", { className: "wb-chat-msg-actions", children: [
+                jsxRuntime.jsx("button", { type: "button", onClick: () => setDrawerId(orch.id), children: "详情抽屉" }),
+                jsxRuntime.jsx("button", { type: "button", onClick: () => window.dispatchEvent(new CustomEvent("wb:open-task-center", { detail: { view: "orchestrate", id: orch.id } })), children: "在任务中心查看完整记录" })
+              ] })
+            ] })
+          ] }, row.id);
+        }) }), flowTarget),
         mode === "multi" && sessionId && jsxRuntime.jsxs("div", { className: "wb-chat-multi-stack", children: [
-          active && jsxRuntime.jsxs("div", { className: "wb-chat-agents" + (agentsCollapsed ? " wb-chat-agents-collapsed" : ""), children: [
-            jsxRuntime.jsxs("button", { type: "button", className: "wb-chat-agents-head", "aria-expanded": !agentsCollapsed, onClick: toggleAgents, children: [
-              jsxRuntime.jsx("span", { children: "子代理运行情况" }),
-              jsxRuntime.jsx("small", { children: agents.filter((agent) => ["running", "planning", "working"].includes(agent.status)).length + " 个代理正在工作" }),
-              jsxRuntime.jsx(primitives.IconChevronRightOutline14, { size: 12 })
-            ] }),
-            !agentsCollapsed && jsxRuntime.jsx("div", { className: "wb-chat-agents-body", children: agents.map((agent, index) => {
-              const busy = ["running", "planning", "working"].includes(agent.status);
-              return jsxRuntime.jsxs("div", { className: "wb-chat-agent-row" + (busy ? " wb-chat-agent-busy" : ""), children: [
-                jsxRuntime.jsx("span", { children: (index === 0 ? "主 · " : "") + agent.name }),
-                jsxRuntime.jsx("strong", { children: (WB_ORCHESTRATION_AGENT_STATUS[agent.status] || agent.status) + (busy ? " · 工作中" : "") }),
-                jsxRuntime.jsx("small", { children: (agent.usedModel || agent.model || "继承主会话模型") + (agent.modelReason ? " · " + agent.modelReason : "") })
-              ] }, agent.id || index);
-            }) })
-          ] }),
           jsxRuntime.jsxs("div", { className: "wb-chat-compose" + (dragOver ? " wb-collab-drop-over" : ""), onDragOver: (event) => { event.preventDefault(); setDragOver(true); }, onDragLeave: () => setDragOver(false), onDrop: (event) => { event.preventDefault(); setDragOver(false); uploadFiles(event.dataTransfer && event.dataTransfer.files); }, children: [
             refOpen && jsxRuntime.jsxs("div", { className: "wb-chat-ref-pop", children: [
               jsxRuntime.jsx("input", { className: "wb-chat-ref-search", autoFocus: true, value: refQuery, placeholder: "搜索想法或项目文件", onChange: (event) => setRefQuery(event.target.value) }),
@@ -3205,6 +3516,7 @@ window.__ModuleLoader__.load({
             jsxRuntime.jsx("button", { type: "button", title: "添加附件", onClick: () => fileInputRef.current && fileInputRef.current.click(), children: jsxRuntime.jsx(primitives.IconPlusOutline16, { size: 14 }) }),
               jsxRuntime.jsx("input", { ref: fileInputRef, type: "file", multiple: true, style: { display: "none" }, onChange: (event) => { uploadFiles(event.target.files); event.target.value = ""; } }),
               jsxRuntime.jsx("button", { type: "button", title: strategy === "auto" ? "当前：自动判断简单问答或完整编排" : "当前：始终完整编排", onClick: () => selectStrategy(strategy === "auto" ? "always" : "auto"), children: strategy === "auto" ? "自动" : "始终编排" }),
+              jsxRuntime.jsx("button", { type: "button", title: "模型分配：" + MODEL_POLICY_TITLE[modelPolicy] + "（点击切换）", onClick: cycleModelPolicy, children: "模型:" + (MODEL_POLICY_LABEL[modelPolicy] || modelPolicy) }),
               jsxRuntime.jsx("span", { className: "wb-chat-meta", title: complexity.reasons.join("；"), children: "复杂度 " + complexity.score + " · " + (quick ? "快速回答" : "多代理编排") }),
             jsxRuntime.jsx("button", { type: "button", className: "wb-chat-send", disabled: submitting || activeBusy || !draft.trim(), onClick: submit, title: activeBusy ? "当前任务完成后再发送" : "发送", children: submitting ? "处理中" : "发送" })
           ] }),
@@ -3224,7 +3536,19 @@ window.__ModuleLoader__.load({
           ] }),
           store.err && jsxRuntime.jsx(WbErrNote, { message: store.err })
           ] })
-        ] })
+        ] }),
+        drawerOrchestration && jsxRuntime.jsx(OrchestrationDrawer, { orchestration: drawerOrchestration, onClose: () => setDrawerId(""), onOpenTaskCenter: (id) => { setDrawerId(""); window.dispatchEvent(new CustomEvent("wb:open-task-center", { detail: { view: "orchestrate", id } })); }, onRetryWorker: (workerId) => store.mutate("orchestration_worker_retry", { id: drawerOrchestration.id, workerId }).catch((error) => store.setErr(String((error && error.message) || error))) }),
+        approvalPending && ReactDOM.createPortal(jsxRuntime.jsxs("div", { className: "wb-approval-overlay", role: "dialog", "aria-label": "写操作确认", children: [
+          jsxRuntime.jsxs("div", { className: "wb-approval-overlay-head", children: [
+            jsxRuntime.jsx("strong", { children: "✋ 子代理请求权限" }),
+            jsxRuntime.jsx("small", { children: approvalWorkerName || approvalPending.payload.sessionId || "子代理" })
+          ] }),
+          jsxRuntime.jsx("div", { children: "操作：" + (approvalPending.payload.toolName || "未知工具") + (approvalPending.payload.reason ? "（" + approvalPending.payload.reason + "）" : "") }),
+          jsxRuntime.jsxs("div", { className: "wb-approval-overlay-actions", children: [
+            jsxRuntime.jsx("button", { type: "button", onClick: () => respondApproval("rejected"), children: "拒绝" }),
+            jsxRuntime.jsx("button", { type: "button", className: "wb-approval-allow", onClick: () => respondApproval("allowed-once"), children: "允许一次" })
+          ] })
+        ] }), document.body)
       ] });
     }
 
@@ -4406,7 +4730,7 @@ window.__ModuleLoader__.load({
                 jsxRuntime.jsxs("label", { className: "wb-kb-auto-field", children: [jsxRuntime.jsx("span", { children: "门控" }), jsxRuntime.jsx("select", { value: autoCfg.gate || "both", onChange: (e) => setAutoCfg((cur) => ({ ...cur, gate: e.target.value })), children: [{ id: "both", label: "规则 + AI" }, { id: "rule", label: "仅规则" }, { id: "model", label: "仅 AI" }].map((item) => jsxRuntime.jsx("option", { value: item.id, children: item.label }, item.id)) })] }),
                 jsxRuntime.jsxs("label", { className: "wb-kb-auto-field", children: [jsxRuntime.jsx("span", { children: "路由" }), jsxRuntime.jsx("select", { value: autoCfg.routing || "auto", onChange: (e) => setAutoCfg((cur) => ({ ...cur, routing: e.target.value })), children: [{ id: "auto", label: "自动" }, { id: "force-hybrid", label: "快速混合" }, { id: "force-iterative", label: "迭代检索" }].map((item) => jsxRuntime.jsx("option", { value: item.id, children: item.label }, item.id)) })] }),
                 jsxRuntime.jsxs("label", { className: "wb-kb-auto-field", children: [jsxRuntime.jsx("span", { children: "迭代上限" }), jsxRuntime.jsx("select", { value: String(autoCfg.maxIterations || 2), onChange: (e) => setAutoCfg((cur) => ({ ...cur, maxIterations: Number(e.target.value) })), children: [1, 2].map((n) => jsxRuntime.jsx("option", { value: String(n), children: n + " 轮" }, n)) })] }),
-                jsxRuntime.jsxs("label", { className: "wb-kb-auto-field", children: [jsxRuntime.jsx("span", { children: "重排" }), jsxRuntime.jsx("select", { value: autoCfg.rerank || "none", onChange: (e) => setAutoCfg((cur) => ({ ...cur, rerank: e.target.value })), children: [{ id: "none", label: "关闭（推荐）" }, { id: "local", label: "本地 BGE" }, { id: "llm", label: "LLM" }].map((item) => jsxRuntime.jsx("option", { value: item.id, children: item.label }, item.id)) })] }),
+                jsxRuntime.jsxs("label", { className: "wb-kb-auto-field", children: [jsxRuntime.jsx("span", { children: "重排" }), jsxRuntime.jsx("select", { value: autoCfg.rerank || "none", onChange: (e) => setAutoCfg((cur) => ({ ...cur, rerank: e.target.value })), children: [{ id: "none", label: "关闭（推荐）" }, { id: "local", label: "本地 BGE" }, { id: "cross", label: "cross-encoder" }, { id: "llm", label: "LLM" }].map((item) => jsxRuntime.jsx("option", { value: item.id, children: item.label }, item.id)) })] }),
                 jsxRuntime.jsxs("label", { className: "wb-kb-auto-field", children: [jsxRuntime.jsx("span", { children: "不足阈值" }), jsxRuntime.jsx("input", { type: "number", min: "0", max: "1", step: "0.01", value: String((autoCfg.thresholds && autoCfg.thresholds.insufficient) ?? 0.42), onChange: (e) => setAutoCfg((cur) => ({ ...cur, thresholds: { ...(cur.thresholds || {}), insufficient: Number(e.target.value) } })) })] }),
                 jsxRuntime.jsxs("label", { className: "wb-kb-auto-field", children: [jsxRuntime.jsx("span", { children: "充分阈值" }), jsxRuntime.jsx("input", { type: "number", min: "0", max: "1", step: "0.01", value: String((autoCfg.thresholds && autoCfg.thresholds.gray) ?? 0.55), onChange: (e) => setAutoCfg((cur) => ({ ...cur, thresholds: { ...(cur.thresholds || {}), gray: Number(e.target.value) } })) })] }),
                 jsxRuntime.jsxs("label", { className: "wb-kb-auto-field", children: [jsxRuntime.jsx("span", { children: "审计" }), jsxRuntime.jsx("select", { value: autoCfg.auditLevel || "ref-only", onChange: (e) => setAutoCfg((cur) => ({ ...cur, auditLevel: e.target.value })), children: [{ id: "ref-only", label: "引用真实性" }, { id: "ref+groundedness", label: "引用 + 逐句" }].map((item) => jsxRuntime.jsx("option", { value: item.id, children: item.label }, item.id)) })] })

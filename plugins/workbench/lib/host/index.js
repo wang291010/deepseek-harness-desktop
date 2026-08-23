@@ -86,12 +86,19 @@ const KNOWLEDGE_EVAL_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-eval.json')
 const KNOWLEDGE_QUALITY_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-quality.json');
 const KNOWLEDGE_AUTO_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-auto.json');
 const KNOWLEDGE_TRACE_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-traces.json');
+const KNOWLEDGE_STATS_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-stats.json');
 const MAX_KNOWLEDGE_INDEX_BYTES = 32 * 1024 * 1024;
 const MAX_KNOWLEDGE_EVAL_BYTES = 2 * 1024 * 1024;
 const MAX_KNOWLEDGE_TRACE_BYTES = 2 * 1024 * 1024;
+const MAX_KNOWLEDGE_STATS_BYTES = 256 * 1024;
 const MAX_KNOWLEDGE_TRACES = 1000;
-const KNOWLEDGE_TRACE_TOOLS = new Set(['knowledge_search', 'knowledge_read', 'web_search', 'web_fetch']);
+const KNOWLEDGE_TRACE_TOOLS = new Set(['knowledge_search', 'knowledge_read', 'web_search', 'web_fetch', 'knowledge_audit']);
 const KNOWLEDGE_TRACE_SECRET_KEY = /api[-_]?key|authorization|cookie|credential|password|secret|(?:access|refresh|auth)?token$/i;
+const KNOWLEDGE_GROUNDEDNESS_TARGET = 0.85;
+const KNOWLEDGE_GROUNDEDNESS_MIN_CLAIM_CHARS = 6;
+const KNOWLEDGE_GROUNDEDNESS_THRESHOLD = 0.42;
+const KNOWLEDGE_GROUNDEDNESS_WEAK_THRESHOLD = 0.3;
+const KNOWLEDGE_GROUNDEDNESS_CLAIM_RE = /是|为|应|可以|需要|建议|因此|导致|说明|支持|选择|采用|必须|能|会|有|包含|包括|根据|依据|表明|显示|证明|意味着|推荐|应该|避免|宜|不宜|优先|相比|优于|更快|更低|更少|更多|达到|实现|提供|要求|确保|防止|解决|修复|提升|降低|增加|减少|最好|适合|适用|用于|数据|研究|统计|率|占比|阈值|默认|配置|机制|原理|架构|方法|流程|步骤|规范|标准|原因|影响|区别|对比/;
 const KNOWLEDGE_FOLDER_DIRS = {
   raw: KNOWLEDGE_RAW, inbox: KNOWLEDGE_INBOX, atomic: KNOWLEDGE_ATOMIC, mocs: KNOWLEDGE_MOCS,
   projects: KNOWLEDGE_PROJECTS, templates: KNOWLEDGE_TEMPLATES, archive: KNOWLEDGE_ARCHIVE
@@ -131,6 +138,8 @@ const KNOWLEDGE_AUTO_SKIP = /^(你好|您好|hi|hello|嗨|哈喽|早上好|下�
 const KNOWLEDGE_AUTO_FOLLOWUP = /^(继续|展开|详细|具体|然后|那|为什么|再|接着|还有|举例|比如|说说|讲讲|更多|深入|解释|另外|其他)/;
 const KNOWLEDGE_EMBED_SCRIPT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'tools', 'knowledge_embed.py');
 const KNOWLEDGE_EMBED_NODE_SCRIPT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'tools', 'knowledge_embed.mjs');
+const KNOWLEDGE_RERANK_NODE_SCRIPT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'tools', 'knowledge_rerank.mjs');
+const KNOWLEDGE_RERANK_MODEL = 'bge-reranker-v2-m3';
 const KNOWLEDGE_DEFAULT_PROFILE = {
   mode: 'auto',
   routes: { bm25: true, graph: true, vector: true, hyde: false },
@@ -149,8 +158,10 @@ const IDEA_STATUSES = ['inbox', 'considering', 'promoted', 'snoozed', 'archived'
 const IDEA_RECOMMENDATIONS = ['task', 'orchestration', 'later', 'archive'];
 const ORCHESTRATION_PHASES = ['idea', 'planning', 'planned', 'running', 'refining', 'review', 'changes_requested', 'accepted', 'failed', 'cancelled'];
 const ORCHESTRATION_AGENT_STATUSES = ['planned', 'waiting', 'running', 'completed', 'failed', 'cancelled'];
-const ORCHESTRATION_WORKER_TIMEOUT_MS = Number(process.env.DSH_WORKBENCH_WORKER_TIMEOUT_MS) > 0 ? Number(process.env.DSH_WORKBENCH_WORKER_TIMEOUT_MS) : 15 * 60 * 1000;
+const ORCHESTRATION_WORKER_TIMEOUT_MS = Number(process.env.DSH_WORKBENCH_WORKER_TIMEOUT_MS) > 0 ? Number(process.env.DSH_WORKBENCH_WORKER_TIMEOUT_MS) : 10 * 60 * 1000;
 const ORCHESTRATION_WORKER_MAX_RETRIES = Number.isSafeInteger(Number(process.env.DSH_WORKBENCH_WORKER_MAX_RETRIES)) && Number(process.env.DSH_WORKBENCH_WORKER_MAX_RETRIES) >= 0 ? Number(process.env.DSH_WORKBENCH_WORKER_MAX_RETRIES) : 2;
+const ORCHESTRATION_MODEL_FAILOVER_MAX = Number.isSafeInteger(Number(process.env.DSH_WORKBENCH_MODEL_FAILOVER_MAX)) && Number(process.env.DSH_WORKBENCH_MODEL_FAILOVER_MAX) >= 0 ? Number(process.env.DSH_WORKBENCH_MODEL_FAILOVER_MAX) : 2;
+const ORCHESTRATION_MODEL_FAILOVER_ENABLED = String(process.env.DSH_WORKBENCH_MODEL_FAILOVER || 'on').toLowerCase() !== 'off';
 const ATTACHMENT_TYPES = new Map([
   ['png', 'image/png'], ['jpg', 'image/jpeg'], ['jpeg', 'image/jpeg'], ['webp', 'image/webp'],
   ['pdf', 'application/pdf'], ['txt', 'text/plain'], ['md', 'text/markdown'], ['json', 'application/json'],
@@ -1777,7 +1788,7 @@ function mergeKnowledgeProfile(profile, project) {
     weights: { ...base.weights, ...(stored.weights || {}) },
     topK: clampInt(stored.topK, 1, KNOWLEDGE_MAX_TOPK, base.topK),
     tokenBudget: clampInt(stored.tokenBudget, 200, KNOWLEDGE_MAX_TOKEN_BUDGET, base.tokenBudget),
-    rerank: ['none', 'local', 'llm'].includes(stored.rerank) ? stored.rerank : 'none',
+    rerank: ['none', 'local', 'llm', 'cross'].includes(stored.rerank) ? stored.rerank : 'none',
     folders: Array.isArray(stored.folders) ? stored.folders.filter((item) => KNOWLEDGE_FOLDER_IDS.includes(item)).slice(0, 5) : [...base.folders],
     projectType: cleanTaskText(stored.projectType || '', 80)
   };
@@ -1832,6 +1843,40 @@ async function knowledgeLocalRerank(query, candidates, topK) {
     }));
     scored.sort((a, b) => b.score - a.score || a.index - b.index);
     return { results: scored.slice(0, topK).map((item) => item.entry), status: 'ok' };
+  } catch (error) {
+    return { results: fallback, status: 'error', error: String((error && error.message) || error).slice(0, 500) };
+  }
+}
+
+async function knowledgeCrossRerank(query, candidates, topK) {
+  const fallback = candidates.slice(0, topK);
+  if (candidates.length < 2) return { results: fallback, status: 'skipped' };
+  try {
+    const texts = candidates.map((entry) => [entry.title, entry.summary, entry.snippet].filter(Boolean).join('\n').slice(0, 2000));
+    const output = await new Promise((resolvePromise, rejectPromise) => {
+      const child = execFile(process.execPath, [KNOWLEDGE_RERANK_NODE_SCRIPT, '--model', KNOWLEDGE_RERANK_MODEL], {
+        cwd: DSH_ROOT,
+        timeout: 180000,
+        maxBuffer: 32 * 1024 * 1024,
+        windowsHide: true,
+        env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }
+      }, (error, stdout, stderr) => {
+        if (error) {
+          rejectPromise(new Error('cross-encoder rerank failed: ' + String(stderr || error.message).slice(0, 500)));
+          return;
+        }
+        try { resolvePromise(JSON.parse(stdout)); }
+        catch (parseError) {
+          rejectPromise(new Error('cross-encoder rerank invalid output: ' + String(stderr || '').slice(0, 300)));
+        }
+      });
+      child.stdin.on('error', () => {});
+      child.stdin.end(JSON.stringify({ query, candidates: texts.map((text) => ({ text })) }));
+    });
+    const order = Array.isArray(output.order) ? output.order.map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n < candidates.length) : [];
+    const ranked = order.map((index) => candidates[index]).filter(Boolean);
+    const rest = candidates.filter((entry) => !ranked.includes(entry));
+    return { results: [...ranked, ...rest].slice(0, topK), status: order.length ? 'ok' : 'empty', scores: Array.isArray(output.scores) ? output.scores.slice(0, candidates.length) : [] };
   } catch (error) {
     return { results: fallback, status: 'error', error: String((error && error.message) || error).slice(0, 500) };
   }
@@ -2079,7 +2124,7 @@ async function runKnowledgeSearchOnce(query, project, options = {}) {
   const scoreMap = new Map(fused.map((item) => [item.id, item.score]));
   const candidates = fused.slice(0, Math.max(topK * 3, 12)).map((item) => byPath.get(item.id)).filter(Boolean);
   let reranked = candidates;
-  const rerankMode = ['none', 'local', 'llm'].includes(options.rerank) ? options.rerank : profile.rerank;
+  const rerankMode = ['none', 'local', 'llm', 'cross'].includes(options.rerank) ? options.rerank : profile.rerank;
   let rerankStatus = rerankMode === 'none' ? 'disabled' : 'skipped';
   let rerankError = '';
   if (rerankMode === 'local' && candidates.length > 1) {
@@ -2092,6 +2137,12 @@ async function runKnowledgeSearchOnce(query, project, options = {}) {
     reranked = await knowledgeLlmRerank(q, candidates, topK);
     rerankStatus = 'ok';
     routesUsed.push('rerank-llm');
+  } else if (rerankMode === 'cross' && candidates.length > 1) {
+    const cross = await knowledgeCrossRerank(q, candidates, topK);
+    reranked = cross.results;
+    rerankStatus = cross.status;
+    rerankError = cross.error || '';
+    routesUsed.push(cross.status === 'ok' ? 'rerank-cross' : 'rerank-cross-fallback');
   } else {
     reranked = candidates.slice(0, topK);
   }
@@ -2250,7 +2301,7 @@ function cleanKnowledgeAutoConfig(raw) {
     gate: ['rule', 'model', 'both'].includes(value.gate) ? value.gate : base.gate,
     routing: ['auto', 'force-hybrid', 'force-iterative'].includes(value.routing) ? value.routing : base.routing,
     maxIterations: clampInt(value.maxIterations, 1, 2, base.maxIterations),
-    rerank: ['none', 'local', 'llm'].includes(value.rerank) ? value.rerank : base.rerank,
+    rerank: ['none', 'local', 'llm', 'cross'].includes(value.rerank) ? value.rerank : base.rerank,
     topK: clampInt(value.topK, 1, KNOWLEDGE_MAX_TOPK, base.topK),
     tokenBudget: clampInt(value.tokenBudget, 200, KNOWLEDGE_MAX_TOKEN_BUDGET, base.tokenBudget),
     minConfidence: KNOWLEDGE_CONFIDENCES.includes(value.minConfidence) ? value.minConfidence : base.minConfidence,
@@ -2360,6 +2411,73 @@ function knowledgeAutoBuildBlock(refs, meta, config) {
 const knowledgeAutoCache = new Map();
 const knowledgeAutoLastBySession = new Map();
 const knowledgeChatContext = new Map();
+let knowledgeStatsCache = null;
+let knowledgeStatsQueue = Promise.resolve();
+
+async function readKnowledgeStats() {
+  if (knowledgeStatsCache) return knowledgeStatsCache;
+  try {
+    const info = await lstat(KNOWLEDGE_STATS_STORE);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('knowledge stats store must be a regular file');
+    if (info.size > MAX_KNOWLEDGE_STATS_BYTES) throw new Error('knowledge stats store too large');
+    const parsed = JSON.parse(await readFile(KNOWLEDGE_STATS_STORE, 'utf8'));
+    knowledgeStatsCache = {
+      version: 1,
+      autoRetrievals: Math.max(0, Number(parsed.autoRetrievals) || 0),
+      cacheHits: Math.max(0, Number(parsed.cacheHits) || 0),
+      cacheMisses: Math.max(0, Number(parsed.cacheMisses) || 0),
+      updatedAt: typeof parsed.updatedAt === 'string' ? parsed.updatedAt : ''
+    };
+  } catch (error) {
+    if (error && error.code === 'ENOENT') knowledgeStatsCache = { version: 1, autoRetrievals: 0, cacheHits: 0, cacheMisses: 0, updatedAt: '' };
+    else throw error;
+  }
+  return knowledgeStatsCache;
+}
+
+async function writeKnowledgeStats(stats) {
+  await mkdir(DSH_ROOT, { recursive: true });
+  const temp = KNOWLEDGE_STATS_STORE + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, JSON.stringify(stats, null, 2) + '\n', 'utf8');
+  await rename(temp, KNOWLEDGE_STATS_STORE);
+  knowledgeStatsCache = stats;
+  return stats;
+}
+
+async function bumpKnowledgeStats(delta = {}) {
+  const operation = knowledgeStatsQueue.then(async () => {
+    const stats = await readKnowledgeStats();
+    stats.autoRetrievals += Math.max(0, Number(delta.autoRetrievals) || 0);
+    stats.cacheHits += Math.max(0, Number(delta.cacheHits) || 0);
+    stats.cacheMisses += Math.max(0, Number(delta.cacheMisses) || 0);
+    stats.updatedAt = new Date().toISOString();
+    await writeKnowledgeStats(stats);
+    return stats;
+  });
+  knowledgeStatsQueue = operation.catch(() => {});
+  return operation;
+}
+
+async function knowledgeRuntimeStats() {
+  const stats = await readKnowledgeStats();
+  let knowledgeCalls = 0;
+  let webCalls = 0;
+  try {
+    const store = await readKnowledgeTraceStore();
+    for (const trace of store.traces) {
+      if (trace.tool === 'knowledge_search' || trace.tool === 'knowledge_read') knowledgeCalls += 1;
+      else if (trace.tool === 'web_search' || trace.tool === 'web_fetch') webCalls += 1;
+    }
+  } catch { /* best-effort */ }
+  return {
+    autoRetrievals: stats.autoRetrievals,
+    cacheHits: stats.cacheHits,
+    cacheMisses: stats.cacheMisses,
+    cacheHitRate: stats.autoRetrievals > 0 ? Math.round(stats.cacheHits / stats.autoRetrievals * 1000) / 1000 : null,
+    realKnowledgeCalls: knowledgeCalls,
+    realWebCalls: webCalls
+  };
+}
 
 function rememberKnowledgeChatContext(sessionId, result) {
   const key = String(sessionId || '');
@@ -2395,11 +2513,13 @@ async function knowledgeAutoRetrieve(query, sessionId, project, options = {}) {
   const cacheKey = knowledgeAutoCacheKey(sessionId, q);
   const cached = knowledgeAutoCache.get(cacheKey);
   if (cached && now - cached.at < config.cacheTtlMs) {
+    await bumpKnowledgeStats({ autoRetrievals: 1, cacheHits: 1 }).catch(() => {});
     return { ...cached.result, reused: true, cachedAt: cached.at };
   }
   const last = knowledgeAutoLastBySession.get(String(sessionId || 'global'));
   if (q.length <= 14 && KNOWLEDGE_AUTO_FOLLOWUP.test(q) && last && now - last.at < config.cacheTtlMs) {
     const reuse = { ...last.result, reused: true, followupReuse: true, reason: '追问复用上次检索结果' };
+    await bumpKnowledgeStats({ autoRetrievals: 1, cacheHits: 1 }).catch(() => {});
     return reuse;
   }
   const ruleGate = knowledgeAutoGate(q);
@@ -2422,6 +2542,7 @@ async function knowledgeAutoRetrieve(query, sessionId, project, options = {}) {
     maxIterations: config.maxIterations,
     thresholds: config.thresholds
   });
+  await bumpKnowledgeStats({ autoRetrievals: 1, cacheMisses: 1 }).catch(() => {});
   const minRank = { high: 2, medium: 1, low: 0 }[config.minConfidence] ?? 1;
   const refs = (search.results || []).filter((entry) => knowledgeEntryConfidenceRank(entry) >= minRank).slice(0, config.maxRefs).map((entry, index) => ({
     id: '知识' + (index + 1),
@@ -2500,6 +2621,339 @@ function auditKnowledgeCitations(answer, refs, level = 'ref-only') {
     abstainRequired: missing || invalid.length > 0 || groundedness.length > 0,
     checkedAt: new Date().toISOString()
   };
+}
+
+function splitAnswerSentences(text) {
+  const parts = String(text || '').split(/([。！？!?\n]+)/);
+  const raw = [];
+  for (let index = 0; index < parts.length; index += 2) {
+    const sentence = ((parts[index] || '') + (parts[index + 1] || '')).trim();
+    if (sentence) raw.push(sentence);
+  }
+  const sentences = [];
+  for (const sentence of raw) {
+    if (/^\[知识\s*\d+[^\]]*\]$/.test(sentence) && sentences.length) {
+      sentences[sentences.length - 1] += ' ' + sentence;
+    } else {
+      sentences.push(sentence);
+    }
+  }
+  return sentences;
+}
+
+function knowledgeTextTokens(text) {
+  const normalized = String(text || '').toLowerCase().replace(/[\s\p{P}\p{S}]+/gu, '');
+  if (!normalized) return new Set();
+  const chars = [...normalized];
+  const tokens = new Set(chars);
+  for (let index = 0; index < chars.length - 1; index += 1) tokens.add(chars[index] + chars[index + 1]);
+  return tokens;
+}
+
+function knowledgeTokenOverlap(left, right) {
+  const setA = knowledgeTextTokens(left);
+  const setB = knowledgeTextTokens(right);
+  if (!setA.size || !setB.size) return 0;
+  let hit = 0;
+  for (const token of setA) if (setB.has(token)) hit += 1;
+  return (2 * hit) / (setA.size + setB.size);
+}
+
+function knowledgeTokenContainment(sentence, snippet) {
+  const setA = knowledgeTextTokens(sentence);
+  const setB = knowledgeTextTokens(snippet);
+  if (!setA.size) return 0;
+  let hit = 0;
+  for (const token of setA) if (setB.has(token)) hit += 1;
+  return hit / setA.size;
+}
+
+function knowledgeEvidenceScore(sentence, snippet, embeddingScore) {
+  const overlap = knowledgeTokenOverlap(sentence, snippet);
+  const containment = knowledgeTokenContainment(sentence, snippet);
+  const ruleScore = Math.min(1, overlap * 0.7 + containment * 0.3);
+  const score = typeof embeddingScore === 'number' && Number.isFinite(embeddingScore)
+    ? Math.min(1, Math.max(ruleScore, embeddingScore))
+    : ruleScore;
+  return Math.round(score * 1000) / 1000;
+}
+
+function knowledgeClaimSentence(sentence) {
+  const text = String(sentence || '').trim();
+  if (text.length < KNOWLEDGE_GROUNDEDNESS_MIN_CLAIM_CHARS) return false;
+  if (/[？?]$/.test(text) || /^[#>*\-\s\d.]+$/.test(text)) return false;
+  if (/[:：]$/.test(text)) return false;
+  if (/^(来源[:：]|参考资料[:：]|\[来源)/.test(text)) return false;
+  return KNOWLEDGE_GROUNDEDNESS_CLAIM_RE.test(text) || /[\d０-９]+([.．%％点次个条项倍]|$)/.test(text);
+}
+
+function knowledgeCitationIdsIn(sentence) {
+  const ids = [];
+  const pattern = /\[知识\s*(\d+)[^\]]*\]/g;
+  let match;
+  while ((match = pattern.exec(sentence))) ids.push('知识' + match[1]);
+  return ids;
+}
+
+async function knowledgeAdjudicateWeak(check) {
+  if (chatLlm === null || !check || check.verdict !== 'weak') return check;
+  const ref = check.suggestedRef;
+  const evidence = ref ? ref.id + '《' + ref.title + '》 ' + String(ref.snippet || '') : '无';
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const text = await streamLlmText(
+        '你是引用证据判定器。判断结论句是否被给定知识条目内容直接支持。只输出 JSON：{"supported":true|false,"reason":"简短原因"}。只要条目内容能支撑该结论（含合理推断）就算 true；条目完全没有相关信息才算 false。',
+        '结论句：' + check.sentence + '\n\n知识条目：\n' + evidence + '\n\n输出：',
+        { maxTokens: 256, temperature: 0 }
+      );
+      const parsed = parseJsonObject(text);
+      if (parsed && typeof parsed.supported === 'boolean') {
+        if (parsed.supported) {
+          return { ...check, verdict: 'grounded', reason: '', adjudicated: true, adjudicationReason: cleanTaskText(parsed.reason, 200) };
+        }
+        return { ...check, verdict: 'unsupported', reason: '证据判定器认为该结论不被引用条目支持', adjudicated: true, adjudicationReason: cleanTaskText(parsed.reason, 200) };
+      }
+      if (attempt === 0 && !String(text || '').trim()) continue;
+      break;
+    } catch (error) {
+      if (attempt === 0) {
+        diag('knowledge groundedness adjudication failed (retry): ' + String((error && error.message) || error));
+        continue;
+      }
+      diag('knowledge groundedness adjudication failed: ' + String((error && error.message) || error));
+    }
+  }
+  return check;
+}
+
+async function auditKnowledgeGroundedness(answer, refs, options = {}) {
+  const references = Array.isArray(refs) ? refs.map(cleanKnowledgeRef).filter((entry) => entry.title) : [];
+  const byId = new Map(references.map((entry) => [entry.id, entry]));
+  const sentences = splitAnswerSentences(answer);
+  const claims = sentences.filter(knowledgeClaimSentence);
+  const config = await readVectorConfig();
+  let vectors = null;
+  let method = 'rule';
+  if (claims.length && references.length && config && ['bge-local', 'bge-node', 'openai', 'custom'].includes(config.provider)) {
+    try {
+      const texts = [
+        ...claims.map((sentence) => String(sentence).replace(/\[知识\s*\d+[^\]]*\]/g, '').slice(0, 4000)),
+        ...references.map((entry) => [entry.title, entry.snippet].filter(Boolean).join('\n').slice(0, 4000))
+      ];
+      const embedded = await embedKnowledgeTexts(config, texts);
+      if (embedded && Array.isArray(embedded.vectors) && embedded.vectors.length === texts.length) {
+        vectors = embedded.vectors;
+        method = 'hybrid';
+      }
+    } catch (error) {
+      diag('knowledge groundedness embedding failed: ' + String((error && error.message) || error));
+    }
+  }
+  const checks = [];
+  for (let index = 0; index < claims.length; index += 1) {
+    const sentence = claims[index];
+    const citedIds = knowledgeCitationIdsIn(sentence);
+    const cleaned = String(sentence).replace(/\[知识\s*\d+[^\]]*\]/g, '').trim();
+    const citedRefs = citedIds.map((id) => byId.get(id)).filter(Boolean);
+    let best = { score: 0, ref: null, embeddingScore: null };
+    references.forEach((ref, refIndex) => {
+      const embeddingScore = vectors ? cosineSimilarity(vectors[index], vectors[claims.length + refIndex]) : null;
+      const score = knowledgeEvidenceScore(cleaned, ref.snippet || ref.title || '', embeddingScore);
+      if (score > best.score) best = { score, ref, embeddingScore };
+    });
+    let verdict = 'unsupported';
+    let reason = '结论句与引用的知识条目证据内容不匹配';
+    if (best.score >= KNOWLEDGE_GROUNDEDNESS_THRESHOLD) {
+      if (citedRefs.some((ref) => ref.id === best.ref.id)) {
+        verdict = 'grounded';
+        reason = '';
+      } else if (citedRefs.length) {
+        verdict = 'weak';
+        reason = '结论句引用的条目与证据内容不匹配，疑似应为 ' + best.ref.id;
+      } else {
+        verdict = 'uncited';
+        reason = '结论句未标注知识库引用（存在疑似可支撑条目）';
+      }
+    } else if (best.score >= KNOWLEDGE_GROUNDEDNESS_WEAK_THRESHOLD) {
+      verdict = 'weak';
+      reason = '结论句与证据内容的匹配度偏低（' + best.score + '），需要复核';
+    } else if (!citedIds.length) {
+      reason = '结论句未标注引用且未找到可支撑的知识条目';
+    }
+    let check = {
+      sentence,
+      cited: citedIds,
+      verdict,
+      score: best.score,
+      reason,
+      suggestedRef: best.ref ? { id: best.ref.id, title: best.ref.title, snippet: String(best.ref.snippet || '').slice(0, 200) } : null,
+      embeddingScore: best.embeddingScore
+    };
+    if (/未验证|无法确认|暂无法|不确定/.test(sentence)) {
+      check = { ...check, verdict: 'abstained', reason: '句子已标注未验证/无法确认（abstain）' };
+    } else if (check.verdict === 'weak' && options.adjudicateWeak !== false) {
+      check = await knowledgeAdjudicateWeak(check);
+    }
+    checks.push(check);
+  }
+  const eligible = checks.filter((check) => check.verdict !== 'abstained');
+  const violations = eligible.filter((check) => check.verdict !== 'grounded');
+  const rate = eligible.length ? Math.round((eligible.length - violations.length) / eligible.length * 1000) / 1000 : null;
+  return { claims, checks, rate, violations, grounded: eligible.length - violations.length, abstained: checks.length - eligible.length, method, target: KNOWLEDGE_GROUNDEDNESS_TARGET };
+}
+
+function knowledgeInsertSentenceMarker(sentence, marker) {
+  const match = /([。！？!?；;]*)$/.exec(sentence);
+  const punct = match ? match[1] : '';
+  const body = punct ? sentence.slice(0, -punct.length) : sentence;
+  if (marker === '未验证') return body + '（未验证）' + punct;
+  return body + ' ' + marker + punct;
+}
+
+function knowledgeReplaceFirstCitation(sentence, toId) {
+  return /\[知识\s*\d+[^\]]*\]/.test(sentence) ? sentence.replace(/\[知识\s*\d+[^\]]*\]/, '[' + toId + ']') : sentence;
+}
+
+function knowledgeGroundednessFixRules(answer, refs, groundedness) {
+  if (!groundedness || !Array.isArray(groundedness.checks) || !groundedness.checks.length) return answer;
+  let text = String(answer || '').replace(/\s+/g, ' ');
+  let changed = false;
+  for (const check of groundedness.checks) {
+    const sentence = String(check.sentence || '').replace(/\s+/g, ' ');
+    if (check.verdict === 'grounded' || !sentence || !text.includes(sentence)) continue;
+    let fixed = '';
+    if (check.verdict === 'uncited' && check.suggestedRef && check.suggestedRef.id) {
+      fixed = knowledgeInsertSentenceMarker(sentence, '[' + check.suggestedRef.id + ']');
+    } else if (check.verdict === 'weak' && check.suggestedRef && check.suggestedRef.id && !(check.cited || []).includes(check.suggestedRef.id)) {
+      const replaced = knowledgeReplaceFirstCitation(sentence, check.suggestedRef.id);
+      fixed = replaced !== sentence ? replaced : knowledgeInsertSentenceMarker(sentence, '[' + check.suggestedRef.id + ']');
+    } else if (check.verdict === 'unsupported' || check.verdict === 'weak') {
+      fixed = knowledgeInsertSentenceMarker(sentence, '未验证');
+    }
+    if (!fixed || fixed === sentence) continue;
+    text = text.replace(sentence, fixed);
+    changed = true;
+  }
+  return changed ? text : answer;
+}
+
+async function knowledgeGroundednessFixLlm(answer, refs, groundedness) {
+  if (chatLlm === null) return answer;
+  try {
+    const listText = (Array.isArray(refs) ? refs : []).map((entry, index) => (index + 1) + '. ' + entry.id + '《' + entry.title + '》 ' + String(entry.snippet || entry.summary || '').slice(0, 300)).join('\n');
+    const issues = (groundedness.checks || []).filter((check) => check.verdict !== 'grounded').map((check) => '- ' + check.sentence + '（' + check.reason + '）').join('\n');
+    const text = await streamLlmText(
+      '你是知识库引用修正器。用户回答中部分结论句缺少引用或引用的知识条目无法支撑结论。请重写回答：\n' +
+      '1. 保持原意、结构与语气，不要新增知识库之外的事实；\n' +
+      '2. 每个结论句必须紧邻标注能支撑它的引用，格式 [知识N《标题》· 置信度X]，编号只能来自给定引用列表；\n' +
+      '3. 若某结论没有任何给定引用能支撑，改成不超出知识范围的表述，或在该句末尾标注（未验证）；\n' +
+      '4. 不要编造引用。\n' +
+      '只输出修正后的完整回答，不要解释。',
+      '给定引用：\n' + listText + '\n\n问题句子：\n' + issues + '\n\n原回答：\n' + String(answer || ''),
+      { maxTokens: 4000, temperature: 0.2 }
+    );
+    const cleaned = String(text || '').trim();
+    return cleaned.length >= 4 && cleaned !== String(answer || '').trim() ? cleaned : answer;
+  } catch (error) {
+    diag('knowledge groundedness llm fix failed: ' + String((error && error.message) || error));
+    return answer;
+  }
+}
+
+async function recordKnowledgeAuditTrace({ query, sessionId, answer, refs, audit }) {
+  const at = audit && audit.checkedAt ? audit.checkedAt : new Date().toISOString();
+  const trace = cleanKnowledgeTrace({
+    id: randomUUID(),
+    sessionId: cleanTaskText(sessionId, 160),
+    callId: '',
+    rootCallId: '',
+    turn: 0,
+    step: 0,
+    tool: 'knowledge_audit',
+    arguments: { query: cleanTaskText(query, 500) },
+    startedAt: at,
+    endedAt: at,
+    startedMs: Date.now(),
+    endedMs: Date.now(),
+    success: audit.valid === true,
+    result: {
+      rate: audit.groundednessRate,
+      target: audit.groundednessTarget,
+      method: audit.groundednessMethod,
+      claimCount: Array.isArray(audit.groundednessChecks) ? audit.groundednessChecks.length : 0,
+      grounded: audit.groundednessSummary ? audit.groundednessSummary.grounded : 0,
+      violations: audit.groundednessSummary ? audit.groundednessSummary.violations : 0,
+      completeness: audit.completeness,
+      fixed: audit.fix && audit.fix.applied === true,
+      abstainRequired: audit.abstainRequired === true,
+      missing: audit.missing,
+      invalidCount: (audit.invalid || []).length,
+      checks: (Array.isArray(audit.groundednessChecks) ? audit.groundednessChecks : []).slice(0, 30).map((check) => ({
+        verdict: check.verdict,
+        score: check.score,
+        cited: check.cited,
+        reason: check.reason ? String(check.reason).slice(0, 200) : '',
+        sentence: String(check.sentence).slice(0, 200)
+      }))
+    }
+  });
+  await mutateKnowledgeTraceStore((store) => { store.traces.push(trace); });
+  return trace;
+}
+
+async function auditKnowledgeCitationsDeep(answer, refs, options = {}) {
+  const level = options.level || 'ref+groundedness';
+  const text = String(answer || '').trim();
+  const cleanRefs = Array.isArray(refs) ? refs.map(cleanKnowledgeRef).filter((entry) => entry.title) : [];
+  const base = auditKnowledgeCitations(text, cleanRefs, level);
+  if (level !== 'ref+groundedness') return base;
+  const first = await auditKnowledgeGroundedness(text, cleanRefs, options);
+  const fix = { attempted: false, applied: false, method: '', before: null, after: null };
+  let finalText = text;
+  let final = first;
+  const target = options.targetRate ?? KNOWLEDGE_GROUNDEDNESS_TARGET;
+  if (first.claims.length && first.rate !== null && first.rate < target && options.autoFix !== false) {
+    fix.attempted = true;
+    fix.before = { rate: first.rate, violations: first.violations.length };
+    let fixedText = text;
+    if (chatLlm !== null && options.llmFix !== false) {
+      const llmFixed = await knowledgeGroundednessFixLlm(text, cleanRefs, first);
+      if (llmFixed !== text) { fixedText = llmFixed; fix.method = 'llm'; }
+    }
+    const ruleFixed = knowledgeGroundednessFixRules(fixedText, cleanRefs, first);
+    if (ruleFixed !== fixedText) { fixedText = ruleFixed; fix.method = fix.method ? fix.method + '+rule' : 'rule'; }
+    if (fixedText !== text) {
+      fix.applied = true;
+      finalText = fixedText;
+      final = await auditKnowledgeGroundedness(finalText, cleanRefs, options);
+      fix.after = { rate: final.rate, violations: final.violations.length };
+    }
+  }
+  const violations = final.violations || [];
+  const completenessValue = options.completeness === null || options.completeness === undefined ? null : Number(options.completeness);
+  const audit = {
+    ...base,
+    level,
+    text: finalText,
+    fixed: fix.applied === true,
+    fix,
+    groundednessChecks: final.checks || [],
+    groundednessRate: final.rate,
+    groundednessTarget: target,
+    groundednessMethod: final.method,
+    groundednessSummary: { claims: Math.max(0, final.claims.length - (final.abstained || 0)), abstained: final.abstained || 0, grounded: final.grounded, violations: violations.length, rate: final.rate, method: final.method },
+    groundedness: violations.map((check) => ({ sentence: check.sentence, reason: check.reason })),
+    completeness: completenessValue !== null && Number.isFinite(completenessValue) && completenessValue >= 0 && completenessValue <= 1 ? Math.round(completenessValue * 1000) / 1000 : null,
+    valid: (base.missing || []).length === 0 && base.invalid.length === 0 && violations.length === 0,
+    abstainRequired: (base.missing || []).length > 0 || base.invalid.length > 0 || violations.length > 0,
+    checkedAt: new Date().toISOString()
+  };
+  try {
+    await recordKnowledgeAuditTrace({ query: options.query || '', sessionId: options.sessionId || '', answer: finalText, refs: cleanRefs, audit });
+  } catch (error) {
+    diag('knowledge audit trace write failed: ' + String((error && error.message) || error));
+  }
+  return audit;
 }
 
 function safeKnowledgeName(title) {
@@ -3342,27 +3796,66 @@ async function knowledgeOnlineAuditSummary() {
     const audits = (taskStore.orchestrations || []).map((item) => item.knowledgeCitationAudit).filter((audit) => audit && typeof audit === 'object');
     const grounded = audits.filter((audit) => audit.level === 'ref+groundedness');
     const rate = (list, predicate) => list.length ? Math.round(list.filter(predicate).length / list.length * 1000) / 1000 : null;
+    const orchestrationChecks = grounded.flatMap((audit) => Array.isArray(audit.groundednessChecks) ? audit.groundednessChecks : []);
+    let traceChecks = [];
+    try {
+      const traceStore = await readKnowledgeTraceStore();
+      traceChecks = traceStore.traces.filter((trace) => trace.tool === 'knowledge_audit').flatMap((trace) => trace.result && Array.isArray(trace.result.checks) ? trace.result.checks : []);
+    } catch { /* trace store is best-effort */ }
+    const checks = traceChecks.length ? traceChecks : orchestrationChecks;
+    const eligibleChecks = checks.filter((check) => check.verdict !== 'abstained');
+    const sentenceRate = eligibleChecks.length ? Math.round(eligibleChecks.filter((check) => check.verdict === 'grounded').length / eligibleChecks.length * 1000) / 1000 : null;
+    let completenessValues = [];
+    try {
+      const traceStore = await readKnowledgeTraceStore();
+      completenessValues = traceStore.traces
+        .filter((trace) => trace.tool === 'knowledge_audit')
+        .map((trace) => Number(trace.result && trace.result.completeness))
+        .filter((value) => Number.isFinite(value) && value >= 0 && value <= 1);
+    } catch { /* best-effort */ }
+    const completeness = completenessValues.length ? Math.round(completenessValues.reduce((sum, value) => sum + value, 0) / completenessValues.length * 1000) / 1000 : null;
     return {
       citationSamples: audits.length,
       citationValidRate: rate(audits, (audit) => audit.valid === true),
       abstainRate: rate(audits, (audit) => audit.abstainRequired === true),
-      groundednessSamples: grounded.length,
-      groundedness: rate(grounded, (audit) => audit.valid === true && (!audit.groundedness || audit.groundedness.length === 0))
+      groundednessSamples: eligibleChecks.length || grounded.length,
+      groundedness: eligibleChecks.length ? sentenceRate : rate(grounded, (audit) => audit.valid === true && (!audit.groundedness || audit.groundedness.length === 0)),
+      groundednessChecks: eligibleChecks.length,
+      groundednessMethod: null,
+      faithfulness: sentenceRate,
+      completeness
     };
   } catch {
-    return { citationSamples: 0, citationValidRate: null, abstainRate: null, groundednessSamples: 0, groundedness: null };
+    return { citationSamples: 0, citationValidRate: null, abstainRate: null, groundednessSamples: 0, groundedness: null, groundednessChecks: 0, groundednessMethod: null, faithfulness: null, completeness: null };
   }
+}
+
+async function knowledgeTop1Relevance(query, entry) {
+  try {
+    const config = await readVectorConfig();
+    if (!['bge-local', 'bge-node'].includes(config.provider) || !entry) return null;
+    const embedded = await embedKnowledgeTexts(config, [
+      query,
+      [entry.title, entry.summary].filter(Boolean).join('\n').slice(0, 2000)
+    ]);
+    if (!embedded || !Array.isArray(embedded.vectors) || embedded.vectors.length < 2 || !embedded.vectors[0].length) return null;
+    return Math.round(cosineSimilarity(embedded.vectors[0], embedded.vectors[1]) * 1000) / 1000;
+  } catch { return null; }
 }
 
 async function runKnowledgeEvalSet(options = {}) {
   const store = await readKnowledgeEval();
   const items = store.items || [];
   const topK = clampInt(options.topK, 1, 10, 5);
+  const rerank = ['none', 'local', 'llm', 'cross'].includes(options.rerank) ? options.rerank : '';
+  const searchOptions = { topK: Math.max(topK, 10), tokenBudget: 4000 };
+  if (rerank) searchOptions.rerank = rerank;
   const results = [];
   for (const item of items) {
     const start = Date.now();
-    const search = await runKnowledgeSearch(item.question, '', { topK: Math.max(topK, 10), tokenBudget: 4000 });
+    const search = await runKnowledgeSearch(item.question, '', searchOptions);
     const topResults = (search.results || []).slice(0, topK);
+    const top1 = topResults[0] || null;
     const paths = new Set(topResults.map((result) => result.path));
     const titles = new Set(topResults.map((result) => result.title.toLowerCase()));
     const expected = item.expected || [];
@@ -3370,12 +3863,21 @@ async function runKnowledgeEvalSet(options = {}) {
       const normalized = String(exp).toLowerCase();
       return paths.has(exp) || titles.has(normalized) || titles.has(normalized.replace(/\.md$/, ''));
     });
+    const top1Hit = top1 ? expected.some((exp) => {
+      const normalized = String(exp).toLowerCase();
+      return top1.path === exp || top1.title.toLowerCase() === normalized || top1.title.toLowerCase() === normalized.replace(/\.md$/, '');
+    }) : false;
+    const top1Relevance = rerank && top1 ? await knowledgeTop1Relevance(item.question, top1) : null;
     results.push({
       id: item.id,
       question: item.question,
       expected: expected.length,
       hits: hits.length,
       hitPaths: hits,
+      top1Hit,
+      top1Path: top1 ? top1.path : '',
+      top1Relevance,
+      rerankMode: rerank || (search.rerankMode || 'default'),
       topK,
       latencyMs: Date.now() - start,
       tokens: search.estimatedTokens || 0,
@@ -3396,6 +3898,9 @@ async function runKnowledgeEvalSet(options = {}) {
   const totalExpected = results.reduce((sum, result) => sum + result.expected, 0);
   const totalHits = results.reduce((sum, result) => sum + result.hits, 0);
   const recallAtK = completed && totalExpected ? Math.round((totalHits / totalExpected) * 1000) / 1000 : 0;
+  const top1HitRate = completed ? Math.round(results.filter((result) => result.top1Hit).length / completed * 1000) / 1000 : 0;
+  const relevanceScores = results.map((result) => result.top1Relevance).filter((value) => typeof value === 'number');
+  const avgTop1Relevance = relevanceScores.length ? Math.round(relevanceScores.reduce((sum, value) => sum + value, 0) / relevanceScores.length * 1000) / 1000 : null;
   const routeSamples = results.filter((result) => result.expectedStrategy);
   const webRouteSamples = results.filter((result) => result.expectedWeb);
   const simpleRouteSamples = routeSamples.filter((result) => result.expectedStrategy === 'single');
@@ -3403,17 +3908,21 @@ async function runKnowledgeEvalSet(options = {}) {
   const webRouteAccuracy = webRouteSamples.length ? Math.round(webRouteSamples.filter((result) => result.actualWeb === result.expectedWeb).length / webRouteSamples.length * 1000) / 1000 : null;
   const simpleSinglePassRate = simpleRouteSamples.length ? Math.round(simpleRouteSamples.filter((result) => result.actualStrategy === 'single').length / simpleRouteSamples.length * 1000) / 1000 : null;
   const onlineAudit = await knowledgeOnlineAuditSummary();
+  const runtime = await knowledgeRuntimeStats();
   const acceptanceChecks = [
     { id: 'dataset-size', label: '离线评测题数', actual: completed, target: 50, passed: completed >= 50 },
     { id: 'recall-at-k', label: 'recall@' + topK, actual: recallAtK, target: 0.9, passed: completed > 0 && recallAtK >= 0.9 },
-    { id: 'groundedness-samples', label: '逐句审计样本', actual: onlineAudit.groundednessSamples, target: 1, passed: onlineAudit.groundednessSamples >= 1 },
+    { id: 'groundedness-samples', label: '逐句审计样本', actual: onlineAudit.groundednessSamples, target: 20, passed: onlineAudit.groundednessSamples >= 20 },
     { id: 'groundedness', label: 'groundedness', actual: onlineAudit.groundedness, target: 0.85, passed: onlineAudit.groundedness !== null && onlineAudit.groundedness >= 0.85 }
   ];
   const report = {
     ranAt: new Date().toISOString(),
     topK,
+    rerankMode: rerank || 'default',
     items: completed,
     recallAtK,
+    top1HitRate,
+    avgTop1Relevance,
     avgTokens: completed ? Math.round(results.reduce((sum, result) => sum + result.tokens, 0) / completed) : 0,
     avgRetrievalTokens: completed ? Math.round(results.reduce((sum, result) => sum + result.retrievalTokens, 0) / completed) : 0,
     avgLatencyMs: completed ? Math.round(results.reduce((sum, result) => sum + result.latencyMs, 0) / completed) : 0,
@@ -3431,6 +3940,9 @@ async function runKnowledgeEvalSet(options = {}) {
     webFallbackRate: completed ? Math.round(results.filter((result) => result.coverage && result.coverage.action !== 'knowledge-only').length / completed * 1000) / 1000 : 0,
     iterativeRate: completed ? Math.round(results.filter((result) => Number(result.iterations || 1) > 1).length / completed * 1000) / 1000 : 0,
     onlineAudit,
+    runtime,
+    faithfulness: onlineAudit.faithfulness,
+    completeness: onlineAudit.completeness,
     acceptance: { ready: acceptanceChecks.every((check) => check.passed), checks: acceptanceChecks },
     results
   };
@@ -3447,11 +3959,128 @@ async function addKnowledgeEvalCandidate(question) {
   if (!text) return;
   const store = await readKnowledgeEval();
   store.candidates = store.candidates || [];
-  const lower = text.toLowerCase();
-  if (store.candidates.some((item) => String(item.question || '').toLowerCase() === lower)) return;
+  const normalized = text.replace(/\s+/g, ' ').toLowerCase();
+  if (store.candidates.some((item) => String(item.question || '').replace(/\s+/g, ' ').toLowerCase() === normalized)) return;
   store.candidates.push(cleanEvalItem({ question: text, note: '自动记录：检索无结果', expected: [] }));
   store.candidates = store.candidates.slice(-200);
   await writeKnowledgeEval(store);
+}
+
+async function knowledgeRecordMissCandidate(query, coverage, hasSelectedResults) {
+  const level = coverage && coverage.level;
+  const lexical = Number(coverage && coverage.lexicalCoverage) || 0;
+  const isMiss = !hasSelectedResults || level === 'insufficient' || (level === 'gray' && lexical === 0);
+  if (!isMiss) return;
+  try { await addKnowledgeEvalCandidate(query); } catch (e) { /* best effort */ }
+}
+
+async function knowledgeCompletenessScore(question, answer, refs) {
+  if (chatLlm === null) return null;
+  const refsSummary = (Array.isArray(refs) ? refs : []).map((entry) => entry.id + '《' + entry.title + '》 ' + String(entry.snippet || '').replace(/\s+/g, ' ').slice(0, 120)).join('\n');
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const text = await streamLlmText(
+        '你是回答完整度评估器。以下是回答可依据的知识条目摘要（只用于判断问题是否可答，不要求回答覆盖所有条目）。判断回答是否完整覆盖"问题要求且条目能支撑的要点"。只输出一个 0.0 到 1.0 的小数作为完整度分数，不要输出任何解释、引号或 JSON。\n评分口径：\n- 问题要求且条目能支撑的要点全部覆盖，无法支撑的部分明确标注（未验证）→ 0.9 以上；\n- 遗漏一个可支撑的明显要点 → 0.6-0.8；\n- 只覆盖一半或更少可答要点 → 0.5 以下；\n- 条目确实没有相关信息、回答如实说明无法确认（未验证）→ 0.85 以上（诚实 abstain 不算遗漏）；\n- 回答与问题无关 → 0.1 以下。',
+        '知识条目摘要：\n' + (refsSummary || '（无）') + '\n\n问题：' + String(question || '').slice(0, 1000) + '\n\n回答：\n' + String(answer || '').slice(0, 4000) + '\n\n输出：',
+        { maxTokens: 256, temperature: 0 }
+      );
+      const match = /(\d+(?:\.\d+)?)/.exec(String(text || ''));
+      const value = match ? Number(match[1]) : NaN;
+      if (Number.isFinite(value) && value >= 0 && value <= 1) return Math.round(value * 1000) / 1000;
+      if (attempt === 0 && !String(text || '').trim()) continue;
+      diag('knowledge completeness score parse failed: ' + String(text || '').slice(0, 200));
+      break;
+    } catch (error) {
+      if (attempt === 0) {
+        diag('knowledge completeness score failed (retry): ' + String((error && error.message) || error));
+        continue;
+      }
+      diag('knowledge completeness score failed: ' + String((error && error.message) || error));
+    }
+  }
+  return null;
+}
+
+async function generateKnowledgeGroundednessSamples(options = {}) {
+  const store = await readKnowledgeEval();
+  const items = (store.items || []).slice(0, clampInt(options.count, 1, 50, 20));
+  const topK = clampInt(options.topK, 1, 10, 5);
+  const results = [];
+  for (const item of items) {
+    const search = await runKnowledgeSearch(item.question, '', { topK: Math.max(topK, 5), tokenBudget: 4000 });
+    const refs = (search.results || []).slice(0, Math.max(topK, 3)).map((entry, index) => ({
+      id: '知识' + (index + 1),
+      title: entry.title,
+      path: entry.path,
+      confidence: entry.computedConfidence || entry.confidence || 'medium',
+      snippet: entry.summary || entry.snippet || ''
+    }));
+    let answer = '';
+    let block = '';
+    if (refs.length && chatLlm !== null) {
+      const meta = {
+        query: item.question,
+        mode: search.mode || '',
+        routes: search.routes || [],
+        vectorStatus: search.vectorStatus || 'n/a',
+        estimatedTokens: search.estimatedTokens || 0,
+        retrievalTokens: search.retrievalTokens || 0,
+        latencyMs: search.latencyMs || 0,
+        coverage: search.coverage || null,
+        iterations: search.iterations || 1
+      };
+      block = knowledgeAutoBuildBlock(refs, meta, { maxRefs: refs.length, tokenBudget: 4000 });
+      answer = await streamLlmText(
+        '你是知识库问答助手。只依据给定知识条目回答用户问题：\n' +
+        '1. 每个结论句必须紧邻标注支撑它的引用，格式 [知识N《标题》· 置信度X]；\n' +
+        '2. 知识条目无法支撑的结论不要写，或明确标注（未验证）；\n' +
+        '3. 不要编造引用与事实；\n' +
+        '4. 完整回答问题的所有要点：若问题包含多个方面或步骤，逐点覆盖，不要只答一半；宁可列出全部要点也不要遗漏。',
+        '知识条目：\n' + block + '\n\n问题：' + item.question + '\n\n回答：',
+        { maxTokens: 2000, temperature: 0.2 }
+      );
+    }
+    const audit = answer && answer.trim()
+      ? await auditKnowledgeCitationsDeep(answer, refs, {
+          level: 'ref+groundedness',
+          query: item.question,
+          autoFix: true,
+          completeness: await knowledgeCompletenessScore(item.question, answer, refs)
+        })
+      : null;
+    results.push({
+      id: item.id,
+      question: item.question,
+      refs: refs.length,
+      answerLength: answer.length,
+      answerPreview: String(answer).slice(0, 300),
+      completeness: audit ? audit.completeness : null,
+      audit: audit ? {
+        valid: audit.valid,
+        rate: audit.groundednessRate,
+        claims: audit.groundednessSummary,
+        fixed: audit.fixed,
+        fixMethod: audit.fix && audit.fix.method,
+        method: audit.groundednessMethod
+      } : null
+    });
+  }
+  const audited = results.filter((result) => result.audit);
+  const checks = audited.flatMap((result) => result.audit && result.audit.claims ? result.audit.claims.claims || [] : []);
+  const sentenceRate = checks.length ? Math.round(checks.filter((check) => check.verdict === 'grounded').length / checks.length * 1000) / 1000 : null;
+  const traces = await readKnowledgeTraceStore();
+  return {
+    generatedAt: new Date().toISOString(),
+    target: KNOWLEDGE_GROUNDEDNESS_TARGET,
+    generated: results.length,
+    audited: audited.length,
+    skippedNoRefs: results.filter((result) => !result.refs).length,
+    skippedNoAnswer: results.filter((result) => result.refs && !result.answerLength).length,
+    claimSamples: checks.length,
+    groundednessRate: sentenceRate,
+    auditTraces: traces.traces.filter((trace) => trace.tool === 'knowledge_audit').length,
+    results
+  };
 }
 
 async function recordKnowledgeFeedback(raw) {
@@ -3654,9 +4283,7 @@ function makeKnowledgeSearchTool() {
         confidence: KNOWLEDGE_CONFIDENCES.includes(entry.computedConfidence) ? entry.computedConfidence : KNOWLEDGE_CONFIDENCES.includes(entry.confidence) ? entry.confidence : 'medium',
         summary: cleanTaskText(entry.summary || entry.snippet, 600)
       }));
-      if (!results.length) {
-        try { await addKnowledgeEvalCandidate(query); } catch (e) { /* best effort */ }
-      }
+      await knowledgeRecordMissCandidate(query, coverage, results.length > 0);
       return {
         query,
         coverage: coverage.level,
@@ -3985,12 +4612,16 @@ function syncOrchestrationTask(store, orchestration) {
   if (!orchestration || !orchestration.taskId) return;
   const index = store.tasks.findIndex((task) => task.id === orchestration.taskId);
   if (index < 0) return;
-  const status = orchestrationTaskStatus(orchestration.phase);
+  const derived = orchestrationTaskStatus(orchestration.phase);
+  const task = store.tasks[index];
   const now = new Date().toISOString();
+  const active = derived === 'in_progress' || derived === 'pending';
+  if (task.locked && !active) return;
   store.tasks[index] = cleanTask({
-    ...store.tasks[index],
-    status,
-    completedAt: status === 'completed' ? (orchestration.acceptedAt || now) : '',
+    ...task,
+    status: derived,
+    locked: active ? false : task.locked,
+    completedAt: derived === 'completed' ? (orchestration.acceptedAt || now) : '',
     blockedReason: orchestration.phase === 'failed' ? (orchestration.runtimeError || 'AI 协作执行失败') : (orchestration.phase === 'cancelled' ? 'AI 协作已取消' : (store.tasks[index] && store.tasks[index].blockedReason) || ''),
     updatedAt: now
   });
@@ -4038,6 +4669,7 @@ function cleanOrchestrationAgent(raw, fallbackName, fallbackRole) {
     provider: cleanTaskText(value.provider, 160),
     model: cleanTaskText(value.model, 240),
     modelReason: cleanTaskText(value.modelReason, 1000),
+    readOnly: value.readOnly !== false,
     usedProvider: cleanTaskText(value.usedProvider, 160),
     usedModel: cleanTaskText(value.usedModel, 240),
     dependsOn: Array.isArray(value.dependsOn) ? [...new Set(value.dependsOn.map((item) => cleanTaskText(item, 120)).filter(Boolean))].slice(0, 12) : [],
@@ -4187,6 +4819,7 @@ function cleanOrchestration(raw) {
     knowledgeMeta: raw.knowledgeMeta && typeof raw.knowledgeMeta === 'object' ? cleanKnowledgeAutoMeta(raw.knowledgeMeta) : null,
     knowledgeCitationAudit: raw.knowledgeCitationAudit && typeof raw.knowledgeCitationAudit === 'object' ? raw.knowledgeCitationAudit : null,
     modelProbe: cleanModelProbe(raw.modelProbe),
+    modelPolicy: cleanTaskText(raw.modelPolicy, 40),
     projectPath: String(raw.projectPath || ''),
     sourceSessionId: String(raw.sourceSessionId || ''),
     taskId: String(raw.taskId || ''),
@@ -4601,6 +5234,7 @@ async function mutateTasks(body) {
       mainAgent: { ...plan.mainAgent, status: 'planned', sessionId: '', output: '', error: '' },
       workers: plan.workers.map((worker) => ({ ...worker, status: 'planned', sessionId: '', output: '', error: '' })),
       maxParallel: plan.maxParallel,
+      modelPolicy: cleanTaskText(body.modelPolicy, 40) || 'balanced',
       planVersions: [...current.planVersions, { version: nextVersion, plan, feedback: cleanTaskText(body.feedback, 6000), createdAt: now }],
       feedback: cleanTaskText(body.feedback, 6000),
       finalReport: '',
@@ -4628,14 +5262,17 @@ async function mutateTasks(body) {
     if (index < 0) throw new Error('orchestration not found');
     const current = store.orchestrations[index];
     if (!current.plan || current.workers.length === 0) throw new Error('generate an AI plan before execution');
-    if (!current.sourceSessionId) throw new Error('source session required for agent execution');
+    const sourceSessionId = cleanTaskText(current.sourceSessionId || body.sourceSessionId, 160);
+    if (!sourceSessionId) throw new Error('source session required for agent execution');
     if (current.phase === 'running') throw new Error('orchestration is already running');
+    const enforceReadOnly = body.readOnlyOverride === 'enforce';
     store.orchestrations[index] = cleanOrchestration({
       ...current,
+      sourceSessionId,
       phase: 'running',
       attempt: current.attempt + 1,
       mainAgent: { ...current.mainAgent, status: 'waiting', sessionId: '', output: '', error: '', usedProvider: '', usedModel: '', startedAt: '', completedAt: '' },
-      workers: current.workers.map((worker) => ({ ...worker, status: 'planned', sessionId: '', output: '', error: '', usedProvider: '', usedModel: '', startedAt: '', completedAt: '' })),
+      workers: current.workers.map((worker) => ({ ...worker, readOnly: enforceReadOnly ? true : worker.readOnly, status: 'planned', sessionId: '', output: '', error: '', usedProvider: '', usedModel: '', startedAt: '', completedAt: '' })),
       finalReport: '',
       runtimeError: '',
       startedAt: now,
@@ -4686,6 +5323,31 @@ async function mutateTasks(body) {
       attempt: current.attempt + 1,
       mainAgent: { ...current.mainAgent, status: 'waiting', sessionId: '', output: '', error: '', startedAt: '', completedAt: '' },
       workers: resumedWorkers,
+      finalReport: '',
+      runtimeError: '',
+      startedAt: now,
+      completedAt: '',
+      updatedAt: now
+    });
+  } else if (action === 'orchestration_worker_retry') {
+    const index = store.orchestrations.findIndex((item) => item.id === body.id);
+    if (index < 0) throw new Error('orchestration not found');
+    const current = store.orchestrations[index];
+    if (current.phase !== 'failed' && current.phase !== 'cancelled') throw new Error('只有异常中止或已终止的协作任务可以重试单个子代理');
+    if (!current.plan || current.workers.length === 0) throw new Error('没有可执行的方案，请重新生成方案');
+    const workerId = String(body.workerId || '');
+    const target = (current.workers || []).find((worker) => worker.id === workerId);
+    if (!target) throw new Error('子代理不存在');
+    if (target.status === 'completed') throw new Error('该子代理已成功完成，无需重试');
+    const retriedWorkers = current.workers.map((worker) => worker.id === workerId ? {
+      ...worker, status: 'planned', sessionId: '', output: '', error: '', startedAt: '', completedAt: '', attempts: 1
+    } : worker);
+    store.orchestrations[index] = cleanOrchestration({
+      ...current,
+      phase: 'running',
+      attempt: current.attempt + 1,
+      mainAgent: { ...current.mainAgent, status: 'waiting', sessionId: '', output: '', error: '', startedAt: '', completedAt: '' },
+      workers: retriedWorkers,
       finalReport: '',
       runtimeError: '',
       startedAt: now,
@@ -5204,6 +5866,7 @@ async function generateOrchestrationPlan(record, feedback, models, policy) {
     '只输出一个 JSON 对象，不要 Markdown，不要解释。主代理负责最终汇总和质量控制；子代理负责边界清晰的工作包。',
     '优先 2-4 个子代理，最多 6 个。可并行的任务不要添加依赖；确有先后关系时，dependsOn 使用子代理 name。',
     '每个任务必须带明确验收标准，不得声称已经执行。',
+    '每个子代理必须声明 readOnly：纯分析/检索/评估/调研类工作包填 true（默认）；需要写文件、执行命令、修改代码或修改配置的工作包填 false。只有 readOnly=false 的子代理才会在用户确认后获得写权限。',
     '如果提供了模型目录，只能从目录中为代理选择 provider/model；没有合适选项时两者留空以继承父代理。',
     record.quick ? '快速问答模式：这是简单问题，不要拆解任务。只生成 1 个名为「直接回答」的子代理（role 用「回答者」）和 1 个主代理，主代理 mission 写「直接回答用户问题并给出可执行的结论」。' : ''
   ].join('\n');
@@ -5226,7 +5889,7 @@ async function generateOrchestrationPlan(record, feedback, models, policy) {
       strategy: '执行策略与汇总方式',
       maxParallel: 3,
       mainAgent: { name: '主代理名称', role: '主代理角色', mission: '主代理职责', rationale: '为什么由该角色主导', provider: '', model: '', modelReason: '选择或继承理由' },
-      workers: [{ name: '子代理名称', role: '专业角色', task: '完整工作包（包含必要上下文）', dependsOn: [], acceptance: '该子任务的验收标准', provider: '', model: '', modelReason: '选择或继承理由' }],
+      workers: [{ name: '子代理名称', role: '专业角色', task: '完整工作包（包含必要上下文）', dependsOn: [], readOnly: true, acceptance: '该子任务的验收标准', provider: '', model: '', modelReason: '选择或继承理由' }],
       acceptanceCriteria: ['最终由用户验收的标准']
     }, null, 2)
   ].filter(Boolean).join('\n\n');
@@ -5244,15 +5907,16 @@ async function generateOrchestrationPlan(record, feedback, models, policy) {
     }
   })());
   const allowed = new Set(modelList.map((item) => item.provider + '\u0000' + item.id));
-  const validateAgentModel = (agent) => {
+  const validateAgentModel = (agent, isMain) => {
     if (!agent) return agent;
-    if (policy === 'manual') return { ...agent, provider: '', model: '', modelReason: '等待用户手动选择，当前继承主会话' };
+    const manualTarget = policy === 'manual' || (policy === 'main-manual' && isMain);
+    if (manualTarget) return { ...agent, provider: '', model: '', modelReason: policy === 'main-manual' ? '主代理模型等待手动选择，子代理自动分配' : '等待用户手动选择，当前继承主会话' };
     if (!agent.provider || !agent.model) return { ...agent, provider: '', model: '', modelReason: agent.modelReason || '继承主会话模型' };
     if (unhealthy(agent.provider, agent.model)) return { ...agent, provider: '', model: '', modelReason: 'AI 建议的模型近期执行失败较多，已安全回退为继承主会话' };
     if (!allowed.has(agent.provider + '\u0000' + agent.model)) return { ...agent, provider: '', model: '', modelReason: 'AI 建议的模型当前不可用，已安全回退为继承主会话' };
     return agent;
   };
-  return cleanOrchestrationPlan({ ...plan, mainAgent: validateAgentModel(plan.mainAgent), workers: plan.workers.map(validateAgentModel) });
+  return cleanOrchestrationPlan({ ...plan, mainAgent: validateAgentModel(plan.mainAgent, true), workers: plan.workers.map((worker) => validateAgentModel(worker, false)) });
 }
 
 function queueOrchestrationPatch(id, update) {
@@ -5306,6 +5970,7 @@ async function workerPrompt(orchestration, worker) {
     '总目标：\n' + orchestration.idea,
     '你的任务：\n' + worker.mission,
     worker.acceptance ? '你的验收标准：\n' + worker.acceptance : '',
+    worker.readOnly ? '只读模式：你是分析型子代理，禁止任何文件写入、代码修改、命令执行或状态变更；只允许读取、检索、分析与联网查询，最终产出报告。若任务确实需要写操作，在交接报告中明确说明，由主代理和用户决定。' : '',
     dependencyContext ? '依赖任务的结果：\n' + dependencyContext : '',
     (orchestration.sourceRefs || []).length ? '凡是依赖上述引用资料的事实、判断或建议，必须紧邻标注 [来源: 对应名称]；无法从来源确认时明确写“未验证”，不得补造。' : '',
     orchestration.knowledgeMeta ? '知识库引用规则：知识库是优先参考但不是唯一来源——知识库覆盖不全或需要更全面/更新的信息时，可结合自身知识或调用 web_search / web_fetch 联网补充；引用知识库内容时标注 [知识N《标题》· 置信度 X] 或 [来源: 标题]，引用联网内容时标注来源 URL；无法确认的内容标注“未验证”。' : '',
@@ -5326,24 +5991,62 @@ function orchestrationFailureDetail(result) {
   const parts = ['stopReason=' + String(result.stopReason || '')];
   if (result.error) parts.push('error=' + String(result.error));
   if (result.message) parts.push('message=' + String(result.message));
+  if (result.failure) parts.push('failure=' + String(result.failure.message || result.failure));
+  const reasonError = result.reason && result.reason.error;
+  if (reasonError) parts.push('reason=' + String(reasonError.message || reasonError));
   if (Array.isArray(result.errors) && result.errors.length) parts.push('errors=' + result.errors.slice(0, 3).map((entry) => String(entry && (entry.message || entry))).join(' | '));
   return parts.join('；');
 }
 
+async function modelHealthSnapshot() {
+  try { const store = await readTaskStore(); return store.modelHealth || {}; } catch (e) { return {}; }
+}
+
+function modelUnhealthy(health, provider, model) {
+  const entry = health[String(provider || '') + '\u0000' + String(model || '')];
+  if (!entry || entry.failures < 2) return false;
+  const age = Date.now() - Date.parse(entry.lastFailedAt || 0);
+  return Number.isFinite(age) && age < 7 * 86400000;
+}
+
+async function pickOrchestrationFailoverModel(worker, triedKeys) {
+  if (!ORCHESTRATION_MODEL_FAILOVER_ENABLED) return null;
+  if (!worker) return null;
+  let catalog = [];
+  try { catalog = await listOrchestrationModels(); } catch (e) { return null; }
+  if (!catalog.length) return null;
+  const health = await modelHealthSnapshot();
+  const candidates = catalog.map((item) => ({ ...item, key: item.provider + '\u0000' + item.id }))
+    .filter((item) => !triedKeys.has(item.key) && !modelUnhealthy(health, item.provider, item.id));
+  if (!candidates.length) return null;
+  candidates.sort((a, b) => {
+    const sameA = worker.provider ? (a.provider === worker.provider ? 0 : 1) : 0;
+    const sameB = worker.provider ? (b.provider === worker.provider ? 0 : 1) : 0;
+    if (sameA !== sameB) return sameA - sameB;
+    return String(a.name || a.id).localeCompare(String(b.name || b.id));
+  });
+  return candidates[0];
+}
+
 async function runOrchestrationWorker(orchestrationId, workerId, parent, controller) {
-  const maxAttempts = 1 + ORCHESTRATION_WORKER_MAX_RETRIES;
+  const maxSameRetries = ORCHESTRATION_WORKER_MAX_RETRIES;
+  const maxFailovers = ORCHESTRATION_MODEL_FAILOVER_MAX;
+  const triedKeys = new Set();
   let run = null;
   let attemptsDone = 0;
+  let sameRetries = 0;
+  let failovers = 0;
   let lastError = '';
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+  for (let attempt = 1; ; attempt++) {
     attemptsDone = attempt;
     if (controller.signal.aborted) break;
     const startedAt = new Date().toISOString();
     let finished = false;
+    let worker = null;
     try {
       const current = await orchestrationSnapshot(orchestrationId);
       if (!current || current.phase !== 'running') return;
-      const worker = current.workers.find((item) => item.id === workerId);
+      worker = current.workers.find((item) => item.id === workerId);
       if (!worker) throw new Error('worker not found');
       let poolEntry = null;
       try {
@@ -5352,12 +6055,13 @@ async function runOrchestrationWorker(orchestrationId, workerId, parent, control
       } catch (e) { /* pool is optional */ }
       const effectiveProvider = worker.provider || (poolEntry && poolEntry.provider) || '';
       const effectiveModel = worker.model || (poolEntry && poolEntry.model) || '';
+      if (effectiveProvider && effectiveModel) triedKeys.add(effectiveProvider + '\u0000' + effectiveModel);
       await queueOrchestrationPatch(orchestrationId, (item) => ({
         ...item,
         workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: 'running', startedAt, error: '', attempts: attempt } : entry),
         updatedAt: startedAt
       }));
-      await appendOrchestrationLog(orchestrationId, 'info', '子代理「' + worker.name + '」第 ' + attempt + ' 次执行开始', worker.id);
+      await appendOrchestrationLog(orchestrationId, 'info', '子代理「' + worker.name + '」第 ' + attempt + ' 次执行开始' + (effectiveProvider && effectiveModel ? '（模型 ' + effectiveProvider + '/' + effectiveModel + '）' : ''), worker.id);
       const spawned = await orchestrationSubagents.start('spawn', {
         label: worker.name,
         prompt: [{ type: 'text', text: await workerPrompt(current, worker) }],
@@ -5399,22 +6103,44 @@ async function runOrchestrationWorker(orchestrationId, workerId, parent, control
     } finally {
       if (run) { await run.dispose().catch(() => {}); run = null; }
     }
-    if (finished && attempt < maxAttempts) {
-      await appendOrchestrationLog(orchestrationId, 'warn', '子代理 ' + workerId + '：' + lastError + '；准备第 ' + (attempt + 1) + ' 次重试', workerId);
-      await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
-        ...item,
-        workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: 'running', error: lastError + '；准备重试（第 ' + (attempt + 1) + ' 次）' } : entry),
-        updatedAt: new Date().toISOString()
-      })).catch(() => {});
-      await new Promise((resolvePromise) => setTimeout(resolvePromise, 1200 * attempt));
-      continue;
-    }
     if (finished) {
+      if (controller.signal.aborted) break;
+      if (failovers < maxFailovers) {
+        const latest = await orchestrationSnapshot(orchestrationId).catch(() => null);
+        const latestWorker = latest ? (latest.workers || []).find((entry) => entry.id === workerId) : null;
+        if (latestWorker && latestWorker.provider && latestWorker.model) triedKeys.add(latestWorker.provider + '\u0000' + latestWorker.model);
+        const nextModel = await pickOrchestrationFailoverModel(latestWorker || worker, triedKeys);
+        if (nextModel) {
+          failovers++;
+          triedKeys.add(nextModel.key);
+          const origin = latestWorker && latestWorker.provider && latestWorker.model ? latestWorker.provider + '/' + latestWorker.model : '继承主会话';
+          await appendOrchestrationLog(orchestrationId, 'warn', '子代理 ' + workerId + '：' + lastError + '；自动切换模型 ' + nextModel.provider + '/' + nextModel.id + '（原 ' + origin + '）重试', workerId);
+          await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
+            ...item,
+            workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, provider: nextModel.provider, model: nextModel.id, modelReason: '失败后自动切换（原 ' + origin + '）', status: 'running', error: lastError + '；准备切换模型重试', attempts: attempt + 1 } : entry),
+            updatedAt: new Date().toISOString()
+          })).catch(() => {});
+          await new Promise((resolvePromise) => setTimeout(resolvePromise, 800));
+          continue;
+        }
+      }
+      if (sameRetries < maxSameRetries) {
+        sameRetries++;
+        const nextNumber = sameRetries + failovers + 1;
+        await appendOrchestrationLog(orchestrationId, 'warn', '子代理 ' + workerId + '：' + lastError + '；准备第 ' + nextNumber + ' 次重试（同模型）', workerId);
+        await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
+          ...item,
+          workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: 'running', error: lastError + '；准备重试（第 ' + nextNumber + ' 次）' } : entry),
+          updatedAt: new Date().toISOString()
+        })).catch(() => {});
+        await new Promise((resolvePromise) => setTimeout(resolvePromise, 1200 * nextNumber));
+        continue;
+      }
       await appendOrchestrationLog(orchestrationId, 'error', '子代理 ' + workerId + ' 最终失败：' + lastError, workerId);
       const completedAt = new Date().toISOString();
       await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
         ...item,
-        workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: controller.signal.aborted ? 'cancelled' : 'failed', error: lastError, completedAt, attempts: attemptsDone } : entry),
+        workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: 'failed', error: lastError, completedAt, attempts: attemptsDone } : entry),
         updatedAt: completedAt
       })).catch(() => {});
       return;
@@ -5558,22 +6284,41 @@ async function runOrchestration(orchestrationId) {
       const completedAt = new Date().toISOString();
       const output = contentBlocksText(result.output);
       const successful = result.stopReason === 'completed';
+      const failureDetail = orchestrationFailureDetail(result);
       const workerFailures = orchestration.workers.filter((worker) => worker.status !== 'completed').length;
       const knowledgeAutoConfig = await readKnowledgeAutoConfig();
+      let citationAudit = null;
+      if (successful && orchestration.knowledgeMeta) {
+        const lastUser = [...(orchestration.thread || [])].reverse().find((entry) => entry.role === 'user');
+        citationAudit = await auditKnowledgeCitationsDeep(output, orchestration.knowledgeRefs, {
+          level: knowledgeAutoConfig.auditLevel,
+          query: orchestration.knowledgeMeta.query || (lastUser ? lastUser.text : ''),
+          sessionId: orchestration.mainAgent ? orchestration.mainAgent.sessionId || '' : '',
+          autoFix: true
+        }).catch((error) => {
+          diag('knowledge audit deep failed: ' + String((error && error.message) || error));
+          return successful && orchestration.knowledgeMeta ? auditKnowledgeCitations(output, orchestration.knowledgeRefs, knowledgeAutoConfig.auditLevel) : null;
+        });
+      }
       await queueOrchestrationPatch(orchestrationId, (item) => {
         if (item.phase === 'cancelled') return item;
-        const mainAgent = { ...item.mainAgent, status: successful ? 'completed' : 'failed', output, error: successful ? '' : ('主代理结束原因：' + result.stopReason), completedAt };
-        const citationAudit = successful && item.knowledgeMeta ? auditKnowledgeCitations(output, item.knowledgeRefs, knowledgeAutoConfig.auditLevel) : null;
+        const mainAgent = { ...item.mainAgent, status: successful ? 'completed' : 'failed', output, error: successful ? '' : ('主代理结束原因：' + failureDetail), completedAt };
         const traceMissing = successful && ((item.sourceRefs || []).length > 0 || item.knowledgeMeta) && !/\[来源:\s*[^\]]+\]/.test(output) && !/\[知识\d+[^\]]*\]/.test(output);
         const warnings = [];
         if (successful && workerFailures > 0) warnings.push(workerFailures + ' 个子代理未正常完成，请在验收时重点检查。');
         if (traceMissing) warnings.push('生成侧溯源门未通过：最终报告使用了引用资料或知识库条目，但没有找到 [来源: 名称] 或 [知识N] 标注，请要求主代理补充后再验收。');
-        if (citationAudit && !citationAudit.valid) warnings.push('知识库引用审计未通过：' + [...citationAudit.missing, ...citationAudit.invalid.map((item) => item.id + ' ' + item.reason)].join('；'));
-        const runtimeError = successful ? warnings.join('\n') : ('主代理结束原因：' + result.stopReason);
+        if (citationAudit && !citationAudit.valid) {
+          const reasons = [...(citationAudit.missing || []), ...(citationAudit.invalid || []).map((entry) => entry.id + ' ' + entry.reason)];
+          if (citationAudit.groundednessSummary && citationAudit.groundednessSummary.violations > 0) {
+            reasons.push('逐句 groundedness 未达标（' + citationAudit.groundednessSummary.grounded + '/' + citationAudit.groundednessSummary.claims + '，目标 ≥ ' + (citationAudit.groundednessTarget ?? 0.85) + '），' + citationAudit.groundednessSummary.violations + ' 个结论句缺少证据支撑');
+          }
+          warnings.push('知识库引用审计未通过：' + reasons.join('；'));
+        }
+        const runtimeError = successful ? warnings.join('\n') : ('主代理结束原因：' + failureDetail);
         const next = { ...item, phase: successful ? 'review' : 'failed', mainAgent, finalReport: output, runtimeError, knowledgeCitationAudit: citationAudit, completedAt, updatedAt: completedAt };
         return { ...next, runs: runsWithSnapshot(next, successful ? 'review' : 'failed', completedAt) };
       });
-      await appendOrchestrationLog(orchestrationId, successful ? 'info' : 'error', successful ? '主代理完成汇总，进入验收' : '主代理汇总失败：' + result.stopReason, orchestration.mainAgent.id);
+      await appendOrchestrationLog(orchestrationId, successful ? 'info' : 'error', successful ? '主代理完成汇总，进入验收' : '主代理汇总失败：' + failureDetail, orchestration.mainAgent.id);
     } finally {
       if (mainRun) await mainRun.dispose().catch(() => {});
     }
@@ -5651,15 +6396,16 @@ async function continueOrchestration(orchestrationId) {
     const completedAt = new Date().toISOString();
     const output = contentBlocksText(result.output);
     const successful = result.stopReason === 'completed';
+    const failureDetail = orchestrationFailureDetail(result);
     await queueOrchestrationPatch(orchestrationId, (item) => {
       if (item.phase === 'cancelled') return item;
       return cleanOrchestration({
         ...item,
         phase: successful ? 'review' : 'failed',
-        mainAgent: { ...item.mainAgent, status: successful ? 'completed' : 'failed', output, error: successful ? '' : ('主代理优化结束原因：' + result.stopReason), completedAt },
+        mainAgent: { ...item.mainAgent, status: successful ? 'completed' : 'failed', output, error: successful ? '' : ('主代理优化结束原因：' + failureDetail), completedAt },
         thread: [...(item.thread || []), { role: 'main', text: output, at: completedAt }],
         finalReport: output,
-        runtimeError: successful ? '' : ('主代理优化结束原因：' + result.stopReason),
+        runtimeError: successful ? '' : ('主代理优化结束原因：' + failureDetail),
         completedAt,
         updatedAt: completedAt
       });
@@ -6112,6 +6858,9 @@ function makeRoutes() {
           }
           if (body.action === 'orchestration_resume') {
             void runOrchestration(body.id).catch((error) => diag('orchestration resume failed: ' + String((error && error.stack) || error)));
+          }
+          if (body.action === 'orchestration_worker_retry') {
+            void runOrchestration(body.id).catch((error) => diag('orchestration worker retry failed: ' + String((error && error.stack) || error)));
           }
           if (body.action === 'orchestration_continue') {
             void continueOrchestration(body.id).catch((error) => diag('orchestration continue failed: ' + String((error && error.stack) || error)));
@@ -6734,8 +7483,8 @@ function makeRoutes() {
             maxIterations: body.maxIterations,
             thresholds: body.thresholds
           });
-          if (result && !result.error && (!result.results || !result.results.length)) {
-            try { await addKnowledgeEvalCandidate(body.query); } catch (e) { /* best effort */ }
+          if (result && !result.error) {
+            await knowledgeRecordMissCandidate(body.query, result.coverage, (result.results || []).length > 0);
           }
           writeJson(res, 200, result);
         } catch (error) { fail(res, error); }
@@ -6968,7 +7717,7 @@ function makeRoutes() {
         let body;
         try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
         try {
-          writeJson(res, 200, await runKnowledgeEvalSet({ topK: body.topK }));
+          writeJson(res, 200, await runKnowledgeEvalSet({ topK: body.topK, rerank: body.rerank }));
         } catch (error) { fail(res, error); }
       }
     },
@@ -6984,7 +7733,92 @@ function makeRoutes() {
         if (!answer) return bad(res, 'empty', 'answer required');
         try {
           const config = await readKnowledgeAutoConfig();
-          writeJson(res, 200, auditKnowledgeCitations(answer, body.refs, body.level || config.auditLevel));
+          const level = body.level || config.auditLevel;
+          const deep = body.deep === true || level === 'ref+groundedness';
+          const audit = deep
+            ? await auditKnowledgeCitationsDeep(answer, body.refs, {
+                level,
+                query: cleanTaskText(body.query, 500),
+                sessionId: cleanTaskText(body.sessionId, 160),
+                autoFix: body.autoFix !== false
+              })
+            : auditKnowledgeCitations(answer, body.refs, level);
+          writeJson(res, 200, audit);
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/groundedness',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        try {
+          if (req.method !== 'GET') return bad(res, 'method', 'GET required');
+          const taskStore = await readTaskStore();
+          const audits = (taskStore.orchestrations || [])
+            .map((item) => item.knowledgeCitationAudit)
+            .filter((audit) => audit && typeof audit === 'object' && audit.level === 'ref+groundedness');
+          const traceStore = await readKnowledgeTraceStore();
+          const traceAudits = traceStore.traces.filter((trace) => trace.tool === 'knowledge_audit');
+          const traceChecks = traceAudits.flatMap((trace) => trace.result && Array.isArray(trace.result.checks) ? trace.result.checks : []);
+          const orchestrationChecks = audits.flatMap((audit) => Array.isArray(audit.groundednessChecks) ? audit.groundednessChecks : []);
+          const checks = traceChecks.length ? traceChecks : orchestrationChecks;
+          const rate = (list) => {
+            const eligible = list.filter((check) => check.verdict !== 'abstained');
+            return eligible.length ? Math.round(eligible.filter((check) => check.verdict === 'grounded').length / eligible.length * 1000) / 1000 : null;
+          };
+          const samples = [
+            ...audits.slice(-100).map((audit) => ({
+              source: 'orchestration',
+              checkedAt: audit.checkedAt,
+              rate: audit.groundednessRate,
+              target: audit.groundednessTarget,
+              claims: audit.groundednessSummary,
+              fixed: audit.fixed,
+              method: audit.groundednessMethod,
+              checks: (Array.isArray(audit.groundednessChecks) ? audit.groundednessChecks : []).slice(0, 30).map((check) => ({ verdict: check.verdict, score: check.score, reason: check.reason }))
+            })),
+            ...traceAudits.slice(-100).map((trace) => ({
+              source: 'trace',
+              traceId: trace.id,
+              checkedAt: trace.endedAt,
+              rate: trace.result && trace.result.rate,
+              target: trace.result && trace.result.target,
+              claims: trace.result ? { claims: trace.result.claimCount, grounded: trace.result.grounded, violations: trace.result.violations, rate: trace.result.rate, method: trace.result.method } : null,
+              fixed: trace.result && trace.result.fixed,
+              method: trace.result && trace.result.method,
+              checks: trace.result && Array.isArray(trace.result.checks) ? trace.result.checks : []
+            }))
+          ].slice(-200);
+          writeJson(res, 200, {
+            target: KNOWLEDGE_GROUNDEDNESS_TARGET,
+            summary: {
+              orchestrationSamples: audits.length,
+              traceSamples: traceAudits.length,
+              claimSamples: checks.filter((check) => check.verdict !== 'abstained').length,
+              groundednessRate: rate(checks),
+              method: traceAudits.length ? (traceAudits[0].result && traceAudits[0].result.method || null) : null,
+              faithfulness: rate(checks),
+              completeness: (() => {
+                const values = traceAudits.map((trace) => Number(trace.result && trace.result.completeness)).filter((value) => Number.isFinite(value) && value >= 0 && value <= 1);
+                return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length * 1000) / 1000 : null;
+              })()
+            },
+            samples
+          });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/groundedness/generate',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        try {
+          writeJson(res, 200, await generateKnowledgeGroundednessSamples({ count: body.count, topK: body.topK }));
         } catch (error) { fail(res, error); }
       }
     },

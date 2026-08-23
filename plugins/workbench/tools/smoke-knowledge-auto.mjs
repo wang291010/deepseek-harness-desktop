@@ -365,6 +365,16 @@ try {
     thresholds: { insufficient: 0.42, gray: 0.55 }, auditLevel: 'ref-only'
   });
 
+  // 5.1 零结果检索自动进候选池（自生长：聊天/搜索未命中沉淀）
+  const missToolHit = await knowledgeSearchTool.execute(
+    { query: '完全不存在的词xyz987654321' },
+    { signal: new AbortController().signal }
+  );
+  assert.equal(missToolHit.results.length, 0, 'nonsense query should return no results');
+  const evalAfterMiss = await call('/api/dsh-workbench/knowledge/eval', 'GET');
+  const missCandidate = evalAfterMiss.candidates.find((item) => item.question.includes('完全不存在的词xyz987654321'));
+  assert.ok(missCandidate, 'zero-result knowledge_search should be recorded into the candidate pool');
+
   // 5. orchestration_create attaches knowledgeRefs automatically.
   const created = await call('/api/dsh-workbench/tasks/mutate', 'POST', {
     action: 'orchestration_create',

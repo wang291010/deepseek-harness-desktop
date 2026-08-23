@@ -83,6 +83,19 @@ async function call(path, method, body, query = '') {
   return data;
 }
 
+async function callRawStatus(path, method, body) {
+  const route = routes.get(path);
+  assert(route, `route missing: ${path}`);
+  let status = 0;
+  let text = '';
+  const res = {
+    writeHead(code) { status = code; },
+    end(value) { text += value || ''; }
+  };
+  await route.handler(request(method, path, body), res);
+  return { status, text };
+}
+
 try {
   const { apply } = await import('../lib/host/index.js?' + Date.now());
   apply(ctx);
@@ -193,7 +206,77 @@ try {
   assert.ok(refinedState.thread[1].text.length > 0);
   assert.ok(agentPrompts.some((text) => text.includes('用户本次优化要求')), 'continuation prompt should include the new instruction');
   assert.ok(agentPrompts.some((text) => text.includes('把报告第 2 部分的方案再优化一下')), 'continuation prompt should carry the user message');
+
+  // Single-worker retry: simulate a run where only one worker failed, then retry it alone.
+  const retryStore = JSON.parse(await readFile(storeFile, 'utf8'));
+  const retryTarget = retryStore.orchestrations[0];
+  retryTarget.phase = 'failed';
+  retryTarget.runtimeError = '模拟：第二个子代理失败';
+  retryTarget.workers = retryTarget.workers.map((worker, index) => index === 0
+    ? { ...worker, status: 'completed', output: '第一步已完成', completedAt: new Date().toISOString() }
+    : { ...worker, status: 'failed', error: '模拟失败：上游超时', completedAt: new Date().toISOString() });
+  retryTarget.mainAgent = { ...retryTarget.mainAgent, status: 'failed', error: '模拟失败', completedAt: new Date().toISOString() };
+  retryTarget.feedback = '把方案精简为两个子代理，体验与安全并行';
+  retryTarget.completedAt = new Date().toISOString();
+  await writeFile(storeFile, JSON.stringify(retryStore, null, 2) + '\n', 'utf8');
+  const failedWorkerId = retryTarget.workers[1].id;
+  const retried = await call('/api/dsh-workbench/tasks/mutate', 'POST', {
+    action: 'orchestration_worker_retry', scope: 'all', projectPath: 'D:\\demo', id, workerId: failedWorkerId
+  });
+  assert.equal(retried.orchestrations[0].phase, 'running', 'worker retry should set phase running');
+  assert.equal(retried.orchestrations[0].attempt, retryTarget.attempt + 1);
+  assert.equal(retried.orchestrations[0].workers[0].status, 'completed', 'completed worker should be kept on single retry');
+  assert.equal(retried.orchestrations[0].workers[1].status, 'planned', 'failed worker should be reset to planned');
+  let retriedState = null;
+  for (let i = 0; i < 100; i += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    const snap = await call('/api/dsh-workbench/tasks/list', 'GET', undefined, '?scope=all&projectPath=D%3A%5Cdemo');
+    const rec = snap.orchestrations[0];
+    if (rec.phase === 'review' || rec.phase === 'failed') { retriedState = rec; break; }
+  }
+  assert(retriedState, 'worker retry should reach a terminal state');
+  assert.equal(retriedState.phase, 'review');
+  assert.equal(retriedState.workers.filter((worker) => worker.status === 'completed').length, 2, 'both workers should complete after single retry');
+
+  // Orchestration without a source session can be started with a session fallback (bugfix C0026).
+  const noSession = await call('/api/dsh-workbench/tasks/mutate', 'POST', {
+    action: 'orchestration_create', scope: 'all', projectPath: 'D:\\demo', idea: '无会话编排回归测试'
+  });
+  const noSessionId = noSession.orchestrations.find((item) => item.idea === '无会话编排回归测试').id;
+  assert.equal(noSession.orchestrations.find((item) => item.id === noSessionId).sourceSessionId, '', 'orchestration should start without a session');
+  await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_plan', scope: 'all', projectPath: 'D:\\demo', id: noSessionId });
+  let noSessionState = null;
+  for (let i = 0; i < 50; i += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    const snap = await call('/api/dsh-workbench/tasks/list', 'GET', undefined, '?scope=all&projectPath=D%3A%5Cdemo');
+    const rec = snap.orchestrations.find((item) => item.id === noSessionId);
+    if (rec && rec.phase === 'planned') { noSessionState = rec; break; }
+  }
+  assert(noSessionState, 'no-session orchestration should still plan');
+  const startError = await callRawStatus('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_start', scope: 'all', projectPath: 'D:\\demo', id: noSessionId });
+  assert.notEqual(startError.status, 200, 'starting without any session should fail');
+  const started = await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_start', scope: 'all', projectPath: 'D:\\demo', id: noSessionId, sourceSessionId: 'session-2' });
+  const startedRec = started.orchestrations.find((item) => item.id === noSessionId);
+  assert.equal(startedRec.phase, 'running', 'starting with a session fallback should run');
+  assert.equal(startedRec.sourceSessionId, 'session-2', 'session fallback should be persisted');
+  await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_cancel', scope: 'all', projectPath: 'D:\\demo', id: noSessionId });
+
+  // Locked orchestration task keeps manual status across re-syncs (bugfix C0025).
+  const lockedOrch = await call('/api/dsh-workbench/tasks/mutate', 'POST', {
+    action: 'orchestration_create', scope: 'all', projectPath: 'D:\\demo', sourceSessionId: 'session-1', idea: '锁定覆盖回归测试'
+  });
+  const lockedId = lockedOrch.orchestrations[0].id;
+  await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_cancel', scope: 'all', projectPath: 'D:\\demo', id: lockedId });
+  let lockedTask = (await call('/api/dsh-workbench/tasks/list', 'GET', undefined, '?scope=all&projectPath=D%3A%5Cdemo')).tasks.find((task) => task.orchestrationId === lockedId);
+  assert.equal(lockedTask.status, 'blocked', 'cancelled orchestration task should be blocked');
+  await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'update', scope: 'all', projectPath: 'D:\\demo', id: lockedTask.id, patch: { status: 'completed', locked: true } });
+  await call('/api/dsh-workbench/tasks/mutate', 'POST', {
+    action: 'orchestration_create', scope: 'all', projectPath: 'D:\\demo', sourceSessionId: 'session-1', idea: '触发全量同步'
+  });
+  lockedTask = (await call('/api/dsh-workbench/tasks/list', 'GET', undefined, '?scope=all&projectPath=D%3A%5Cdemo')).tasks.find((task) => task.orchestrationId === lockedId);
+  assert.equal(lockedTask.status, 'completed', 'locked manual status should survive orchestration re-sync');
+
   console.log('orchestration smoke test passed');
 } finally {
-  await rm(tempHome, { recursive: true, force: true });
+  await rm(tempHome, { recursive: true, force: true, maxRetries: 8, retryDelay: 80 });
 }

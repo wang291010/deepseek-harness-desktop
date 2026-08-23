@@ -22,6 +22,8 @@ function opt(name, fallback) {
 const apiBase = opt('--api', '');
 const addQuestion = opt('--add', '');
 const expectedRaw = opt('--expected', '');
+const rerankMode = opt('--rerank', '');
+const gate = args.includes('--gate');
 
 async function callApi(path, method, body) {
   const response = await fetch(apiBase.replace(/\/+$/, '') + path, {
@@ -84,8 +86,9 @@ console.log('评测题：' + (store.items || []).length + ' 条；候选：' + (
 if (!(store.items || []).length) {
   console.log('（暂无评测题，用 --add 添加后再跑）');
 } else {
-  const report = await call('/api/dsh-workbench/knowledge/eval/run', 'POST', { topK: 5 });
+  const report = await call('/api/dsh-workbench/knowledge/eval/run', 'POST', { topK: 5, rerank: rerankMode || undefined });
   console.log('recall@5 = ' + report.recallAtK + '  平均 token = ' + report.avgTokens + '  平均耗时 = ' + report.avgLatencyMs + 'ms');
+  console.log('重排 = ' + (report.rerankMode || 'default') + '  top1 命中率 = ' + report.top1HitRate + '  平均 top1 相关性 = ' + (report.avgTop1Relevance ?? 'n/a'));
   console.log('平均覆盖 = ' + report.avgCoverage + '  平均检索 token = ' + report.avgRetrievalTokens + '  联网回退率 = ' + report.webFallbackRate + '  迭代率 = ' + report.iterativeRate);
   if (report.onlineAudit) {
     console.log('在线引用审计 = ' + report.onlineAudit.citationSamples + ' 条  有效率 = ' + (report.onlineAudit.citationValidRate ?? '待采样') + '  groundedness = ' + (report.onlineAudit.groundedness ?? '待采样'));
@@ -98,5 +101,18 @@ if (!(store.items || []).length) {
   }
   for (const item of report.results || []) {
     console.log('  ' + (item.hits === item.expected ? '✅' : '❌') + ' [' + item.hits + '/' + item.expected + '] ' + item.question.slice(0, 60));
+  }
+  if (gate) {
+    const failures = [];
+    if (report.items < 50) failures.push('评测题数 ' + report.items + ' < 50');
+    if (report.recallAtK < 0.9) failures.push('recall@5 ' + report.recallAtK + ' < 0.9');
+    if (report.top1HitRate !== undefined && report.top1HitRate < 0.75) failures.push('top1 命中率 ' + report.top1HitRate + ' < 0.75');
+    if (report.completeness !== undefined && report.completeness !== null && report.completeness < 0.8) failures.push('completeness ' + report.completeness + ' < 0.8');
+    if (report.faithfulness !== undefined && report.faithfulness !== null && report.faithfulness < 0.85) failures.push('faithfulness ' + report.faithfulness + ' < 0.85');
+    if (failures.length) {
+      console.error('离线门禁未通过：' + failures.join('；'));
+      process.exit(1);
+    }
+    console.log('离线门禁通过：题数 ' + report.items + '，recall@5 ' + report.recallAtK + '，top1 ' + report.top1HitRate);
   }
 }

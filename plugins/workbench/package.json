@@ -10,6 +10,7 @@
     "check": "node --check lib/client.js && eslint lib/client.js",
     "check:eslint": "eslint lib/client.js",
     "test:orchestration": "node tools/smoke-orchestration.mjs",
+    "test:worker-failover": "node tools/smoke-worker-failover.mjs",
     "test:style": "node tools/smoke-style.mjs",
     "test:client-load": "node tools/smoke-client-load.mjs",
     "test:watchdog": "node tools/smoke-watchdog.mjs",
