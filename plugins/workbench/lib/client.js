@@ -376,13 +376,13 @@ window.__ModuleLoader__.load({
       ".wb-tb-chips{display:flex;flex-wrap:wrap;gap:6px}",
       ".wb-tb-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;font-size:11px;background:var(--dsw-alias-interactive-bg-active,var(--dsw-alias-button-floating-fill));color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2)}",
       ".wb-tb-empty{font-size:12px;color:var(--dsw-alias-label-secondary)}",
-      ".wb-tb-distill{width:100%;height:34px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px dashed var(--dsw-alias-border-l2);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:not-allowed;font-family:inherit;font-size:12px;box-sizing:border-box}",
+      ".wb-tb-distill{width:100%;height:34px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--dsw-alias-accent-fill,var(--dsw-alias-border-l2));border-radius:8px;background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-inverted,#fff);cursor:pointer;font-family:inherit;font-size:12px;box-sizing:border-box}.wb-tb-distill:disabled{opacity:.5;cursor:not-allowed}",
+      ".wb-distill-form{display:grid;gap:7px}.wb-distill-form label{display:grid;gap:4px;font-size:10px;color:var(--dsw-alias-label-tertiary)}.wb-distill-form select,.wb-distill-form input{width:100%;height:31px;box-sizing:border-box;padding:0 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:11px inherit}.wb-distill-inline{display:grid;grid-template-columns:1fr 74px;gap:6px}.wb-distill-note{padding:7px 8px;border-radius:8px;background:var(--dsw-alias-bg-base);font-size:10px;line-height:1.55;color:var(--dsw-alias-label-secondary)}.wb-distill-history{display:grid;gap:5px}.wb-distill-history-row{display:grid;grid-template-columns:1fr auto;gap:6px;padding:6px 0;border-top:1px solid var(--dsw-alias-border-l1);font-size:10px}.wb-distill-history-row small{color:var(--dsw-alias-label-tertiary)}.wb-distill-modal-box{width:min(980px,96vw);max-height:90vh}.wb-distill-modal-body{display:flex!important;flex-direction:column;overflow:auto;padding-right:4px}.wb-distill-summary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--dsw-alias-label-secondary)}.wb-distill-review-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.wb-distill-candidates{display:grid;gap:9px}.wb-distill-candidate{display:grid;grid-template-columns:22px 110px 130px minmax(0,1fr);gap:7px;padding:10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-2)}.wb-distill-candidate>input[type=checkbox]{margin-top:9px}.wb-distill-candidate select,.wb-distill-candidate input[type=text],.wb-distill-candidate textarea{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);border-radius:7px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:10px/1.5 inherit}.wb-distill-candidate select,.wb-distill-candidate input[type=text]{height:31px;padding:0 7px}.wb-distill-candidate textarea{grid-column:2/-1;min-height:92px;padding:8px;resize:vertical}.wb-distill-evidence{grid-column:2/-1;font-size:9px;line-height:1.5;color:var(--dsw-alias-label-tertiary)}.wb-distill-warning{grid-column:2/-1;padding:6px 8px;border-radius:7px;background:rgba(255,159,10,.1);color:#d17a00;font-size:9px}.wb-distill-empty{padding:32px;text-align:center;color:var(--dsw-alias-label-secondary);font-size:12px}@media(max-width:760px){.wb-distill-candidate{grid-template-columns:22px 1fr}.wb-distill-candidate select,.wb-distill-candidate input[type=text],.wb-distill-candidate textarea,.wb-distill-evidence,.wb-distill-warning{grid-column:2/-1}}",
       ".wb-tb-reopen{position:absolute;right:8px;top:50%;transform:translateY(-50%);z-index:12;width:30px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;background:var(--dsw-alias-button-elevated-fill);color:var(--dsw-alias-label-secondary);cursor:pointer;opacity:.75;box-shadow:var(--dsw-shadow-lv1)}",
       ".wb-tb-reopen:hover{opacity:1;color:var(--dsw-alias-label-primary)}",
       // ---- toolbar tabs (P1) ----
-      ".wb-tb-tabs{flex:1;min-width:0;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}",
-      ".wb-tb-tabs::-webkit-scrollbar{display:none}",
-      ".wb-tb-tab{flex:none;height:26px;padding:0 9px;border:none;border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-family:inherit;font-size:12px;font-weight:500;white-space:nowrap}",
+      ".wb-tb-tabs{flex:1;min-width:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;overflow:visible}",
+      ".wb-tb-tab{min-width:0;width:100%;height:26px;padding:0 4px;border:none;border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-family:inherit;font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
       ".wb-tb-tab:hover{background:var(--dsw-alias-interactive-bg-hover)}",
       ".wb-tb-tab-active{background:var(--dsw-alias-interactive-bg-active,var(--dsw-alias-button-floating-fill));color:var(--dsw-alias-label-primary)}",
       // ---- expandable tool rows ----
@@ -592,6 +592,9 @@ window.__ModuleLoader__.load({
       ".wb-collab-log-toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}.wb-collab-log-toolbar input{flex:1;min-width:120px;height:28px;padding:0 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:6px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:11px inherit}.wb-collab-log-filter{height:26px;padding:0 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);font:10px inherit;cursor:pointer}.wb-collab-log-filter-active{border-color:var(--dsw-alias-accent-fill);color:var(--dsw-alias-label-primary)}.wb-collab-log-list{display:grid;gap:4px;max-height:360px;overflow:auto}.wb-collab-log-row{display:grid;grid-template-columns:52px 1fr;gap:8px;padding:5px 7px;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;background:var(--dsw-alias-bg-layer-2);font-size:10px;line-height:1.5}.wb-collab-log-row small{color:var(--dsw-alias-label-tertiary)}.wb-collab-log-info{border-left:2px solid #30b650}.wb-collab-log-warn{border-left:2px solid #ff9f0a}.wb-collab-log-error{border-left:2px solid #ff453a}.wb-orch-agents-editor{width:100%;box-sizing:border-box;min-height:120px;margin-top:8px;padding:8px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;resize:vertical;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:10px/1.5 monospace}.wb-orch-agent-ref{display:block;margin:2px 0;color:var(--dsw-alias-label-tertiary);font-size:10px}.wb-collab-memory-actions{margin-bottom:10px}.wb-collab-memory-card{padding:9px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-2);display:grid;gap:6px}.wb-collab-memory-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.wb-collab-memory-head strong{font-size:12px;color:var(--dsw-alias-label-primary)}.wb-collab-memory-head small{font-size:10px;color:var(--dsw-alias-label-tertiary)}.wb-collab-memory-card p{margin:0;font-size:11px;line-height:1.6;color:var(--dsw-alias-label-secondary)}.wb-collab-memory-list{display:grid;gap:3px}.wb-collab-memory-finding{font-size:10px;color:var(--dsw-alias-label-secondary);line-height:1.5}.wb-monitor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}.wb-monitor-card{padding:12px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-2);display:grid;gap:8px;align-content:start}.wb-monitor-card h3{margin:0;font-size:12px;color:var(--dsw-alias-label-secondary);font-weight:600}.wb-monitor-big{font-size:20px;color:var(--dsw-alias-label-primary)}.wb-monitor-card small{color:var(--dsw-alias-label-tertiary);font-size:10px}.wb-monitor-wide{grid-column:1/-1}.wb-monitor-bars{display:flex;align-items:flex-end;gap:8px;height:96px}.wb-monitor-bar-col{flex:1;display:grid;gap:4px;align-items:end;justify-items:center;min-width:0}.wb-monitor-bar{width:100%;max-width:42px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--dsw-alias-accent-fill),color-mix(in srgb,var(--dsw-alias-accent-fill) 45%,var(--dsw-alias-bg-layer-2)))}.wb-monitor-bar-col small{font-size:9px;color:var(--dsw-alias-label-tertiary)}.wb-monitor-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}.wb-monitor-rows{display:grid;gap:6px}.wb-monitor-table{display:grid;gap:4px}.wb-monitor-table-row{display:grid;grid-template-columns:minmax(120px,2fr) repeat(4,minmax(60px,1fr));gap:8px;padding:6px 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-1);font-size:10px;color:var(--dsw-alias-label-secondary)}.wb-monitor-sessions{display:grid;gap:10px}.wb-alert-banner{padding:8px 12px;border:1px solid #ff9f0a;border-radius:10px;background:color-mix(in srgb,#ff9f0a 12%,transparent);color:var(--dsw-alias-label-primary);font-size:12px}.wb-alert-banner-global{margin:8px 16px 0}.wb-nav-btn{position:relative}.wb-nav-alert-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#ff453a}.wb-workflow-editor{display:grid;gap:8px}.wb-workflow-editor input,.wb-workflow-editor select{height:32px;padding:0 10px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:12px inherit}.wb-workflow-editor .wb-orch-agents-editor{margin-top:0}.wb-knowledge-group{display:grid;gap:10px;margin-top:14px}.wb-knowledge-group .wb-collab-list-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.wb-knowledge-group .wb-collab-list-head strong{font-size:12px;color:var(--dsw-alias-label-secondary)}.wb-knowledge-group .wb-collab-list-head span{font-size:11px;color:var(--dsw-alias-label-tertiary)}",
       ".wb-orch-main p,.wb-orch-worker p{margin:8px 0 0;font-size:10px;line-height:1.55;color:var(--dsw-alias-label-secondary);white-space:pre-wrap}",
       ".wb-knowledge-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}.wb-knowledge-search-row{display:grid;grid-template-columns:1fr 200px 80px auto;gap:8px}.wb-knowledge-result-card{padding:11px 12px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-2);display:grid;gap:6px}.wb-knowledge-result-card strong{font-size:12px;color:var(--dsw-alias-label-primary)}.wb-knowledge-snippet{font-size:10px;line-height:1.6;color:var(--dsw-alias-label-secondary)}.wb-knowledge-preview{position:fixed;inset:0;z-index:130;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:24px}.wb-knowledge-preview-box{width:min(720px,100%);max-height:88vh;overflow:auto;border:1px solid var(--dsw-alias-border-l2);border-radius:14px;background:var(--dsw-alias-bg-layer-1);padding:16px;display:grid;gap:10px}.wb-knowledge-preview-box textarea{min-height:320px}.wb-knowledge-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.wb-knowledge-filter button{height:26px;padding:0 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary);font:10px inherit;cursor:pointer}.wb-knowledge-filter button.wb-knowledge-filter-active{border-color:var(--dsw-alias-accent-fill);color:var(--dsw-alias-label-primary)}",
+      ".wb-review-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.wb-review-toolbar>input{height:34px;min-width:220px;flex:1;box-sizing:border-box;padding:0 10px;border:1px solid var(--dsw-alias-border-l2);border-radius:9px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:11px inherit}.wb-review-filter{position:relative}.wb-review-filter summary{height:32px;display:flex;align-items:center;padding:0 10px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;color:var(--dsw-alias-label-secondary);font-size:10px;cursor:pointer;list-style:none}.wb-review-filter-pop{position:absolute;z-index:9;right:0;top:38px;width:210px;display:grid;gap:7px;padding:10px;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;background:var(--dsw-alias-bg-layer-1);box-shadow:0 12px 30px rgba(0,0,0,.18)}.wb-review-filter-pop select{height:31px;padding:0 8px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:10px inherit}.wb-review-layout{position:relative;display:grid;grid-template-columns:280px minmax(420px,1fr);gap:10px;min-height:620px}.wb-review-pane{min-width:0;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-1);overflow:hidden}.wb-review-queue{max-height:720px;overflow:auto;padding:6px}.wb-review-row{width:100%;display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:7px;margin-bottom:5px;padding:10px 9px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--dsw-alias-label-primary);text-align:left;cursor:pointer}.wb-review-row:hover{background:var(--dsw-alias-interactive-bg-hover)}.wb-review-row-active{border-color:var(--dsw-alias-accent-fill);background:var(--dsw-alias-button-elevated-fill)}.wb-review-row input{margin-top:2px}.wb-review-row strong{display:block;font-size:11px;line-height:1.45}.wb-review-row small{display:block;margin-top:4px;font-size:9px;color:var(--dsw-alias-label-tertiary)}.wb-review-score-chip{align-self:start;min-width:31px;padding:3px 5px;border-radius:999px;background:var(--dsw-alias-bg-base);font-size:10px;text-align:center}.wb-review-score-good{color:#30b650}.wb-review-score-mid{color:#d17a00}.wb-review-score-low{color:#e5484d}.wb-review-editor{display:flex;flex-direction:column;min-height:620px}.wb-review-editor-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--dsw-alias-border-l1)}.wb-review-editor-head h3{margin:0 0 4px;font-size:14px;color:var(--dsw-alias-label-primary)}.wb-review-editor-head-actions{display:flex;gap:6px;flex:none}.wb-review-editor>textarea:not(.wb-review-note){flex:1;width:100%;min-height:440px;box-sizing:border-box;padding:15px;border:0;outline:0;resize:none;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:11px/1.65 ui-monospace,Consolas,monospace}.wb-review-note{flex:none;width:calc(100% - 24px);min-height:58px;margin:10px 12px 0;box-sizing:border-box;padding:8px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font:10px/1.5 inherit;resize:vertical}.wb-review-actions{position:sticky;bottom:0;z-index:2;display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 12px;border-top:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1)}.wb-review-inspector-backdrop{position:absolute;inset:0;z-index:7;background:rgba(0,0,0,.12);border-radius:12px}.wb-review-evidence{position:absolute;z-index:8;top:0;right:0;bottom:0;width:min(390px,92%);overflow:auto;padding:14px;display:grid;align-content:start;gap:12px;border:1px solid var(--dsw-alias-border-l2);border-radius:12px;background:var(--dsw-alias-bg-layer-1);box-shadow:-12px 0 36px rgba(0,0,0,.18)}.wb-review-inspector-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.wb-review-inspector-tabs{display:flex;gap:4px}.wb-review-evidence section{display:grid;gap:6px;padding-bottom:10px;border-bottom:1px solid var(--dsw-alias-border-l1)}.wb-review-evidence h4{margin:0;font-size:11px;color:var(--dsw-alias-label-primary)}.wb-review-evidence small{font-size:9px;line-height:1.55;color:var(--dsw-alias-label-tertiary);word-break:break-word}.wb-ai-score-card{display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:center;padding:11px;border-radius:10px;background:var(--dsw-alias-bg-base)}.wb-ai-score{font-size:30px;font-weight:700;text-align:center;color:var(--dsw-alias-label-primary)}.wb-ai-score span{display:block;font-size:9px;font-weight:400;color:var(--dsw-alias-label-tertiary)}.wb-ai-dimensions{display:grid;gap:8px}.wb-ai-dimension{display:grid;grid-template-columns:1fr 34px;gap:4px}.wb-ai-dimension strong{font-size:10px}.wb-ai-dimension-bar{grid-column:1/-1;height:5px;border-radius:999px;background:var(--dsw-alias-border-l1);overflow:hidden}.wb-ai-dimension-bar span{display:block;height:100%;background:var(--dsw-alias-accent-fill)}.wb-ai-suggestion{display:grid;grid-template-columns:20px 1fr;gap:5px;padding:8px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px}.wb-ai-suggestion strong{font-size:10px}.wb-ai-suggestion pre{grid-column:2;max-height:110px;overflow:auto;margin:3px 0 0;padding:6px;border-radius:6px;background:var(--dsw-alias-bg-base);white-space:pre-wrap;font:9px/1.45 ui-monospace,Consolas,monospace}.wb-review-block{padding:6px 8px;border-radius:7px;background:rgba(255,69,58,.1);color:#e5484d;font-size:9px;line-height:1.5}.wb-review-warn{padding:6px 8px;border-radius:7px;background:rgba(255,159,10,.1);color:#d17a00;font-size:9px;line-height:1.5}.wb-review-empty{display:grid;place-items:center;min-height:480px;padding:30px;text-align:center;color:var(--dsw-alias-label-secondary);font-size:12px}.wb-review-count{display:inline-flex;min-width:18px;height:18px;align-items:center;justify-content:center;margin-left:4px;padding:0 5px;border-radius:999px;background:var(--dsw-alias-accent-fill);color:#fff;font-size:9px}@media(max-width:900px){.wb-review-layout{grid-template-columns:230px minmax(360px,1fr)}}",
+      ".wb-ai-progress-card{display:grid;gap:7px;padding:10px 12px;border:1px solid color-mix(in srgb,var(--dsw-alias-accent-fill) 30%,var(--dsw-alias-border-l1));border-radius:10px;background:color-mix(in srgb,var(--dsw-alias-accent-fill) 7%,var(--dsw-alias-bg-layer-1))}.wb-ai-progress-head{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:10px;color:var(--dsw-alias-label-secondary)}.wb-ai-progress-head strong{color:var(--dsw-alias-label-primary)}.wb-ai-progress-track{height:7px;overflow:hidden;border-radius:999px;background:var(--dsw-alias-border-l1)}.wb-ai-progress-track span{display:block;height:100%;min-width:4%;border-radius:999px;background:linear-gradient(90deg,var(--dsw-alias-accent-fill),#30b650);transition:width .35s ease}.wb-ai-progress-card small{font-size:9px;color:var(--dsw-alias-label-tertiary)}.wb-ai-progress-failed{border-color:rgba(255,69,58,.35);background:rgba(255,69,58,.07)}",
+      ".wb-ai-edit-list-label{color:#7c5cff!important;font-weight:650}.wb-ai-edit-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;border-bottom:1px solid var(--dsw-alias-border-l1);background:color-mix(in srgb,#7c5cff 5%,var(--dsw-alias-bg-layer-1))}.wb-ai-edit-modes{display:flex;gap:2px;padding:2px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-base)}.wb-ai-edit-modes button,.wb-ai-edit-nav button{height:26px;padding:0 8px;border:0;border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);font:10px inherit;cursor:pointer}.wb-ai-edit-modes button.active{background:#7c5cff;color:#fff}.wb-ai-edit-status{color:#7c5cff;font-size:10px;font-weight:650}.wb-ai-edit-nav{display:flex;align-items:center;gap:3px;margin-left:auto}.wb-ai-edit-nav span{min-width:34px;text-align:center;color:var(--dsw-alias-label-tertiary);font-size:9px}.wb-ai-edit-nav button:hover{background:var(--dsw-alias-interactive-bg-hover)}.wb-ai-diff-wrap,.wb-ai-changes-only{flex:1;min-height:440px;overflow:auto;background:var(--dsw-alias-bg-base)}.wb-ai-diff-document{box-sizing:border-box;min-height:100%;margin:0;padding:15px;color:var(--dsw-alias-label-primary);font:11px/1.7 ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-word}.wb-ai-inline-change{border-radius:4px;outline:1px solid color-mix(in srgb,#7c5cff 32%,transparent);scroll-margin:80px}.wb-ai-inline-change del{padding:1px 3px;background:rgba(255,69,58,.10);color:#d33;text-decoration-thickness:1.5px}.wb-ai-inline-change mark{padding:1px 3px;background:color-mix(in srgb,#7c5cff 20%,transparent);color:#6a45ef}.wb-ai-inline-change-active{outline:2px solid #7c5cff;box-shadow:0 0 0 3px color-mix(in srgb,#7c5cff 12%,transparent)}.wb-ai-changes-only{display:grid;align-content:start;gap:9px;padding:12px}.wb-ai-change-card{display:grid;gap:6px;padding:10px;border:1px solid var(--dsw-alias-border-l1);border-radius:9px;background:var(--dsw-alias-bg-layer-1);scroll-margin:80px}.wb-ai-change-card-active{border-color:#7c5cff;box-shadow:0 0 0 2px color-mix(in srgb,#7c5cff 10%,transparent)}.wb-ai-change-card header{display:flex;justify-content:space-between;gap:8px}.wb-ai-change-card header strong{font-size:11px}.wb-ai-change-card header span,.wb-ai-change-card small{color:var(--dsw-alias-label-tertiary);font-size:9px}.wb-ai-change-before,.wb-ai-change-after{display:grid;grid-template-columns:48px 1fr;gap:7px;padding:7px;border-radius:7px;font:10px/1.55 ui-monospace,Consolas,monospace;white-space:pre-wrap}.wb-ai-change-before{background:rgba(255,69,58,.08)}.wb-ai-change-after{background:color-mix(in srgb,#7c5cff 10%,transparent)}.wb-ai-change-before b,.wb-ai-change-after b{font:9px inherit;color:var(--dsw-alias-label-tertiary)}.wb-ai-change-before del{color:#d33}.wb-ai-change-after mark{background:transparent;color:#6a45ef}",
       ".wb-orch-workers{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px;margin-top:8px}.wb-orch-deps,.wb-orch-acceptance{margin-top:7px;font-size:9px;line-height:1.5;color:var(--dsw-alias-label-tertiary)}.wb-orch-acceptance{padding-top:7px;border-top:1px dashed var(--dsw-alias-border-l1)}",
       ".wb-orch-criteria,.wb-orch-report{margin-top:10px;padding:11px 12px;border:1px solid var(--dsw-alias-border-l1);border-radius:11px;background:var(--dsw-alias-bg-base)}.wb-orch-criteria>strong,.wb-orch-report>strong{font-size:11px;color:var(--dsw-alias-label-primary)}.wb-orch-criteria ol{margin:7px 0 0;padding-left:20px;font-size:10px;line-height:1.7;color:var(--dsw-alias-label-secondary)}",
       ".wb-orch-report pre,.wb-orch-output pre{margin:8px 0 0;max-height:360px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font:10px/1.6 inherit;color:var(--dsw-alias-label-secondary)}.wb-orch-output{margin-top:8px}.wb-orch-output summary{cursor:pointer;font-size:9px;color:var(--dsw-alias-label-secondary)}",
@@ -1617,6 +1620,8 @@ window.__ModuleLoader__.load({
       const [ideas, setIdeas] = React.useState([]);
       const [orchestrations, setOrchestrations] = React.useState([]);
       const [orchestrationRuntime, setOrchestrationRuntime] = React.useState({ available: false, providers: [] });
+      const [routingMetrics, setRoutingMetrics] = React.useState({ samples: 0, calibrationReady: false, modes: {} });
+      const [routingPolicy, setRoutingPolicy] = React.useState({ version: 1, complexityThreshold: 0.6, valueThreshold: 0.6, parallelQuestionMin: 2, source: "benchmark-v1" });
       const [modelCatalog, setModelCatalog] = React.useState([]);
       const [loading, setLoading] = React.useState(true);
       const [busy, setBusy] = React.useState(false);
@@ -1625,7 +1630,7 @@ window.__ModuleLoader__.load({
       const loadTasks = React.useCallback((silent) => {
         if (!silent) { setLoading(true); setErr(null); }
         wbFetchJson("/api/dsh-workbench/tasks/list?scope=all&projectPath=" + encodeURIComponent(projectPath || "") + "&sessionId=" + encodeURIComponent(sessionId || ""), null, 30000)
-          .then(({ data }) => { setTasks(Array.isArray(data.tasks) ? data.tasks : []); setTemplates(Array.isArray(data.templates) ? data.templates : []); setIdeas(Array.isArray(data.ideas) ? data.ideas : []); setOrchestrations(Array.isArray(data.orchestrations) ? data.orchestrations : []); setOrchestrationRuntime(data.orchestrationRuntime || { available: false, providers: [] }); setModelCatalog(Array.isArray(data.modelCatalog) ? data.modelCatalog : []); setSessionClients(Number(data.sessionClients) || 0); })
+          .then(({ data }) => { setTasks(Array.isArray(data.tasks) ? data.tasks : []); setTemplates(Array.isArray(data.templates) ? data.templates : []); setIdeas(Array.isArray(data.ideas) ? data.ideas : []); setOrchestrations(Array.isArray(data.orchestrations) ? data.orchestrations : []); setOrchestrationRuntime(data.orchestrationRuntime || { available: false, providers: [] }); setRoutingMetrics(data.routingMetrics || { samples: 0, calibrationReady: false, modes: {} }); setRoutingPolicy(data.routingPolicy || { version: 1, complexityThreshold: 0.6, valueThreshold: 0.6, parallelQuestionMin: 2, source: "benchmark-v1" }); setModelCatalog(Array.isArray(data.modelCatalog) ? data.modelCatalog : []); setSessionClients(Number(data.sessionClients) || 0); })
           .catch((e) => setErr(String((e && e.message) || e)))
           .finally(() => { if (!silent) setLoading(false); });
       }, [projectPath, sessionId]);
@@ -1638,7 +1643,7 @@ window.__ModuleLoader__.load({
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ action, scope: "all", projectPath: projectPath || "", sourceSessionId: sessionId || "", ...(extra || {}) })
         }, 120000)
-          .then(({ data }) => { setTasks(Array.isArray(data.tasks) ? data.tasks : []); setTemplates(Array.isArray(data.templates) ? data.templates : []); setIdeas(Array.isArray(data.ideas) ? data.ideas : []); setOrchestrations(Array.isArray(data.orchestrations) ? data.orchestrations : []); setOrchestrationRuntime(data.orchestrationRuntime || { available: false, providers: [] }); setModelCatalog(Array.isArray(data.modelCatalog) ? data.modelCatalog : []); return data; })
+          .then(({ data }) => { setTasks(Array.isArray(data.tasks) ? data.tasks : []); setTemplates(Array.isArray(data.templates) ? data.templates : []); setIdeas(Array.isArray(data.ideas) ? data.ideas : []); setOrchestrations(Array.isArray(data.orchestrations) ? data.orchestrations : []); setOrchestrationRuntime(data.orchestrationRuntime || { available: false, providers: [] }); setRoutingMetrics(data.routingMetrics || { samples: 0, calibrationReady: false, modes: {} }); setRoutingPolicy(data.routingPolicy || { version: 1, complexityThreshold: 0.6, valueThreshold: 0.6, parallelQuestionMin: 2, source: "benchmark-v1" }); setModelCatalog(Array.isArray(data.modelCatalog) ? data.modelCatalog : []); return data; })
           .catch((e) => { setErr(String((e && e.message) || e)); throw e; })
           .finally(() => setBusy(false));
       };
@@ -1649,7 +1654,7 @@ window.__ModuleLoader__.load({
         return unsubscribe;
       }, [refresh, sessionId]);
       return {
-        tasks, templates, ideas, orchestrations, orchestrationRuntime, modelCatalog, loading, busy, err, setErr, projectPath, sessionId, sessionClients,
+        tasks, templates, ideas, orchestrations, orchestrationRuntime, routingMetrics, routingPolicy, modelCatalog, loading, busy, err, setErr, projectPath, sessionId, sessionClients,
         reload,
         refresh,
         mutate,
@@ -1823,6 +1828,48 @@ window.__ModuleLoader__.load({
       if (/项目|架构|系统|代码|接口|模块|数据库|前端|后端/.test(input)) { score += 0.2; reasons.push("涉及工程/系统范围"); }
       if (/分析|对比|评估|调研|审查/.test(input) && /建议|方案|报告|输出|整理/.test(input)) { score += 0.2; reasons.push("需要分析并产出结论"); }
       return { score: Math.min(1, Math.round(score * 100) / 100), reasons };
+    }
+    function wbParallelHint(text) {
+      const input = String(text || "").trim();
+      const writeIntent = /修改|改造|实现|开发|修复|重构|写入|创建文件|删除|部署|安装|提交|合并|更新代码|调整配置/.test(input);
+      const normalized = input.replace(/(?:另外|同时|与此同时|以及|并且|还要|再查|再看|分别)/g, "；");
+      const parts = normalized.split(/[？?；;\n]+/).map((part) => part.trim()).filter((part) => part.length >= 4);
+      const questionCount = (input.match(/[？?]/g) || []).length;
+      const count = Math.min(3, Math.max(questionCount, parts.length >= 2 ? parts.length : 0));
+      return { count, writeIntent };
+    }
+    function wbRoutingDecision(text, readParallelEnabled, runtimeProviders, policy) {
+      const input = String(text || "").trim();
+      const complexity = wbEstimateComplexity(input);
+      const hint = wbParallelHint(input);
+      const greeting = /^(你好|您好|hi|hello|嗨|谢谢|好的|收到)[！!。.\s]*$/i.test(input);
+      const value = greeting ? 0 : Math.min(1, complexity.score + (/方案|评估|决策|调研|审查|排查|对比/.test(input) ? 0.25 : 0.1));
+      const parallelism = hint.writeIntent ? 0 : Math.min(1, hint.count / 3);
+      const latencyBenefit = hint.count >= 2 ? Math.min(1, 0.35 + hint.count * 0.2) : 0.1;
+      const trackBPreferred = /跨仓库|大型代码库|大规模重构|端到端测试|深度代码审查|长时间编码/.test(input);
+      const trackBProviders = (Array.isArray(runtimeProviders) ? runtimeProviders : []).filter((provider) => provider === "codex" || provider === "claude-code");
+      const trackBAvailable = trackBProviders.length > 0;
+      const complexityThreshold = Number(policy && policy.complexityThreshold) || WB_COMPLEXITY_THRESHOLD;
+      const valueThreshold = Number(policy && policy.valueThreshold) || 0.6;
+      const parallelQuestionMin = Number(policy && policy.parallelQuestionMin) || 2;
+      let mode = "quick";
+      let targetAgents = 1;
+      if (hint.writeIntent) { mode = "orchestrate"; targetAgents = complexity.score >= 0.8 ? 3 : 2; }
+      else if (readParallelEnabled && hint.count >= parallelQuestionMin) { mode = "parallel"; targetAgents = hint.count; }
+      else if (complexity.score >= complexityThreshold || value >= valueThreshold || value * parallelism * latencyBenefit >= 0.12) { mode = "orchestrate"; targetAgents = complexity.score >= 0.8 ? 4 : 2; }
+      if (trackBPreferred && mode === "orchestrate") targetAgents = Math.max(3, targetAgents);
+      return {
+        mode,
+        targetAgents: Math.max(1, Math.min(4, targetAgents)),
+        readOnlyParallel: mode === "parallel",
+        writeIntent: hint.writeIntent,
+        value: Math.round(value * 100) / 100,
+        parallelism: Math.round(parallelism * 100) / 100,
+        latencyBenefit: Math.round(latencyBenefit * 100) / 100,
+        preferredTrack: trackBPreferred ? "B" : "A",
+        actualTrack: trackBPreferred && trackBAvailable ? "B" : "A",
+        fallbackReason: trackBPreferred && !trackBAvailable ? "轨道 B provider 当前未加载，已回退轨道 A" : ""
+      };
     }
 
     function WorkbenchOrchestrationLegacy({ store, projectPath, scope, query }) {
@@ -2006,9 +2053,17 @@ window.__ModuleLoader__.load({
         const parts = event.target.value.split("::");
         store.mutate("orchestration_set_agent_model", { id: orchestration.id, agentId: agent.id, provider: parts[0] || "", model: parts.slice(1).join("::") || "" }).catch(() => {});
       };
+      const isMain = orchestration.mainAgent && orchestration.mainAgent.id === agent.id;
+      const productProviders = (store.orchestrationRuntime.providers || []).filter((provider) => provider === "codex" || provider === "claude-code");
+      const trackValue = agent.executionTrack === "B" && agent.productProvider ? "B::" + agent.productProvider : "A";
+      const changeTrack = (event) => {
+        const parts = event.target.value.split("::");
+        store.mutate("orchestration_set_agent_track", { id: orchestration.id, agentId: agent.id, executionTrack: parts[0] || "A", productProvider: parts[1] || "" }).catch(() => {});
+      };
       return jsxRuntime.jsxs("div", { className: "wb-agent-model", children: [
+        jsxRuntime.jsx("select", { value: isMain ? "A" : trackValue, disabled: store.busy || !editable || isMain, onChange: changeTrack, title: isMain ? "主协调代理固定使用轨道 A" : "选择同进程轨道 A 或外部产品轨道 B", children: [jsxRuntime.jsx("option", { value: "A", children: "轨道 A · Harness 子代理" }), productProviders.map((provider) => jsxRuntime.jsx("option", { value: "B::" + provider, children: "轨道 B · " + (provider === "codex" ? "Codex" : "Claude Code") }, provider))] }),
         jsxRuntime.jsx("select", { value, disabled: store.busy || !editable, onChange: change, title: editable ? "为这个代理单独选择模型" : "执行后模型已锁定", children: [jsxRuntime.jsx("option", { value: "", children: "继承主会话模型" }), (store.modelCatalog || []).map((item) => jsxRuntime.jsx("option", { value: item.provider + "::" + item.id, children: (item.providerName || item.provider) + " · " + (item.name || item.id) }, item.provider + "::" + item.id))] }),
-        jsxRuntime.jsx("small", { children: agent.usedModel ? "实际使用：" + (agent.usedProvider ? agent.usedProvider + " · " : "") + agent.usedModel : (agent.modelReason || "未指定时继承当前会话") })
+        jsxRuntime.jsx("small", { children: agent.usedExecutionTrack ? "实际执行：轨道 " + agent.usedExecutionTrack + " · " + (agent.usedSubagentProvider || "spawn") + (agent.usedModel ? " · " + (agent.usedProvider ? agent.usedProvider + "/" : "") + agent.usedModel : "") : ((agent.executionTrack === "B" ? "外部产品进程，只回传最终文本" : "同进程运行，保留状态/日志/审批") + " · " + (agent.modelReason || "未指定时继承当前会话")) })
       ] });
     }
 
@@ -2103,6 +2158,12 @@ window.__ModuleLoader__.load({
         if (!message) { store.setErr("请写下要继续优化的内容"); return; }
         store.mutate("orchestration_continue", { id: selected.id, message }).then(() => setRefineDraft("")).catch(() => {});
       };
+      const worktreeAction = (agent, action) => {
+        if (!selected || !agent) return;
+        const prompt = action === "apply" ? "把这个隔离分支的改动应用到原项目工作区吗？\n\n操作前会先做 git apply --check；应用后不会自动提交。" : "确定删除这个隔离工作树和分支吗？\n\n尚未应用的改动会永久丢失。";
+        if (!window.confirm(prompt)) return;
+        wbFetchJson("/api/dsh-workbench/orchestration/worktree", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action, id: selected.id, workerId: agent.id }) }, 60000).then(() => store.refresh()).catch((error) => store.setErr(String((error && error.message) || error)));
+      };
       const phaseIndex = !selected ? 0 : selected.phase === "idea" || selected.phase === "planning" || selected.phase === "planned" ? 1 : selected.phase === "running" || selected.phase === "refining" ? 2 : 3;
       const runningProgress = selected && selected.phase === "running" ? (() => {
         const workers = Array.isArray(selected.workers) ? selected.workers : [];
@@ -2118,6 +2179,11 @@ window.__ModuleLoader__.load({
         jsxRuntime.jsx("p", { children: agent.mission }), agent.acceptance && jsxRuntime.jsx("div", { className: "wb-orch-acceptance", children: "完成标准：" + agent.acceptance }), agent.dependsOn && agent.dependsOn.length > 0 && jsxRuntime.jsx("div", { className: "wb-orch-deps", children: "依赖 " + agent.dependsOn.length + " 个工作包" }),
         jsxRuntime.jsx(WorkbenchAgentModel, { agent, orchestration: selected, store }),
         agent.agentRef && jsxRuntime.jsx("small", { className: "wb-orch-agent-ref", children: "候选专家：" + agent.agentRef }),
+        agent.worktreeStatus && jsxRuntime.jsxs("div", { className: "wb-orch-worktree", children: [
+          jsxRuntime.jsx("small", { children: "Git 隔离：" + ({ ready: "已创建", changed: "有改动待应用", clean: "无文件改动", applied: "已应用到原项目", failed: "执行失败，隔离区已保留", discarded: "已删除" }[agent.worktreeStatus] || agent.worktreeStatus) + (agent.worktreeBranch ? " · " + agent.worktreeBranch : "") }),
+          agent.worktreePath && jsxRuntime.jsx("small", { title: agent.worktreePath, children: agent.worktreePath }),
+          jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [agent.worktreeStatus === "changed" && jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", onClick: () => worktreeAction(agent, "apply"), children: "应用到原项目" }), agent.worktreePath && jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => worktreeAction(agent, "discard"), children: "删除隔离区" })] })
+        ] }),
         agent.output && jsxRuntime.jsxs("details", { className: "wb-orch-output", children: [jsxRuntime.jsx("summary", { children: "查看代理交接" }), jsxRuntime.jsx("pre", { children: agent.output })] }), agent.error && jsxRuntime.jsx("div", { className: "wb-tb-err", children: agent.error })
       ] }, agent.id);
       return jsxRuntime.jsxs("div", { className: "wb-collab", children: [
@@ -2182,6 +2248,12 @@ window.__ModuleLoader__.load({
               jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "预计 LLM 调用" }), jsxRuntime.jsx("strong", { children: 1 + (selected.workers || []).length })] }),
               runningProgress && jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "当前进度" }), jsxRuntime.jsx("strong", { children: runningProgress.pct + "%" })] }),
               jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "代理运行时" }), jsxRuntime.jsx("strong", { children: store.orchestrationRuntime.available ? "就绪" : "未就绪" })] }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", title: "最近 14 天使用 G3 分流规则创建的任务", children: [jsxRuntime.jsx("span", { children: "路由观测样本" }), jsxRuntime.jsx("strong", { children: (store.routingMetrics && store.routingMetrics.samples) || 0 })] }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "人工路由评分" }), jsxRuntime.jsx("strong", { children: (store.routingMetrics && store.routingMetrics.manualRated) || 0 })] }),
+              jsxRuntime.jsxs("div", { className: "wb-collab-overview-row", children: [jsxRuntime.jsx("span", { children: "直接通过率" }), jsxRuntime.jsx("strong", { children: store.routingMetrics && store.routingMetrics.acceptanceRate !== null && store.routingMetrics.acceptanceRate !== undefined ? Math.round(store.routingMetrics.acceptanceRate * 100) + "%" : "待积累" })] }),
+              jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "当前策略 V" + ((store.routingPolicy && store.routingPolicy.version) || 1) + " · 复杂度阈值 " + ((store.routingPolicy && store.routingPolicy.complexityThreshold) || 0.6) + " · 价值阈值 " + ((store.routingPolicy && store.routingPolicy.valueThreshold) || 0.6) }),
+              jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: store.routingMetrics && store.routingMetrics.calibrationReady ? (store.routingMetrics.recommendation || "样本已达到首轮校准门槛。") : "至少 20 条任务、10 次人工验收和 10 条路由评分后开放一键校准。" }),
+              store.routingMetrics && store.routingMetrics.calibrationReady && jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: store.busy, onClick: () => { if (window.confirm("采用这轮路由校准建议并生成新策略版本吗？")) store.mutate("routing_apply_recommendation", {}).catch(() => {}); }, children: "采用校准建议" }),
               (selected.workers || []).length >= 4 && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "子代理较多，Token 消耗较大；可减少代理数或调低并行上限。" })
             ] }),
             panelTab === "agents" && jsxRuntime.jsxs("div", { className: "wb-collab-agent-minis", children: [
@@ -2217,6 +2289,16 @@ window.__ModuleLoader__.load({
             panelTab === "decision" && jsxRuntime.jsxs(React.Fragment, { children: [
               jsxRuntime.jsxs("div", { className: "wb-orch-runtime", children: [jsxRuntime.jsx("span", { className: store.orchestrationRuntime.available ? "wb-orch-dot wb-orch-dot-on" : "wb-orch-dot" }), jsxRuntime.jsx("strong", { children: store.orchestrationRuntime.available ? "代理运行时已就绪" : "代理运行时未就绪" }), jsxRuntime.jsx("small", { children: (store.orchestrationRuntime.providers || []).join(" · ") || "当前只能保存和规划" })] }),
             jsxRuntime.jsxs("section", { className: "wb-collab-decision-card", children: [jsxRuntime.jsx("strong", { children: "模型分配策略" }), jsxRuntime.jsx("select", { value: policy, disabled: selected.phase === "running", onChange: (e) => setPolicy(e.target.value), children: [jsxRuntime.jsx("option", { value: "balanced", children: "智能平衡" }), jsxRuntime.jsx("option", { value: "quality", children: "质量优先" }), jsxRuntime.jsx("option", { value: "economy", children: "成本优先" }), jsxRuntime.jsx("option", { value: "main-manual", children: "主代理手动 · 子代理自动" }), jsxRuntime.jsx("option", { value: "manual", children: "全部手动" })] }), jsxRuntime.jsx("small", { children: (store.modelCatalog || []).length ? "已发现 " + store.modelCatalog.length + " 个可用模型；生成方案后仍可逐个调整。" : "没有读取到模型目录，所有代理将继承主会话。" })] }),
+            jsxRuntime.jsxs("section", { className: "wb-collab-decision-card", children: [
+              jsxRuntime.jsx("strong", { children: "写型代理 Git 隔离" }),
+              jsxRuntime.jsx("label", { children: [jsxRuntime.jsx("input", { type: "checkbox", checked: selected.worktreeMode === "write-workers", disabled: selected.phase === "running", onChange: (e) => store.mutate("orchestration_set_worktree_mode", { id: selected.id, worktreeMode: e.target.checked ? "write-workers" : "off" }).catch(() => {}) }), " 为轨道 B 的写型子代理创建独立 worktree"] }),
+              jsxRuntime.jsx("small", { children: "默认关闭。开启后，Codex/Claude Code 只在隔离目录中修改；成功后先保留隔离分支，由你检查并点击“应用到原项目”。" })
+            ] }),
+            selected.routing && jsxRuntime.jsxs("section", { className: "wb-collab-decision-card", children: [
+              jsxRuntime.jsx("strong", { children: "这次自动分流是否合适？" }),
+              jsxRuntime.jsx("small", { children: "模式 " + selected.routing.mode + " · " + selected.routing.targetAgents + " 个代理 · 轨道 " + selected.routing.actualTrack }),
+              jsxRuntime.jsx("div", { className: "wb-orch-actions", children: [{ id: "right", label: "合适" }, { id: "too_much", label: "过度编排" }, { id: "too_little", label: "编排不足" }, { id: "wrong_track", label: "轨道不合适" }].map((item) => jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn" + (selected.routingReview && selected.routingReview.rating === item.id ? " wb-sp-btn-primary" : ""), disabled: store.busy, onClick: () => store.mutate("orchestration_rate_routing", { id: selected.id, rating: item.id }).catch(() => {}), children: item.label }, item.id)) })
+            ] }),
             jsxRuntime.jsxs("section", { className: "wb-collab-decision-card", children: [jsxRuntime.jsx("strong", { children: selected.phase === "review" ? "验收意见" : "给编排 AI 的反馈" }), jsxRuntime.jsx("textarea", { value: feedback, disabled: selected.phase === "running", placeholder: selected.phase === "review" ? "写下需要修改的地方；符合预期可直接通过。" : "反馈将用于生成一份修改后的新方案，不会在子代理执行时重复注入。例如：减少代理数量；让安全审查与体验审查并行…", onChange: (e) => setFeedback(e.target.value) }), selected.phase !== "review" && jsxRuntime.jsx("small", { className: "wb-orch-feedback-hint", children: "提交后按反馈生成新方案版本；执行按新方案进行，子代理不再收到反馈原文。" })] }),
             (selected.phase === "review" || selected.phase === "accepted") && jsxRuntime.jsxs("section", { className: "wb-collab-decision-card", children: [
               jsxRuntime.jsx("strong", { children: "继续与主代理对话" }),
@@ -2872,17 +2954,158 @@ window.__ModuleLoader__.load({
       ] });
     }
 
-    // 蒸馏 (P6): standalone page, knowledge-base dependent.
-    function ToolbarDistill() {
-      return jsxRuntime.jsxs("div", { className: "wb-tb-card", children: [
-        jsxRuntime.jsx("span", { className: "wb-page-badge", children: "建设中 · P6" }),
-        jsxRuntime.jsx("div", { className: "wb-tb-session-title", children: "蒸馏本段对话" }),
-        jsxRuntime.jsx("div", { className: "wb-tb-meta", children: "对话结束后点击，agent 自动提炼本段对话的重点/结论/可复用方法，写入本地知识库（markdown + 标签 + 索引）。待 P6 知识库方案讨论后开放。" }),
-        jsxRuntime.jsx("button", { type: "button", className: "wb-tb-distill", disabled: true, title: "P6 知识库上线后开放", children: [
-          jsxRuntime.jsx(primitives.IconThinkOutline16, { size: 14 }),
-          jsxRuntime.jsx("span", { children: "开始蒸馏（P6 开放）" })
-        ] })
-      ] });
+    function wbDistillContentText(value, depth) {
+      if (depth > 4 || value === null || value === void 0) return "";
+      if (typeof value === "string") return value;
+      if (Array.isArray(value)) return value.map((item) => wbDistillContentText(item, depth + 1)).filter(Boolean).join("\n");
+      if (typeof value !== "object") return "";
+      if (typeof value.text === "string" && (!value.type || ["text", "input_text", "output_text"].includes(value.type))) return value.text;
+      if (value.content !== void 0) return wbDistillContentText(value.content, depth + 1);
+      return "";
+    }
+    async function wbDistillTranscript(sessionId) {
+      const session = wbSessionOf(sessionId);
+      if (!session) throw new Error("当前会话尚未就绪");
+      if (typeof session.open === "function") await session.open();
+      let pages = 0;
+      while (session.hasMore && typeof session.loadOlder === "function" && pages < 20) { await session.loadOlder(); pages += 1; }
+      const raw = Array.isArray(session.events) ? session.events : [];
+      const rows = [];
+      let turn = 0;
+      raw.forEach((event, index) => {
+        if (!event || (event.surfaceOp && event.surfaceOp !== "append")) return;
+        const data = event.data || {};
+        let role = "";
+        let content = "";
+        if (event.type === "user/message" && data.source && data.source.kind === "user") { role = "user"; content = wbDistillContentText(data.content, 0); }
+        else if (event.type === "assistant/message") { role = "assistant"; content = wbDistillContentText(data.message && data.message.content, 0); }
+        if (!role || !String(content || "").trim()) return;
+        if (role === "user") turn += 1;
+        if (!turn) return;
+        rows.push({ seq: Number(event.seq) || (index + 1), turn, role, text: String(content).trim().slice(0, 12000) });
+      });
+      return rows;
+    }
+    const WB_DISTILL_TYPE_LABELS = { preference: "偏好", decision: "决策", knowledge: "知识点", experience: "经验", procedure: "流程", open_loop: "待跟进" };
+    const WB_DISTILL_ACTION_LABELS = { ADD: "新增", MERGE: "合并建议", UPDATE: "更新建议", SUPERSEDE: "取代建议", SKIP: "跳过" };
+
+    function ToolbarDistill({ sessionId, projectPath, title }) {
+      const [rangeMode, setRangeMode] = React.useState("since");
+      const [recentTurns, setRecentTurns] = React.useState(20);
+      const [customStart, setCustomStart] = React.useState(1);
+      const [customEnd, setCustomEnd] = React.useState(20);
+      const [template, setTemplate] = React.useState("auto");
+      const [history, setHistory] = React.useState([]);
+      const [cursor, setCursor] = React.useState(0);
+      const [run, setRun] = React.useState(null);
+      const [busy, setBusy] = React.useState(false);
+      const [err, setErr] = React.useState("");
+      const [notice, setNotice] = React.useState("");
+      const [reviewOpen, setReviewOpen] = React.useState(false);
+      const aliveRef = React.useRef(true);
+      React.useEffect(() => () => { aliveRef.current = false; }, []);
+      const refreshHistory = React.useCallback(() => {
+        if (!sessionId) { setHistory([]); setCursor(0); return Promise.resolve(); }
+        return wbFetchJson("/api/dsh-workbench/distill/history?sessionId=" + encodeURIComponent(sessionId)).then(({ data }) => {
+          if (!aliveRef.current) return;
+          setHistory((data && data.runs) || []); setCursor(Number(data && data.cursor) || 0);
+        });
+      }, [sessionId]);
+      React.useEffect(() => { aliveRef.current = true; setRun(null); setErr(""); setNotice(""); refreshHistory().catch((e) => setErr(String((e && e.message) || e))); }, [refreshHistory]);
+      const pollRun = React.useCallback(async (id) => {
+        for (let attempt = 0; attempt < 300 && aliveRef.current; attempt += 1) {
+          const { data } = await wbFetchJson("/api/dsh-workbench/distill/run?id=" + encodeURIComponent(id), {}, 30000);
+          if (!aliveRef.current) return data;
+          setRun(data);
+          if (["review", "committed", "failed", "cancelled", "undone"].includes(data.status)) return data;
+          await new Promise((resolvePromise) => setTimeout(resolvePromise, 800));
+        }
+        throw new Error("蒸馏任务等待超时");
+      }, []);
+      const start = async () => {
+        if (!sessionId || busy) return;
+        setBusy(true); setErr(""); setNotice("正在读取完整会话历史…");
+        try {
+          const all = await wbDistillTranscript(sessionId);
+          const maxTurn = all.reduce((max, item) => Math.max(max, item.turn), 0);
+          let selected = all;
+          if (rangeMode === "since" && cursor > 0) selected = all.filter((item) => item.seq > cursor);
+          else if (rangeMode === "recent") selected = all.filter((item) => item.turn > Math.max(0, maxTurn - Math.max(1, Number(recentTurns) || 20)));
+          else if (rangeMode === "custom") selected = all.filter((item) => item.turn >= Math.max(1, Number(customStart) || 1) && item.turn <= Math.max(1, Number(customEnd) || maxTurn));
+          if (!selected.some((item) => item.role === "user")) throw new Error(rangeMode === "since" ? "上次成功蒸馏后没有新的用户对话" : "所选范围没有可蒸馏的用户对话");
+          const turns = selected.map((item) => item.turn);
+          const seqs = selected.map((item) => item.seq);
+          const range = { mode: rangeMode, fromSeq: Math.min(...seqs), toSeq: Math.max(...seqs), fromTurn: Math.min(...turns), toTurn: Math.max(...turns), turnCount: new Set(turns).size, messageCount: selected.length };
+          setNotice("正在提取候选并与知识库做重复预检…");
+          const { data } = await wbFetchJson("/api/dsh-workbench/distill/analyze", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId, projectPath: projectPath || "", title: title || "当前会话", template, range, transcript: selected }) }, 60000);
+          setRun(data.run);
+          if (data.secretsRedacted) setNotice("检测到疑似秘密，已在送入模型前脱敏");
+          const finalRun = ["review", "committed"].includes(data.run.status) ? data.run : await pollRun(data.run.id);
+          if (finalRun.status === "review") { setReviewOpen(true); setNotice(`已提取 ${finalRun.candidates.length} 条候选，请人工审核`); }
+          else if (finalRun.status === "committed") setNotice("相同范围已提交过，已返回原批次");
+          else if (finalRun.status === "failed") throw new Error(finalRun.error || "蒸馏失败");
+          await refreshHistory();
+        } catch (e) { setErr(String((e && e.message) || e)); setNotice(""); }
+        finally { if (aliveRef.current) setBusy(false); }
+      };
+      const updateCandidate = (id, patch) => setRun((current) => current ? ({ ...current, candidates: current.candidates.map((item) => item.id === id ? { ...item, ...patch } : item) }) : current);
+      const selectAll = (selected) => setRun((current) => current ? ({ ...current, candidates: current.candidates.map((item) => item.safetyBlocked ? item : { ...item, selected }) }) : current);
+      const saveAndCommit = async () => {
+        if (!run || busy) return;
+        setBusy(true); setErr("");
+        try {
+          const { data: reviewed } = await wbFetchJson("/api/dsh-workbench/distill/review", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: run.id, candidates: run.candidates }) }, 30000);
+          const { data: committed } = await wbFetchJson("/api/dsh-workbench/distill/commit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: reviewed.id }) }, 60000);
+          setRun(committed); setNotice(`已写入 ${committed.committed.length} 条 01-Inbox 草稿`); setReviewOpen(false); await refreshHistory();
+        } catch (e) { setErr(String((e && e.message) || e)); }
+        finally { if (aliveRef.current) setBusy(false); }
+      };
+      const cancel = async () => {
+        if (!run) return;
+        try { const { data } = await wbFetchJson("/api/dsh-workbench/distill/cancel", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: run.id }) }); setRun(data); setBusy(false); setNotice("蒸馏已取消"); }
+        catch (e) { setErr(String((e && e.message) || e)); }
+      };
+      const undo = async () => {
+        if (!run || !window.confirm("仅当草稿未被修改时才会撤销。确定删除本批次新建的 Inbox 草稿吗？")) return;
+        setBusy(true); setErr("");
+        try { const { data } = await wbFetchJson("/api/dsh-workbench/distill/undo", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: run.id }) }); setRun(data); setNotice("本批次草稿已撤销，审计记录仍保留"); await refreshHistory(); }
+        catch (e) { setErr(String((e && e.message) || e)); }
+        finally { setBusy(false); }
+      };
+      const selectedCount = run && Array.isArray(run.candidates) ? run.candidates.filter((item) => item.selected && item.suggestedAction !== "SKIP" && !item.safetyBlocked).length : 0;
+      const modal = reviewOpen && run && run.status === "review" && jsxRuntime.jsx("div", { className: "wb-exp-modal", onClick: (e) => { if (e.target === e.currentTarget && !busy) setReviewOpen(false); }, children: jsxRuntime.jsxs("div", { className: "wb-exp-modal-box wb-distill-modal-box", children: [
+        jsxRuntime.jsxs("div", { className: "wb-exp-modal-head", children: [jsxRuntime.jsx("span", { className: "wb-exp-name", children: "审核会话蒸馏候选" }), jsxRuntime.jsx("button", { type: "button", className: "wb-tb-close", disabled: busy, onClick: () => setReviewOpen(false), children: "✕" })] }),
+        jsxRuntime.jsxs("div", { className: "wb-exp-modal-body wb-distill-modal-body", children: [
+          jsxRuntime.jsxs("div", { className: "wb-distill-summary", children: [jsxRuntime.jsx("span", { className: "wb-page-badge", children: `${run.candidates.length} 条候选` }), jsxRuntime.jsx("span", { children: `会话轮次 ${run.range.fromTurn}–${run.range.toTurn}` }), jsxRuntime.jsx("span", { children: "仅写入 01-Inbox，不自动发布" })] }),
+          jsxRuntime.jsxs("div", { className: "wb-distill-review-actions", children: [jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => selectAll(true), children: "全选" }), jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => selectAll(false), children: "全不选" }), jsxRuntime.jsx("span", { className: "wb-tb-meta", children: `将提交 ${selectedCount} 条` })] }),
+          run.candidates.length === 0 ? jsxRuntime.jsx("div", { className: "wb-distill-empty", children: "没有发现足够可靠的可复用内容。你可以关闭窗口并调整范围或模板后重试。" }) : jsxRuntime.jsx("div", { className: "wb-distill-candidates", children: run.candidates.map((item) => jsxRuntime.jsxs("div", { className: "wb-distill-candidate", children: [
+            jsxRuntime.jsx("input", { type: "checkbox", checked: Boolean(item.selected), disabled: item.safetyBlocked, onChange: (e) => updateCandidate(item.id, { selected: e.target.checked }) }),
+            jsxRuntime.jsx("select", { value: item.type, onChange: (e) => updateCandidate(item.id, { type: e.target.value }), children: Object.entries(WB_DISTILL_TYPE_LABELS).map(([value, label]) => jsxRuntime.jsx("option", { value, children: label }, value)) }),
+            jsxRuntime.jsx("select", { value: item.suggestedAction, disabled: item.safetyBlocked, onChange: (e) => updateCandidate(item.id, { suggestedAction: e.target.value, selected: e.target.value === "SKIP" ? false : item.selected }), children: Object.entries(WB_DISTILL_ACTION_LABELS).map(([value, label]) => jsxRuntime.jsx("option", { value, children: label }, value)) }),
+            jsxRuntime.jsx("input", { type: "text", value: item.title, onChange: (e) => updateCandidate(item.id, { title: e.target.value }) }),
+            jsxRuntime.jsx("textarea", { value: item.content, onChange: (e) => updateCandidate(item.id, { content: e.target.value }) }),
+            jsxRuntime.jsx("div", { className: "wb-distill-evidence", children: `证据：${item.evidence || "—"}${item.relatedEntry ? ` · 相关旧知识：${item.relatedEntry}` : ""}${item.reason ? ` · ${item.reason}` : ""}` }),
+            (item.safetyBlocked || (item.precheck && item.precheck.blocks && item.precheck.blocks.length > 0)) && jsxRuntime.jsx("div", { className: "wb-distill-warning", children: item.safetyBlocked ? "包含已脱敏内容，已强制跳过" : item.precheck.blocks.join("；") })
+          ] }, item.id)) })
+        ] }),
+        jsxRuntime.jsxs("div", { className: "wb-exp-modal-foot", children: [jsxRuntime.jsx("span", { className: "wb-tb-meta", children: err || "提交后仍需在知识库中复核发布" }), jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: busy, onClick: () => setReviewOpen(false), children: "稍后审核" }), jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy || selectedCount === 0, onClick: saveAndCommit, children: busy ? "写入中…" : `提交 ${selectedCount} 条草稿` })] })
+      ] }) });
+      return jsxRuntime.jsxs(React.Fragment, { children: [jsxRuntime.jsxs("div", { className: "wb-tb-card", children: [
+        jsxRuntime.jsx("div", { className: "wb-tb-session-title", children: "会话蒸馏" }),
+        jsxRuntime.jsx("div", { className: "wb-tb-meta", children: "AI 从当前对话提取可复用知识，由你确认后写入 01-Inbox；不会创建用户画像，也不会修改专家配置。" }),
+        jsxRuntime.jsxs("div", { className: "wb-distill-form", children: [
+          jsxRuntime.jsxs("label", { children: ["蒸馏范围", jsxRuntime.jsx("select", { value: rangeMode, onChange: (e) => setRangeMode(e.target.value), children: [jsxRuntime.jsx("option", { value: "since", children: "上次成功后（默认）" }), jsxRuntime.jsx("option", { value: "recent", children: "最近 N 轮" }), jsxRuntime.jsx("option", { value: "all", children: "全部有效对话" }), jsxRuntime.jsx("option", { value: "custom", children: "自定义轮次" })] })] }),
+          rangeMode === "recent" && jsxRuntime.jsxs("label", { children: ["最近轮数", jsxRuntime.jsx("input", { type: "number", min: 1, max: 200, value: recentTurns, onChange: (e) => setRecentTurns(e.target.value) })] }),
+          rangeMode === "custom" && jsxRuntime.jsxs("div", { className: "wb-distill-inline", children: [jsxRuntime.jsxs("label", { children: ["起始轮", jsxRuntime.jsx("input", { type: "number", min: 1, value: customStart, onChange: (e) => setCustomStart(e.target.value) })] }), jsxRuntime.jsxs("label", { children: ["结束轮", jsxRuntime.jsx("input", { type: "number", min: 1, value: customEnd, onChange: (e) => setCustomEnd(e.target.value) })] })] }),
+          jsxRuntime.jsxs("label", { children: ["提取模板", jsxRuntime.jsx("select", { value: template, onChange: (e) => setTemplate(e.target.value), children: [jsxRuntime.jsx("option", { value: "auto", children: "自动识别" }), jsxRuntime.jsx("option", { value: "technical", children: "技术复盘" }), jsxRuntime.jsx("option", { value: "requirements", children: "需求与决策" }), jsxRuntime.jsx("option", { value: "incident", children: "故障复盘" }), jsxRuntime.jsx("option", { value: "learning", children: "学习笔记" })] })] })
+        ] }),
+        cursor > 0 && jsxRuntime.jsx("div", { className: "wb-distill-note", children: `增量游标：消息序号 ${cursor}。成功提交草稿后才会前移。` }),
+        notice && jsxRuntime.jsx("div", { className: "wb-distill-note", children: notice }), err && jsxRuntime.jsx("div", { className: "wb-orch-error", children: err }),
+        jsxRuntime.jsx("button", { type: "button", className: "wb-tb-distill", disabled: !sessionId || busy, onClick: start, children: [jsxRuntime.jsx(primitives.IconThinkOutline16, { size: 14 }), jsxRuntime.jsx("span", { children: busy ? "蒸馏中…" : "开始蒸馏" })] }),
+        busy && run && ["running", "queued"].includes(run.status) && jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: cancel, children: "停止" }),
+        run && run.status === "review" && jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", onClick: () => setReviewOpen(true), children: `打开审核（${run.candidates.length} 条）` }),
+        run && run.status === "committed" && jsxRuntime.jsxs("div", { className: "wb-tb-card-actions", children: [jsxRuntime.jsx("span", { className: "wb-tb-meta", children: `已写入 ${run.committed.length} 条 Inbox 草稿` }), jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: busy, onClick: undo, children: "撤销本批次" })] })
+      ] }), history.length > 0 && jsxRuntime.jsxs("div", { className: "wb-tb-card", children: [jsxRuntime.jsx("div", { className: "wb-tb-card-title", children: "最近批次" }), jsxRuntime.jsx("div", { className: "wb-distill-history", children: history.slice(0, 5).map((item) => jsxRuntime.jsxs("div", { className: "wb-distill-history-row", children: [jsxRuntime.jsxs("span", { children: [item.title || "当前会话", jsxRuntime.jsx("small", { children: ` · ${item.candidates.length} 条` })] }), jsxRuntime.jsx("small", { children: item.status })] }, item.id)) })] }), modal] });
     }
 
     function ProjectConfigPanel({ sessionId, projectPath }) {
@@ -2995,7 +3218,7 @@ window.__ModuleLoader__.load({
         jsxRuntime.jsx("div", { className: "wb-tb-collab-agents", children: agents.map((agent, index) => jsxRuntime.jsxs("div", { className: "wb-chat-card-agent", children: [
           jsxRuntime.jsxs("span", { children: [jsxRuntime.jsx("strong", { children: (index === 0 ? "主 · " : "") + agent.name }), agent.readOnly === false && jsxRuntime.jsx("span", { className: "wb-chat-elapsed", children: " · 可写" })] }),
           jsxRuntime.jsxs("span", { className: wbAgentStatusClass(agent.status), children: [(WB_ORCHESTRATION_AGENT_STATUS[agent.status] || agent.status), wbAgentElapsed(agent) ? " · " + wbAgentElapsed(agent) : ""] }),
-          agent.error ? jsxRuntime.jsx("small", { children: "失败原因：" + agent.error }) : jsxRuntime.jsx("small", { children: "模型：" + (agent.usedModel || agent.model || "继承主会话模型") + (agent.modelReason ? " · " + agent.modelReason : "") }),
+          agent.error ? jsxRuntime.jsx("small", { children: "失败原因：" + agent.error }) : jsxRuntime.jsx("small", { children: "执行：轨道 " + (agent.usedExecutionTrack || agent.executionTrack || "A") + " · " + (agent.usedSubagentProvider || agent.productProvider || "spawn") + (agent.usedModel || agent.model ? " · 模型 " + (agent.usedModel || agent.model) : "") }),
           agent.status === "failed" && (shown.phase === "failed" || shown.phase === "cancelled") && jsxRuntime.jsx("button", { type: "button", className: "wb-chat-agent-retry", onClick: () => store.mutate("orchestration_worker_retry", { id: shown.id, workerId: agent.id }).catch((error) => store.setErr(String((error && error.message) || error))), children: "重试此子代理" })
         ] }, agent.id || index)) }),
         jsxRuntime.jsxs("div", { className: "wb-tb-card-actions", children: [
@@ -3045,7 +3268,7 @@ window.__ModuleLoader__.load({
           tab === "project" && jsxRuntime.jsx(ProjectConfigPanel, { sessionId: currentId, projectPath: summary && summary.cwd }),
           tab === "files" && jsxRuntime.jsx(ToolbarFiles, { cwd: summary && summary.cwd }),
           tab === "git" && jsxRuntime.jsx(ToolbarGit, { cwd: summary && summary.cwd }),
-          tab === "distill" && jsxRuntime.jsx(ToolbarDistill, {})
+          tab === "distill" && jsxRuntime.jsx(ToolbarDistill, { sessionId: currentId, projectPath: summary && summary.cwd, title: summary && (summary.displayTitle || summary.title) })
         ] })
       ] });
     }
@@ -3191,9 +3414,11 @@ window.__ModuleLoader__.load({
       const activeKey = "wb.chatActive." + (sessionId || "none");
       const autoStartKey = "wb.chatAutoStart." + (sessionId || "none");
       const modelPolicyKey = "wb.chatModelPolicy." + (sessionId || "none");
+      const readParallelKey = "wb.chatReadParallel." + (sessionId || "none");
       const [mode, setMode] = React.useState("single");
       const [strategy, setStrategy] = React.useState("auto");
       const [modelPolicy, setModelPolicy] = React.useState("balanced");
+      const [readParallel, setReadParallel] = React.useState(true);
       const [draft, setDraft] = React.useState("");
       const [activeId, setActiveId] = React.useState("");
       const [files, setFiles] = React.useState([]);
@@ -3218,11 +3443,11 @@ window.__ModuleLoader__.load({
       const writeDecidedRef = React.useRef(new Set());
 
       React.useEffect(() => {
-        let nextMode = "single"; let nextStrategy = "auto"; let nextActive = ""; let nextAutoStart = ""; let nextPolicy = "balanced";
-        try { nextMode = localStorage.getItem(modeKey) === "multi" ? "multi" : "single"; nextStrategy = localStorage.getItem(strategyKey) === "always" ? "always" : "auto"; nextActive = localStorage.getItem(activeKey) || ""; nextAutoStart = localStorage.getItem(autoStartKey) || ""; nextPolicy = ["balanced", "main-manual", "manual"].includes(localStorage.getItem(modelPolicyKey)) ? localStorage.getItem(modelPolicyKey) : "balanced"; } catch (e) { /* defaults */ }
+        let nextMode = "single"; let nextStrategy = "auto"; let nextActive = ""; let nextAutoStart = ""; let nextPolicy = "balanced"; let nextReadParallel = true;
+        try { nextMode = localStorage.getItem(modeKey) === "multi" ? "multi" : "single"; nextStrategy = localStorage.getItem(strategyKey) === "always" ? "always" : "auto"; nextActive = localStorage.getItem(activeKey) || ""; nextAutoStart = localStorage.getItem(autoStartKey) || ""; nextPolicy = ["balanced", "main-manual", "manual"].includes(localStorage.getItem(modelPolicyKey)) ? localStorage.getItem(modelPolicyKey) : "balanced"; nextReadParallel = localStorage.getItem(readParallelKey) !== "off"; } catch (e) { /* defaults */ }
         autoStartRef.current = new Set(nextAutoStart ? [nextAutoStart] : []);
-        setMode(nextMode); setStrategy(nextStrategy); setModelPolicy(nextPolicy); setActiveId(nextActive); setDraft(""); setReferences([]); setAttachments([]);
-      }, [modeKey, strategyKey, activeKey, autoStartKey, modelPolicyKey]);
+        setMode(nextMode); setStrategy(nextStrategy); setModelPolicy(nextPolicy); setReadParallel(nextReadParallel); setActiveId(nextActive); setDraft(""); setReferences([]); setAttachments([]);
+      }, [modeKey, strategyKey, activeKey, autoStartKey, modelPolicyKey, readParallelKey]);
       React.useEffect(() => {
         const onChange = (event) => {
           const detail = event && event.detail;
@@ -3376,7 +3601,9 @@ window.__ModuleLoader__.load({
         ...files.filter((item) => !item.isDir).filter((item) => !query || item.name.toLocaleLowerCase().includes(query)).map((item) => ({ kind: "file", title: item.name, content: "项目文件：" + item.name, meta: "文件" }))
       ].slice(0, 14);
       const complexity = wbEstimateComplexity(draft);
-      const quick = strategy === "auto" && complexity.score < WB_COMPLEXITY_THRESHOLD;
+      const routing = wbRoutingDecision(draft, readParallel, store.orchestrationRuntime && store.orchestrationRuntime.providers, store.routingPolicy);
+      const autoParallelCount = routing.readOnlyParallel ? routing.targetAgents : 0;
+      const quick = strategy === "auto" && routing.mode === "quick" && attachments.length === 0;
       const submit = () => {
         const text = draft.trim();
         if (!text || !sessionId || submitting || activeBusy) return;
@@ -3402,7 +3629,7 @@ window.__ModuleLoader__.load({
         }
         const sourceRefs = references.map((entry) => ({ kind: entry.kind, title: entry.title, content: entry.content }));
         setSubmitting(true); store.setErr("");
-        store.mutate("orchestration_create", { title: text.split(/\r?\n/)[0].slice(0, 120), idea: text, quick, attachments: attachments.map((entry) => entry.id), sourceRefs })
+        store.mutate("orchestration_create", { title: text.split(/\r?\n/)[0].slice(0, 120), idea: text, quick, autoParallel: autoParallelCount > 0, parallelCount: autoParallelCount, routing, attachments: attachments.map((entry) => ({ id: entry.id, name: entry.name, mime: entry.mime, size: entry.size })), sourceRefs })
           .then((data) => {
             const created = (data.orchestrations || []).filter((item) => item.sourceSessionId === sessionId && item.idea === text).sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))[0];
             if (!created) throw new Error("任务已创建，但未找到对应的协作记录");
@@ -3445,7 +3672,7 @@ window.__ModuleLoader__.load({
           if (orch) {
             if (phase === "planning") headLine = "✍️ 正在生成方案…";
             else if (phase === "planned") headLine = "📋 方案已生成 · " + orchWorkers.length + " 个子代理待执行" + (writeWorkers.length ? " · 含写操作需确认" : "");
-            else if (phase === "running") headLine = "⏳ " + orchWorkers.length + " 个子代理并行中 · " + doneCount + "/" + orchWorkers.length + " 完成" + (wbOrchElapsed(orch) ? " · " + wbOrchElapsed(orch) : "");
+            else if (phase === "running") headLine = "⏳ 已并行 " + orchWorkers.length + " 个子代理 · " + doneCount + "/" + orchWorkers.length + " 完成" + (wbOrchElapsed(orch) ? " · " + wbOrchElapsed(orch) : "");
             else if (phase === "refining") headLine = "🔄 子代理已完成 · 主代理正在汇总" + (wbOrchElapsed(orch) ? " · " + wbOrchElapsed(orch) : "");
             else if (phase === "review") headLine = "✅ 子代理已完成 · 等待你验收";
             else if (phase === "accepted") headLine = "✅ 已验收 · " + (wbOrchElapsed(orch) || "完成");
@@ -3458,8 +3685,8 @@ window.__ModuleLoader__.load({
               orch && orch.knowledgeRefs && orch.knowledgeRefs.length ? jsxRuntime.jsx("small", { className: "wb-chat-meta", children: "🔍 已自动检索知识库 " + orch.knowledgeRefs.length + " 条（" + ((orch.knowledgeMeta && orch.knowledgeMeta.routes) || []).join(" + ") + "），引用将带 [知识N] 溯源" }) : null
             ] }),
             orch && showGate && jsxRuntime.jsxs("div", { className: "wb-chat-card wb-chat-card-write", children: [
-              jsxRuntime.jsxs("div", { className: "wb-chat-card-head", children: [jsxRuntime.jsx("strong", { children: "✋ 写操作确认" }), jsxRuntime.jsx("small", { children: writeWorkers.length + " 个子代理需要写权限" })] }),
-              jsxRuntime.jsx("div", { className: "wb-chat-card-body", children: jsxRuntime.jsx("div", { children: "方案包含写操作子代理：" + writeWorkers.map((worker) => worker.name).join("、") + "。并行子代理默认只读执行，仅在你允许后才会执行文件写入或命令。" }) }),
+              jsxRuntime.jsxs("div", { className: "wb-chat-card-head", children: [jsxRuntime.jsx("strong", { children: "✋ 建议并行写操作" }), jsxRuntime.jsx("small", { children: writeWorkers.length + " 个子代理需要确认" })] }),
+              jsxRuntime.jsx("div", { className: "wb-chat-card-body", children: jsxRuntime.jsx("div", { children: "检测到可并行的写操作方案：" + writeWorkers.map((worker) => worker.name).join("、") + "。写操作不会自动开始；确认后才执行，或切换为仅读。" }) }),
               jsxRuntime.jsx("div", { className: "wb-chat-card-actions", children: [
                 jsxRuntime.jsx("button", { type: "button", onClick: () => decideWriteGate("enforce"), children: "仅读执行" }),
                 jsxRuntime.jsx("button", { type: "button", onClick: () => decideWriteGate("allow"), children: "允许写操作" })
@@ -3474,7 +3701,7 @@ window.__ModuleLoader__.load({
                 orchWorkers.map((worker, index) => jsxRuntime.jsxs("div", { className: "wb-chat-card-agent", children: [
                   jsxRuntime.jsxs("span", { children: [jsxRuntime.jsx("strong", { children: worker.name }), worker.readOnly === false && jsxRuntime.jsx("span", { className: "wb-chat-elapsed", children: " · 可写" })] }),
                   jsxRuntime.jsxs("span", { className: wbAgentStatusClass(worker.status), children: [(WB_ORCHESTRATION_AGENT_STATUS[worker.status] || worker.status), wbAgentElapsed(worker) ? " · " + wbAgentElapsed(worker) : ""] }),
-                  jsxRuntime.jsx("small", { children: "模型：" + (worker.usedModel || worker.model || "继承主会话模型") + (worker.modelReason ? " · " + worker.modelReason : "") }),
+                  jsxRuntime.jsx("small", { children: "执行：轨道 " + (worker.usedExecutionTrack || worker.executionTrack || "A") + " · " + (worker.usedSubagentProvider || worker.productProvider || "spawn") + (worker.usedModel || worker.model ? " · 模型 " + (worker.usedModel || worker.model) : "") }),
                   worker.error ? jsxRuntime.jsx("small", { children: "失败原因：" + worker.error }) : null,
                   worker.status === "failed" && (phase === "failed" || phase === "cancelled") && jsxRuntime.jsx("button", { type: "button", className: "wb-chat-agent-retry", onClick: () => store.mutate("orchestration_worker_retry", { id: orch.id, workerId: worker.id }).catch((error) => store.setErr(String((error && error.message) || error))), children: "重试此子代理" })
                 ] }, worker.id || index)),
@@ -3514,10 +3741,11 @@ window.__ModuleLoader__.load({
             jsxRuntime.jsx("button", { type: "button", title: "引用想法或文件", onClick: () => setRefOpen((value) => !value), children: "@" }),
             jsxRuntime.jsx("button", { type: "button", title: "模型实测", className: modelPanelOpen ? "wb-chat-tool-active" : "", onClick: () => { setModelPanelOpen((value) => !value); if (!modelProbeState) runModelProbe(false); }, children: "模型" }),
             jsxRuntime.jsx("button", { type: "button", title: "添加附件", onClick: () => fileInputRef.current && fileInputRef.current.click(), children: jsxRuntime.jsx(primitives.IconPlusOutline16, { size: 14 }) }),
-              jsxRuntime.jsx("input", { ref: fileInputRef, type: "file", multiple: true, style: { display: "none" }, onChange: (event) => { uploadFiles(event.target.files); event.target.value = ""; } }),
+              jsxRuntime.jsx("input", { ref: fileInputRef, type: "file", multiple: true, accept: "image/png,image/jpeg,image/webp,image/gif,.pdf,.txt,.md,.json,.js,.ts,.py,.html,.css,.yml,.yaml,.csv,.xml,.sql,.log", style: { display: "none" }, onChange: (event) => { uploadFiles(event.target.files); event.target.value = ""; } }),
               jsxRuntime.jsx("button", { type: "button", title: strategy === "auto" ? "当前：自动判断简单问答或完整编排" : "当前：始终完整编排", onClick: () => selectStrategy(strategy === "auto" ? "always" : "auto"), children: strategy === "auto" ? "自动" : "始终编排" }),
+              jsxRuntime.jsx("button", { type: "button", title: "只读多问题自动并行，点击切换", className: readParallel ? "wb-chat-tool-active" : "", onClick: () => { const next = !readParallel; setReadParallel(next); try { localStorage.setItem(readParallelKey, next ? "on" : "off"); } catch (e) {} }, children: "只读并行:" + (readParallel ? "开" : "关") }),
               jsxRuntime.jsx("button", { type: "button", title: "模型分配：" + MODEL_POLICY_TITLE[modelPolicy] + "（点击切换）", onClick: cycleModelPolicy, children: "模型:" + (MODEL_POLICY_LABEL[modelPolicy] || modelPolicy) }),
-              jsxRuntime.jsx("span", { className: "wb-chat-meta", title: complexity.reasons.join("；"), children: "复杂度 " + complexity.score + " · " + (quick ? "快速回答" : "多代理编排") }),
+              jsxRuntime.jsx("span", { className: "wb-chat-meta", title: "价值 " + routing.value + " · 可并行 " + routing.parallelism + " · 延迟收益 " + routing.latencyBenefit + (routing.fallbackReason ? " · " + routing.fallbackReason : ""), children: autoParallelCount ? "将并行 " + autoParallelCount + " 个只读子代理" : (routing.preferredTrack === "B" ? (routing.actualTrack === "B" ? "将使用轨道 B" : "建议轨道 B · 当前回退 A") : ("复杂度 " + complexity.score + " · " + (quick ? "快速回答" : "多代理编排"))) }),
             jsxRuntime.jsx("button", { type: "button", className: "wb-chat-send", disabled: submitting || activeBusy || !draft.trim(), onClick: submit, title: activeBusy ? "当前任务完成后再发送" : "发送", children: submitting ? "处理中" : "发送" })
           ] }),
           modelPanelOpen && jsxRuntime.jsxs("div", { className: "wb-chat-ref-pop wb-chat-model-pop", children: [
@@ -4060,6 +4288,25 @@ window.__ModuleLoader__.load({
       const [vectorStatus, setVectorStatus] = React.useState(null);
       const [autoCfg, setAutoCfg] = React.useState(null);
       const [autoCfgBusy, setAutoCfgBusy] = React.useState(false);
+      const [reviewQueue, setReviewQueue] = React.useState({ total: 0, counts: { draft: 0, review: 0, lowRisk: 0 }, items: [] });
+      const [reviewPath, setReviewPath] = React.useState("");
+      const [reviewDetail, setReviewDetail] = React.useState(null);
+      const [reviewDraft, setReviewDraft] = React.useState("");
+      const [reviewNote, setReviewNote] = React.useState("");
+      const [reviewSourceConfirmed, setReviewSourceConfirmed] = React.useState(false);
+      const [reviewSelected, setReviewSelected] = React.useState({});
+      const [reviewFilter, setReviewFilter] = React.useState({ query: "", status: "all", source: "all", risk: "all" });
+      const [reviewMessage, setReviewMessage] = React.useState("");
+      const [reviewInspectorOpen, setReviewInspectorOpen] = React.useState(false);
+      const [reviewInspectorTab, setReviewInspectorTab] = React.useState("ai");
+      const [reviewAiBusy, setReviewAiBusy] = React.useState(false);
+      const [reviewAiJob, setReviewAiJob] = React.useState(null);
+      const [reviewSuggestionSelected, setReviewSuggestionSelected] = React.useState({});
+      const [reviewAppliedAiId, setReviewAppliedAiId] = React.useState("");
+      const [reviewAppliedSuggestionIds, setReviewAppliedSuggestionIds] = React.useState([]);
+      const [reviewAiLocalEdit, setReviewAiLocalEdit] = React.useState(null);
+      const [reviewEditMode, setReviewEditMode] = React.useState("edit");
+      const [reviewAiEditIndex, setReviewAiEditIndex] = React.useState(0);
       const load = React.useCallback(() => {
         setBusy(true);
         setError("");
@@ -4074,6 +4321,122 @@ window.__ModuleLoader__.load({
         }).catch((e) => setError(String((e && e.message) || e))).finally(() => setBusy(false));
       }, []);
       React.useEffect(() => { load(); }, [load]);
+      const loadReviews = React.useCallback(() => wbFetchJson("/api/dsh-workbench/knowledge/review/list").then(({ data }) => {
+        const next = data || { total: 0, counts: { draft: 0, review: 0, lowRisk: 0 }, items: [] };
+        setReviewQueue(next);
+        setReviewPath((current) => current && next.items.some((item) => item.path === current) ? current : ((next.items[0] && next.items[0].path) || ""));
+        return next;
+      }), []);
+      const openReview = React.useCallback((path) => {
+        if (!path) { setReviewDetail(null); setReviewDraft(""); return Promise.resolve(null); }
+        setBusy(true); setError(""); setReviewMessage("");
+        return wbFetchJson("/api/dsh-workbench/knowledge/review/detail?path=" + encodeURIComponent(path)).then(({ data }) => {
+          setReviewPath(path); setReviewDetail(data); setReviewDraft(data.content || ""); setReviewNote(""); setReviewSourceConfirmed(false); setReviewAppliedAiId(""); setReviewAppliedSuggestionIds([]); setReviewAiLocalEdit(null); setReviewEditMode(data.aiEdit ? "diff" : "edit"); setReviewAiEditIndex(0);
+          setReviewAiJob(data.aiJob || null); setReviewAiBusy(Boolean(data.aiJob && ["queued", "running"].includes(data.aiJob.status)));
+          setReviewSuggestionSelected(Object.fromEntries((((data.aiReview && data.aiReview.suggestions) || []).map((item) => [item.id, true])))); return data;
+        }).catch((e) => { setError(String((e && e.message) || e)); return null; }).finally(() => setBusy(false));
+      }, []);
+      React.useEffect(() => { if (tab === "review") loadReviews().catch((e) => setError(String((e && e.message) || e))); }, [tab, loadReviews]);
+      React.useEffect(() => { if (tab === "review" && reviewPath) openReview(reviewPath); else if (tab === "review") { setReviewDetail(null); setReviewDraft(""); } }, [tab, reviewPath, openReview]);
+      const saveReviewDraft = async () => {
+        if (!reviewDetail) return null;
+        const { data } = await wbFetchJson("/api/dsh-workbench/knowledge/review/save", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path: reviewDetail.path, expectedHash: reviewDetail.hash, content: reviewDraft, note: reviewNote, aiReviewId: reviewAppliedAiId, appliedSuggestionIds: reviewAppliedSuggestionIds, aiAppliedContent: reviewAiLocalEdit ? reviewAiLocalEdit.appliedContent : "" }) }, 30000);
+        setReviewDetail(data); setReviewDraft(data.content || ""); setReviewMessage("修改已保存；AI 修改标识已保留，正文改变后旧评分已过期"); setReviewAppliedAiId(""); setReviewAppliedSuggestionIds([]); setReviewAiLocalEdit(null); setReviewEditMode(data.aiEdit ? "diff" : "edit"); setReviewAiEditIndex(0); await loadReviews(); return data;
+      };
+      const runKnowledgeAiReview = async () => {
+        if (!reviewDetail || reviewAiBusy) return;
+        setReviewAiBusy(true); setError(""); setReviewMessage("");
+        try {
+          let current = reviewDetail;
+          if (reviewDraft !== reviewDetail.content) current = await saveReviewDraft();
+          const { data } = await wbFetchJson("/api/dsh-workbench/knowledge/review/ai-review/start", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path: current.path, expectedHash: current.hash }) }, 30000);
+          setReviewAiJob(data); setReviewInspectorTab("ai"); setReviewInspectorOpen(true); setReviewMessage("AI 初审已在后台开始；可以离开此页面，回来后会继续显示进度和结果。");
+        } catch (e) { setReviewAiBusy(false); setError(String((e && e.message) || e)); }
+      };
+      React.useEffect(() => {
+        if (!reviewAiJob || !["queued", "running"].includes(reviewAiJob.status)) return undefined;
+        let stopped = false;
+        let timer = null;
+        const poll = () => wbFetchJson("/api/dsh-workbench/knowledge/review/ai-review/status?id=" + encodeURIComponent(reviewAiJob.id), {}, 15000).then(async ({ data }) => {
+          if (stopped) return;
+          const active = ["queued", "running"].includes(data.status);
+          if (data.status === "completed") {
+            const { data: detail } = await wbFetchJson("/api/dsh-workbench/knowledge/review/detail?path=" + encodeURIComponent(data.path));
+            if (stopped) return;
+            if (data.path === reviewPath) { setReviewDetail(detail); setReviewDraft(detail.content || ""); setReviewSuggestionSelected(Object.fromEntries((((detail.aiReview && detail.aiReview.suggestions) || []).map((item) => [item.id, true])))); setReviewMessage(data.message || "AI 初审完成"); }
+            setReviewAiJob(data); setReviewAiBusy(false);
+            await loadReviews();
+          } else if (data.status === "failed") {
+            setReviewAiJob(data); setReviewAiBusy(false); setError(data.error || "AI 初审失败，请重试"); setReviewMessage("AI 初审未完成；错误原因已保留，可以直接重新发起。");
+          } else { setReviewAiJob(data); setReviewAiBusy(active); timer = setTimeout(poll, 900); }
+        }).catch((e) => {
+          if (stopped) return;
+          setReviewAiBusy(false); setError(String((e && e.message) || e));
+        });
+        poll();
+        return () => { stopped = true; if (timer) clearTimeout(timer); };
+      }, [reviewAiJob && reviewAiJob.id, reviewPath, loadReviews]);
+      const applyKnowledgeAiSuggestions = () => {
+        const ai = reviewDetail && reviewDetail.aiReview;
+        if (!ai || ai.stale) { setError("AI 评分已过期，请重新初审"); return; }
+        const selected = (ai.suggestions || []).filter((item) => reviewSuggestionSelected[item.id]);
+        if (!selected.length) { setError("请先勾选至少一条修改建议"); return; }
+        let next = reviewDraft;
+        let applied = [];
+        if (selected.length === (ai.suggestions || []).length && ai.proposedContent) {
+          next = ai.proposedContent; applied = selected.map((item) => item.id);
+        } else {
+          selected.forEach((item) => { if (item.before && next.includes(item.before)) { next = next.replace(item.before, item.after || ""); applied.push(item.id); } });
+        }
+        if (next === reviewDraft || !applied.length) { setError("所选建议无法精确应用，请查看前后内容后手工修改"); return; }
+        const hunks = selected.filter((item) => applied.includes(item.id)).map((item, index) => ({ id: item.id || ("change-" + (index + 1)), title: item.title || ("AI 修改 " + (index + 1)), reason: item.reason || "", before: item.before || "", after: item.after || "", start: item.after ? next.indexOf(item.after) : Math.max(0, reviewDraft.indexOf(item.before || "")) })).sort((left, right) => (left.start < 0 ? Number.MAX_SAFE_INTEGER : left.start) - (right.start < 0 ? Number.MAX_SAFE_INTEGER : right.start));
+        setReviewDraft(next); setReviewAppliedAiId(ai.id); setReviewAppliedSuggestionIds(applied); setReviewAiLocalEdit({ reviewId: ai.id, suggestionIds: applied, hunks, count: applied.length, state: "unsaved", appliedContent: next }); setReviewEditMode("diff"); setReviewAiEditIndex(0); setReviewMessage(`已把 ${applied.length} 条 AI 建议应用到编辑器；紫色部分为 AI 修改，尚未保存或发布`); setReviewInspectorOpen(false);
+      };
+      const holdKnowledgeReview = async () => {
+        const ai = reviewDetail && reviewDetail.aiReview;
+        if (ai && !ai.stale) wbFetchJson("/api/dsh-workbench/knowledge/review/ai-feedback", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ reviewId: ai.id, action: "hold", note: reviewNote }) }).catch(() => {});
+        const next = reviewNextPath(reviewDetail && reviewDetail.path); if (next) setReviewPath(next); else setReviewMessage("已暂留当前条目");
+      };
+      const reviewNextPath = (currentPath) => {
+        const items = reviewQueue.items || [];
+        const index = items.findIndex((item) => item.path === currentPath);
+        return (items[index + 1] && items[index + 1].path) || (items[index - 1] && items[index - 1].path) || "";
+      };
+      const runReviewDecision = async (decision) => {
+        if (!reviewDetail || busy) return;
+        if (["request_changes", "reject"].includes(decision) && !reviewNote.trim()) { setError("退回修改或不采纳时必须填写审核意见"); return; }
+        setBusy(true); setError(""); setReviewMessage("");
+        const currentPath = reviewDetail.path;
+        try {
+          let current = reviewDetail;
+          if (reviewDraft !== reviewDetail.content) {
+            const { data } = await wbFetchJson("/api/dsh-workbench/knowledge/review/save", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path: current.path, expectedHash: current.hash, content: reviewDraft, note: "审核前保存编辑" }) }, 30000);
+            current = data;
+          }
+          const { data } = await wbFetchJson("/api/dsh-workbench/knowledge/review/decision", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ path: current.path, expectedHash: current.hash, decision, note: reviewNote, forceReason: reviewNote, sourceConfirmed: reviewSourceConfirmed, aiReviewId: current.aiReview ? current.aiReview.id : "" }) }, 60000);
+          const nextPath = reviewNextPath(currentPath);
+          setReviewSelected((selected) => { const next = { ...selected }; delete next[currentPath]; return next; });
+          setReviewMessage(decision === "approve" ? "已发布到 02-Atomic" : decision === "reject" ? "已归档到 05-Archive" : "已退回修改");
+          await loadReviews(); await load(); await loadOverview();
+          if (nextPath && nextPath !== currentPath) setReviewPath(nextPath); else { setReviewDetail(null); setReviewDraft(""); }
+          return data;
+        } catch (e) { setError(String((e && e.message) || e)); }
+        finally { setBusy(false); }
+      };
+      const runReviewBatch = async (decision) => {
+        const paths = Object.keys(reviewSelected).filter((path) => reviewSelected[path]);
+        if (!paths.length || busy) return;
+        if (decision === "reject" && !reviewNote.trim()) { setError("批量不采纳必须填写共同审核理由"); return; }
+        if (!window.confirm(decision === "approve" ? `确定批量通过 ${paths.length} 条低风险知识吗？` : `确定把 ${paths.length} 条知识移入归档吗？`)) return;
+        setBusy(true); setError(""); setReviewMessage("");
+        try {
+          const { data } = await wbFetchJson("/api/dsh-workbench/knowledge/review/batch", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ paths, decision, note: reviewNote }) }, 120000);
+          setReviewMessage(`批量处理完成：成功 ${data.succeeded} 条，失败 ${data.failed} 条`);
+          if (data.failed) setError(data.results.filter((item) => !item.ok).map((item) => `${item.path}：${item.error}`).join("\n"));
+          setReviewSelected({}); await loadReviews(); await load(); await loadOverview();
+        } catch (e) { setError(String((e && e.message) || e)); }
+        finally { setBusy(false); }
+      };
       const loadOverview = React.useCallback(() => {
         wbFetchJson("/api/dsh-workbench/knowledge/overview").then(({ data }) => setOverview(data || null)).catch(() => {});
       }, []);
@@ -4354,6 +4717,7 @@ window.__ModuleLoader__.load({
       const claimLabel = { fact: "事实", hypothesis: "假设" };
       const TABS = [
         { id: "overview", label: "总览" },
+        { id: "review", label: "审核", count: reviewQueue.total },
         { id: "dash", label: "增长与浏览" },
         { id: "search", label: "检索" },
         { id: "distill", label: "蒸馏" },
@@ -4363,6 +4727,16 @@ window.__ModuleLoader__.load({
         { id: "vector", label: "向量设置" }
       ];
       const visibleEntries = folderFilter === "all" ? entries : entries.filter((entry) => entry.folder === folderFilter);
+      const visibleReviews = (reviewQueue.items || []).filter((item) => {
+        const query = reviewFilter.query.trim().toLocaleLowerCase();
+        if (query && ![item.title, item.summary, item.project, ...(item.tags || [])].join(" ").toLocaleLowerCase().includes(query)) return false;
+        if (reviewFilter.status !== "all" && item.status !== reviewFilter.status) return false;
+        if (reviewFilter.source !== "all" && item.sourceKind !== reviewFilter.source) return false;
+        if (reviewFilter.risk === "low" && !(item.risk && item.risk.lowRisk)) return false;
+        if (reviewFilter.risk === "attention" && item.risk && item.risk.lowRisk) return false;
+        return true;
+      });
+      const selectedReviewCount = Object.values(reviewSelected).filter(Boolean).length;
       const maxTrend = Math.max(1, ...((stats && stats.trend) || []).map((item) => item.count));
       const confBadge = (confidence) => "wb-orch-agent-status-" + (confidence === "high" ? "completed" : confidence === "low" ? "failed" : "running");
       const entryCard = (entry) => jsxRuntime.jsxs("section", { className: "wb-monitor-card", children: [
@@ -4429,6 +4803,118 @@ window.__ModuleLoader__.load({
           ] })
         ] }, item.path);
       };
+      const reviewSourceLabels = { conversation: "会话蒸馏", "project-log": "项目日志", project: "项目经验", manual: "手工蒸馏", other: "其他" };
+      const reviewAiLevelLabels = { excellent: "质量较高", revise: "建议修改后发布", return: "建议退回重写", reject: "建议不采纳", blocked: "存在硬性阻塞" };
+      const reviewAiPhaseLabels = { queued: "等待开始", precheck: "规则预检", evaluating: "八维评分", retrying: "自动修复返回格式", scoring: "校验分数", saving: "保存结果", completed: "审核完成", failed: "审核失败" };
+      const reviewScoreClass = (score) => score >= 85 ? "wb-review-score-good" : score >= 70 ? "wb-review-score-mid" : "wb-review-score-low";
+      const reviewAi = reviewDetail && reviewDetail.aiReview;
+      const reviewAiEdit = reviewAiLocalEdit || (reviewDetail && reviewDetail.aiEdit);
+      const reviewAiEditHunks = (reviewAiEdit && reviewAiEdit.hunks) || [];
+      const reviewEditSummaryFor = (item) => item.path === reviewPath && reviewAiLocalEdit ? reviewAiLocalEdit : item.aiEdit;
+      const reviewEditLabel = (edit) => !edit ? "" : edit.state === "unsaved" ? `AI 已改 ${edit.count || edit.hunks.length} 处 · 未保存` : edit.state === "human_modified_unsaved" ? `AI 修改后又被人工编辑 · 未保存` : edit.state === "human_modified" ? `AI 修改后又被人工编辑 · ${edit.count || edit.hunks.length} 处` : `AI 已改 ${edit.count || edit.hunks.length} 处`;
+      const updateReviewDraft = (value) => {
+        setReviewDraft(value);
+        if (reviewAiLocalEdit) setReviewAiLocalEdit((current) => ({ ...current, state: value === current.appliedContent ? "unsaved" : "human_modified_unsaved" }));
+        else if (reviewDetail && reviewDetail.aiEdit) setReviewAiLocalEdit({ ...reviewDetail.aiEdit, state: "human_modified_unsaved", appliedContent: undefined });
+      };
+      const positionAiEditHunks = (content, hunks) => {
+        let cursor = 0;
+        return hunks.map((hunk, index) => {
+          const after = String(hunk.after || "");
+          let start = Number.isInteger(hunk.start) && hunk.start >= cursor && content.slice(hunk.start, hunk.start + after.length) === after ? hunk.start : (after ? content.indexOf(after, cursor) : Math.max(cursor, Math.min(content.length, Number(hunk.start) || cursor)));
+          if (start < cursor) start = after ? content.indexOf(after, cursor) : cursor;
+          const found = start >= 0;
+          if (found && after) cursor = start + after.length;
+          return { ...hunk, index, start, found };
+        });
+      };
+      const focusAiEdit = (delta) => {
+        if (!reviewAiEditHunks.length) return;
+        const next = (reviewAiEditIndex + delta + reviewAiEditHunks.length) % reviewAiEditHunks.length;
+        setReviewAiEditIndex(next);
+        setTimeout(() => document.querySelector(`[data-ai-change-index="${next}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
+      };
+      const renderAiHighlightedContent = () => {
+        const content = String(reviewDraft || "");
+        const positioned = positionAiEditHunks(content, reviewAiEditHunks);
+        const children = [];
+        let cursor = 0;
+        positioned.forEach((hunk) => {
+          if (!hunk.found || hunk.start < cursor) return;
+          if (hunk.start > cursor) children.push(content.slice(cursor, hunk.start));
+          children.push(jsxRuntime.jsxs("span", { "data-ai-change-index": hunk.index, className: "wb-ai-inline-change" + (hunk.index === reviewAiEditIndex ? " wb-ai-inline-change-active" : ""), title: hunk.title + (hunk.reason ? "：" + hunk.reason : ""), children: [hunk.before && jsxRuntime.jsx("del", { children: hunk.before }), hunk.after && jsxRuntime.jsx("mark", { children: hunk.after })] }, hunk.id + "-" + hunk.index));
+          cursor = hunk.start + String(hunk.after || "").length;
+        });
+        if (cursor < content.length) children.push(content.slice(cursor));
+        return jsxRuntime.jsx("pre", { className: "wb-ai-diff-document", children });
+      };
+      const reviewCenter = jsxRuntime.jsxs("div", { className: "wb-knowledge-group", children: [
+        jsxRuntime.jsxs("div", { className: "wb-review-toolbar", children: [
+          jsxRuntime.jsx("input", { value: reviewFilter.query, placeholder: "搜索待审核标题、摘要、项目或标签", onChange: (e) => setReviewFilter((current) => ({ ...current, query: e.target.value })) }),
+          jsxRuntime.jsx("span", { className: "wb-tb-meta", children: `共 ${reviewQueue.total} 条 · 低风险 ${reviewQueue.counts.lowRisk || 0} 条` }),
+          jsxRuntime.jsxs("details", { className: "wb-review-filter", children: [jsxRuntime.jsx("summary", { children: "筛选" }), jsxRuntime.jsxs("div", { className: "wb-review-filter-pop", children: [
+            jsxRuntime.jsx("select", { value: reviewFilter.status, onChange: (e) => setReviewFilter((current) => ({ ...current, status: e.target.value })), children: [jsxRuntime.jsx("option", { value: "all", children: "全部状态" }), jsxRuntime.jsx("option", { value: "review", children: "待审核" }), jsxRuntime.jsx("option", { value: "draft", children: "草稿" })] }),
+            jsxRuntime.jsx("select", { value: reviewFilter.source, onChange: (e) => setReviewFilter((current) => ({ ...current, source: e.target.value })), children: [jsxRuntime.jsx("option", { value: "all", children: "全部来源" }), ...Object.entries(reviewSourceLabels).map(([value, label]) => jsxRuntime.jsx("option", { value, children: label }, value))] }),
+            jsxRuntime.jsx("select", { value: reviewFilter.risk, onChange: (e) => setReviewFilter((current) => ({ ...current, risk: e.target.value })), children: [jsxRuntime.jsx("option", { value: "all", children: "全部风险" }), jsxRuntime.jsx("option", { value: "low", children: "可批量通过" }), jsxRuntime.jsx("option", { value: "attention", children: "需要注意" })] })
+          ] })] }),
+          selectedReviewCount > 0 && jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy, onClick: () => runReviewBatch("approve"), children: `批量通过 ${selectedReviewCount} 条` }),
+          selectedReviewCount > 0 && jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: busy, onClick: () => runReviewBatch("reject"), children: "批量归档" })
+        ] }),
+        reviewMessage && jsxRuntime.jsx("div", { className: "wb-distill-note", children: reviewMessage }),
+        reviewAiJob && ["queued", "running", "failed"].includes(reviewAiJob.status) && jsxRuntime.jsxs("div", { className: "wb-ai-progress-card" + (reviewAiJob.status === "failed" ? " wb-ai-progress-failed" : ""), children: [
+          jsxRuntime.jsxs("div", { className: "wb-ai-progress-head", children: [jsxRuntime.jsx("strong", { children: reviewAiPhaseLabels[reviewAiJob.phase] || "AI 初审" }), jsxRuntime.jsx("span", { children: `${Math.max(0, Math.min(100, Number(reviewAiJob.progress) || 0))}%` })] }),
+          jsxRuntime.jsx("div", { className: "wb-ai-progress-track", children: jsxRuntime.jsx("span", { style: { width: Math.max(0, Math.min(100, Number(reviewAiJob.progress) || 0)) + "%" } }) }),
+          jsxRuntime.jsx("small", { children: reviewAiJob.status === "failed" ? (reviewAiJob.error || "AI 初审失败，可以直接重新发起") : ((reviewAiJob.message || "处理中") + " · 可离开此页面，任务会在后台继续") })
+        ] }),
+        reviewQueue.total === 0 ? jsxRuntime.jsx("div", { className: "wb-review-empty wb-review-pane", children: "01-Inbox 已清空，没有待审核知识。" }) : jsxRuntime.jsxs("div", { className: "wb-review-layout", children: [
+          jsxRuntime.jsx("aside", { className: "wb-review-pane wb-review-queue", children: visibleReviews.length ? visibleReviews.map((item) => jsxRuntime.jsxs("div", { className: "wb-review-row" + (reviewPath === item.path ? " wb-review-row-active" : ""), onClick: () => setReviewPath(item.path), children: [
+            jsxRuntime.jsx("input", { type: "checkbox", checked: Boolean(reviewSelected[item.path]), onClick: (e) => e.stopPropagation(), onChange: (e) => setReviewSelected((selected) => ({ ...selected, [item.path]: e.target.checked })) }),
+            jsxRuntime.jsxs("span", { children: [jsxRuntime.jsx("strong", { children: item.title }), jsxRuntime.jsx("small", { children: `${item.status === "draft" ? "草稿" : "待审核"} · ${confidenceLabel[item.confidence] || item.confidence}置信度 · ${reviewSourceLabels[item.sourceKind] || "其他"}` }), reviewEditSummaryFor(item) && jsxRuntime.jsx("small", { className: "wb-ai-edit-list-label", children: reviewEditLabel(reviewEditSummaryFor(item)) }), item.aiJob && ["queued", "running"].includes(item.aiJob.status) && jsxRuntime.jsx("small", { children: `AI 初审中 · ${item.aiJob.progress || 0}%` }), item.aiJob && item.aiJob.status === "failed" && jsxRuntime.jsx("small", { children: "AI 初审失败，可重试" }), item.aiReview && item.aiReview.stale && jsxRuntime.jsx("small", { children: "AI 评分已过期" }), item.risk && item.risk.warnings.length > 0 && jsxRuntime.jsx("small", { children: "⚠ " + item.risk.warnings.join(" · ") })] }),
+            item.aiReview && jsxRuntime.jsx("span", { className: "wb-review-score-chip " + reviewScoreClass(item.aiReview.totalScore), title: item.aiReview.stale ? "正文已改变，需重新评分" : reviewAiLevelLabels[item.aiReview.level], children: item.aiReview.stale ? "过期" : item.aiReview.totalScore })
+          ] }, item.path)) : jsxRuntime.jsx("div", { className: "wb-review-empty", children: "当前筛选下没有条目" }) }),
+          jsxRuntime.jsx("main", { className: "wb-review-pane wb-review-editor", children: !reviewDetail ? jsxRuntime.jsx("div", { className: "wb-review-empty", children: busy ? "加载审核内容…" : "从左侧选择一条知识" }) : jsxRuntime.jsxs(React.Fragment, { children: [
+            jsxRuntime.jsxs("div", { className: "wb-review-editor-head", children: [jsxRuntime.jsxs("div", { children: [jsxRuntime.jsx("h3", { children: reviewDetail.meta.title || reviewDetail.path }), jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: reviewDetail.path + " · 当前哈希 " + reviewDetail.hash.slice(0, 10) }), reviewAi && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: reviewAi.stale ? ` · AI ${reviewAi.totalScore} 分（已过期）` : ` · AI ${reviewAi.totalScore} 分 · ${reviewAiLevelLabels[reviewAi.level]}` })] }), jsxRuntime.jsxs("div", { className: "wb-review-editor-head-actions", children: [
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy || reviewAiBusy, onClick: runKnowledgeAiReview, children: reviewAiBusy ? "AI 初审中…" : (reviewAi && !reviewAi.stale ? "重新 AI 初审" : "AI 初审") }),
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => { setReviewInspectorTab(reviewAi ? "ai" : "evidence"); setReviewInspectorOpen(true); }, children: "审核详情" })
+            ] })] }),
+            reviewAiEdit && jsxRuntime.jsxs("div", { className: "wb-ai-edit-toolbar", children: [
+              jsxRuntime.jsxs("div", { className: "wb-ai-edit-modes", children: [jsxRuntime.jsx("button", { type: "button", className: reviewEditMode === "edit" ? "active" : "", onClick: () => setReviewEditMode("edit"), children: "正常编辑" }), jsxRuntime.jsx("button", { type: "button", className: reviewEditMode === "diff" ? "active" : "", onClick: () => setReviewEditMode("diff"), children: "AI 修改对照" }), jsxRuntime.jsx("button", { type: "button", className: reviewEditMode === "changes" ? "active" : "", onClick: () => setReviewEditMode("changes"), children: "只看修改" })] }),
+              jsxRuntime.jsx("span", { className: "wb-ai-edit-status", children: reviewEditLabel(reviewAiEdit) }),
+              reviewAiEditHunks.length > 0 && jsxRuntime.jsxs("div", { className: "wb-ai-edit-nav", children: [jsxRuntime.jsx("button", { type: "button", onClick: () => focusAiEdit(-1), children: "上一处" }), jsxRuntime.jsx("span", { children: `${reviewAiEditIndex + 1}/${reviewAiEditHunks.length}` }), jsxRuntime.jsx("button", { type: "button", onClick: () => focusAiEdit(1), children: "下一处" })] })
+            ] }),
+            reviewEditMode === "edit" || !reviewAiEdit ? jsxRuntime.jsx("textarea", { spellCheck: false, value: reviewDraft, onChange: (e) => updateReviewDraft(e.target.value) }) : reviewEditMode === "diff" ? jsxRuntime.jsx("div", { className: "wb-ai-diff-wrap", children: renderAiHighlightedContent() }) : jsxRuntime.jsx("div", { className: "wb-ai-changes-only", children: reviewAiEditHunks.map((hunk, index) => jsxRuntime.jsxs("section", { "data-ai-change-index": index, className: "wb-ai-change-card" + (index === reviewAiEditIndex ? " wb-ai-change-card-active" : ""), children: [jsxRuntime.jsxs("header", { children: [jsxRuntime.jsx("strong", { children: hunk.title || `AI 修改 ${index + 1}` }), jsxRuntime.jsx("span", { children: `${index + 1}/${reviewAiEditHunks.length}` })] }), hunk.reason && jsxRuntime.jsx("small", { children: hunk.reason }), hunk.before && jsxRuntime.jsxs("div", { className: "wb-ai-change-before", children: [jsxRuntime.jsx("b", { children: "修改前" }), jsxRuntime.jsx("del", { children: hunk.before })] }), hunk.after && jsxRuntime.jsxs("div", { className: "wb-ai-change-after", children: [jsxRuntime.jsx("b", { children: "修改后" }), jsxRuntime.jsx("mark", { children: hunk.after })] })] }, hunk.id + "-" + index)) }),
+            jsxRuntime.jsx("textarea", { className: "wb-review-note", value: reviewNote, placeholder: "审核意见：退回修改或不采纳时必填；强制通过重复项时填写理由", onChange: (e) => setReviewNote(e.target.value) }),
+            !reviewDetail.meta.source && jsxRuntime.jsxs("label", { className: "wb-tb-meta", style: { padding: "0 12px" }, children: [jsxRuntime.jsx("input", { type: "checkbox", checked: reviewSourceConfirmed, onChange: (e) => setReviewSourceConfirmed(e.target.checked) }), " 我已人工核对这条缺少来源的正文"] }),
+            jsxRuntime.jsxs("div", { className: "wb-review-actions", children: [
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: busy || reviewDraft === reviewDetail.content, onClick: () => { setBusy(true); setError(""); saveReviewDraft().catch((e) => setError(String((e && e.message) || e))).finally(() => setBusy(false)); }, children: "保存修改" }),
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy, onClick: () => runReviewDecision("approve"), children: "通过并发布到 02" }),
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: busy, onClick: () => runReviewDecision("request_changes"), children: "退回修改" }),
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: busy, onClick: holdKnowledgeReview, children: "暂不处理" }),
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: busy, onClick: () => runReviewDecision("reject"), children: "不采纳并归档" })
+            ] })
+          ] }) }),
+          reviewInspectorOpen && jsxRuntime.jsx("div", { className: "wb-review-inspector-backdrop", onClick: () => setReviewInspectorOpen(false) }),
+          reviewInspectorOpen && reviewDetail && jsxRuntime.jsxs("aside", { className: "wb-review-evidence", children: [
+            jsxRuntime.jsxs("div", { className: "wb-review-inspector-head", children: [jsxRuntime.jsx("strong", { children: "审核详情" }), jsxRuntime.jsx("button", { type: "button", className: "wb-tb-close", onClick: () => setReviewInspectorOpen(false), children: "✕" })] }),
+            jsxRuntime.jsxs("div", { className: "wb-review-inspector-tabs", children: [
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn" + (reviewInspectorTab === "ai" ? " wb-sp-btn-primary" : ""), onClick: () => setReviewInspectorTab("ai"), children: "AI 初审" }),
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn" + (reviewInspectorTab === "evidence" ? " wb-sp-btn-primary" : ""), onClick: () => setReviewInspectorTab("evidence"), children: "来源与预检" }),
+              jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn" + (reviewInspectorTab === "history" ? " wb-sp-btn-primary" : ""), onClick: () => setReviewInspectorTab("history"), children: "历史" })
+            ] }),
+            reviewInspectorTab === "ai" && (!reviewAi ? jsxRuntime.jsxs("section", { children: [jsxRuntime.jsx("h4", { children: "尚未进行 AI 初审" }), jsxRuntime.jsx("small", { children: "采用 KCS、Zendesk、Ragas 与 G-Eval 组合规则进行八维评分。AI 只提供建议，不会保存或发布知识。" }), jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: reviewAiBusy, onClick: runKnowledgeAiReview, children: reviewAiBusy ? "AI 初审中…" : "开始 AI 初审" })] }) : jsxRuntime.jsxs(React.Fragment, { children: [
+              jsxRuntime.jsxs("div", { className: "wb-ai-score-card", children: [jsxRuntime.jsxs("div", { className: "wb-ai-score " + reviewScoreClass(reviewAi.totalScore), children: [reviewAi.totalScore, jsxRuntime.jsx("span", { children: reviewAi.stale ? "评分已过期" : "满分 100" })] }), jsxRuntime.jsxs("div", { children: [jsxRuntime.jsx("strong", { children: reviewAiLevelLabels[reviewAi.level] || reviewAi.level }), jsxRuntime.jsx("small", { style: { display: "block", marginTop: 5 }, children: reviewAi.summary || reviewAi.recommendation }), jsxRuntime.jsx("small", { style: { display: "block", marginTop: 5 }, children: `规则 ${reviewAi.rubricVersion} · ${new Date(reviewAi.createdAt).toLocaleString()}` })] })] }),
+              reviewAi.hardBlockers.length > 0 && jsxRuntime.jsx("section", { children: [jsxRuntime.jsx("h4", { children: "硬性阻塞" }), ...reviewAi.hardBlockers.map((item) => jsxRuntime.jsx("div", { className: "wb-review-block", children: item }, item))] }),
+              jsxRuntime.jsxs("section", { children: [jsxRuntime.jsx("h4", { children: "分项评分" }), jsxRuntime.jsx("div", { className: "wb-ai-dimensions", children: reviewAi.dimensions.map((item) => jsxRuntime.jsxs("div", { className: "wb-ai-dimension", children: [jsxRuntime.jsx("strong", { children: `${item.label} · ${item.weight}%` }), jsxRuntime.jsx("span", { className: reviewScoreClass(item.score), children: item.score }), jsxRuntime.jsx("div", { className: "wb-ai-dimension-bar", children: jsxRuntime.jsx("span", { style: { width: item.score + "%" } }) }), item.rationale && jsxRuntime.jsx("small", { style: { gridColumn: "1/-1" }, children: item.rationale })] }, item.id)) })] }),
+              jsxRuntime.jsxs("section", { children: [jsxRuntime.jsx("h4", { children: `修改建议（${reviewAi.suggestions.length}）` }), reviewAi.suggestions.length ? reviewAi.suggestions.map((item) => jsxRuntime.jsxs("label", { className: "wb-ai-suggestion", children: [jsxRuntime.jsx("input", { type: "checkbox", disabled: reviewAi.stale, checked: Boolean(reviewSuggestionSelected[item.id]), onChange: (e) => setReviewSuggestionSelected((current) => ({ ...current, [item.id]: e.target.checked })) }), jsxRuntime.jsxs("span", { children: [jsxRuntime.jsx("strong", { children: item.title }), jsxRuntime.jsx("small", { children: item.reason }), (item.before || item.after) && jsxRuntime.jsx("pre", { children: `修改前：${item.before || "—"}\n修改后：${item.after || "—"}` })] })] }, item.id)) : jsxRuntime.jsx("small", { children: "AI 没有提出正文修改。" }), reviewAi.suggestions.length > 0 && jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: reviewAi.stale, onClick: applyKnowledgeAiSuggestions, children: "应用所选建议到编辑器" })] })
+            ] })),
+            reviewInspectorTab === "evidence" && jsxRuntime.jsxs(React.Fragment, { children: [
+              jsxRuntime.jsxs("section", { children: [jsxRuntime.jsx("h4", { children: "来源与范围" }), jsxRuntime.jsx("small", { children: `来源类型：${reviewSourceLabels[reviewDetail.sourceKind] || "其他"}` }), jsxRuntime.jsx("small", { children: "来源：" + (reviewDetail.meta.source || "缺失") }), reviewDetail.meta.project && jsxRuntime.jsx("small", { children: "项目：" + reviewDetail.meta.project }), reviewDetail.meta.sourceSessionId && jsxRuntime.jsx("small", { children: "会话：" + reviewDetail.meta.sourceSessionId }), reviewDetail.meta.sourceRange && jsxRuntime.jsx("small", { children: "范围：" + reviewDetail.meta.sourceRange }), reviewDetail.meta.distillRunId && jsxRuntime.jsx("small", { children: "批次：" + reviewDetail.meta.distillRunId }), reviewDetail.meta.sourceEvidenceHash && jsxRuntime.jsx("small", { children: "证据哈希：" + reviewDetail.meta.sourceEvidenceHash })] }),
+              jsxRuntime.jsxs("section", { children: [jsxRuntime.jsx("h4", { children: "质量与协调" }), jsxRuntime.jsx("small", { children: `置信度：${reviewDetail.meta.confidence} · 时效：${reviewDetail.meta.staleness || "未标注"}` }), reviewDetail.meta.suggestedAction && jsxRuntime.jsx("small", { children: "建议动作：" + reviewDetail.meta.suggestedAction }), reviewDetail.meta.relatedEntry && jsxRuntime.jsx("small", { children: "相关旧知识：" + reviewDetail.meta.relatedEntry }), reviewDetail.precheck.blocks.map((item) => jsxRuntime.jsx("div", { className: "wb-review-block", children: item }, "block-" + item)), reviewDetail.precheck.warnings.map((item) => jsxRuntime.jsx("div", { className: "wb-review-warn", children: item }, "warn-" + item)), !reviewDetail.precheck.blocks.length && jsxRuntime.jsx("small", { children: "✓ 没有重复或来源阻塞项" })] })
+            ] }),
+            reviewInspectorTab === "history" && jsxRuntime.jsx("section", { children: [jsxRuntime.jsx("h4", { children: "审核历史" }), reviewDetail.history.length ? reviewDetail.history.map((event) => jsxRuntime.jsxs("small", { children: [event.decision + " · " + new Date(event.at).toLocaleString(), event.note ? " · " + event.note : ""] }, event.id)) : jsxRuntime.jsx("small", { children: "尚无审核记录" }), jsxRuntime.jsx("small", { children: `已积累 ${reviewDetail.feedbackCount || 0} 条人工校准信号` })] })
+          ] })
+        ] })
+      ] });
       return jsxRuntime.jsxs("div", { className: "wb-page wb-knowledge", children: [
         jsxRuntime.jsxs("div", { className: "wb-page-inner", children: [
           jsxRuntime.jsxs("div", { className: "wb-style-head", children: [
@@ -4443,7 +4929,9 @@ window.__ModuleLoader__.load({
           ] }),
           error && jsxRuntime.jsx(WbErrNote, { message: error }),
           vaultRoot && jsxRuntime.jsx("small", { className: "wb-collab-file-hint", children: "Vault：" + vaultRoot + "（Obsidian 兼容；也可复制路径手动打开）" }),
-          jsxRuntime.jsx("nav", { className: "wb-collab-panel-tabs", children: TABS.map((item) => jsxRuntime.jsx("button", { type: "button", className: "wb-collab-panel-tab" + (tab === item.id ? " wb-collab-panel-tab-active" : ""), onClick: () => setTab(item.id), children: item.label }, item.id)) }),
+          jsxRuntime.jsx("nav", { className: "wb-collab-panel-tabs", children: TABS.map((item) => jsxRuntime.jsxs("button", { type: "button", className: "wb-collab-panel-tab" + (tab === item.id ? " wb-collab-panel-tab-active" : ""), onClick: () => setTab(item.id), children: [item.label, item.count > 0 && jsxRuntime.jsx("span", { className: "wb-review-count", children: item.count })] }, item.id)) }),
+
+          tab === "review" && reviewCenter,
 
           tab === "overview" && jsxRuntime.jsxs("div", { className: "wb-knowledge-group", children: [
             jsxRuntime.jsx("div", { className: "wb-knowledge-filter", children: [
@@ -4605,7 +5093,8 @@ window.__ModuleLoader__.load({
               ] }),
               distillResult.path && !distillResult.autoPublished && !distillResult.publishedPath && jsxRuntime.jsxs("div", { className: "wb-orch-actions", children: [
                 jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn wb-sp-btn-primary", disabled: busy, onClick: () => publishEntry(distillResult.path, true), children: "发布到 02-Atomic" }),
-                jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: busy, onClick: () => publishEntry(distillResult.path, false), children: "仅标记已发布" })
+                jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", disabled: busy, onClick: () => publishEntry(distillResult.path, false), children: "仅标记已发布" }),
+                jsxRuntime.jsx("button", { type: "button", className: "wb-sp-btn", onClick: () => { setTab("review"); loadReviews(); }, children: "前往审核中心" })
               ] })
             ] }),
             jsxRuntime.jsxs("section", { className: "wb-monitor-card wb-workflow-editor", children: [

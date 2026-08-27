@@ -123,9 +123,11 @@ try {
   assert.ok(knowledgeSearchTool, 'knowledge_search tool should be registered');
   assert.ok(knowledgeReadTool, 'knowledge_read tool should be registered');
   assert.equal(knowledgeSearchTool.isConcurrencySafe(), true, 'knowledge_search should opt into parallel tool scheduling');
+  assert.equal('maxItems' in knowledgeSearchTool.output.schema.properties.webQueries, false, 'tool output must stay inside the DSH rc.2 JSON Schema subset');
   const toolPrompt = promptSections.get('dsh-workbench:knowledge-tools');
   assert.ok(toolPrompt && String(toolPrompt.text).includes('knowledge_read'), 'knowledge tool prompt should be registered');
   assert.ok(String(toolPrompt.text).includes('same assistant tool-call batch'), 'freshness prompt should require a concurrent knowledge/Web call batch');
+  assert.ok(String(toolPrompt.text).includes('two or more webQueries'), 'multi-question Web fallback should require concurrent web_search calls');
   assert.ok(String(toolPrompt.text).includes('clickable [source title](URL)'), 'web-backed claims should require real clickable citations');
   assert.ok(String(toolPrompt.text).includes('Do not repeat knowledge_search'), 'sufficient coverage should discourage redundant searches');
   const traceWrapper = (eventListeners.get('tools/execute') || [])[0];
@@ -134,7 +136,8 @@ try {
   await call('/api/dsh-workbench/knowledge/traces', 'POST', { action: 'clear' });
   const traceEvents = [
     { type: 'tool/call', data: { turn: 2, step: 3, callId: 'kb-parallel', name: 'knowledge_search' } },
-    { type: 'tool/call', data: { turn: 2, step: 3, callId: 'web-parallel', name: 'web_search' } }
+    { type: 'tool/call', data: { turn: 2, step: 3, callId: 'web-parallel', name: 'web_search' } },
+    { type: 'tool/call', data: { turn: 2, step: 3, callId: 'web-parallel-2', name: 'web_search' } }
   ];
   const makeTraceExec = (name, callId, sessionId, events, args) => ({
     name, callId, rootCallId: callId, arguments: args,
@@ -156,6 +159,13 @@ try {
         await delay(20);
         return { isError: false, value: { results: [{ url: 'https://example.com/current', title: 'Current' }] }, content: [{ type: 'text', text: 'bounded web result' }] };
       }
+    ),
+    traceWrapper(
+      makeTraceExec('web_search', 'web-parallel-2', 'trace-session-a', traceEvents, { query: 'RAG 2026 benchmark latest' }),
+      async () => {
+        await delay(28);
+        return { isError: false, value: { results: [{ url: 'https://example.org/benchmark', title: 'Benchmark' }] }, content: [{ type: 'text', text: 'second bounded web result' }] };
+      }
     )
   ]);
   const isolatedEvents = [{ type: 'tool/call', data: { turn: 1, step: 1, callId: 'web-failure', name: 'web_fetch' } }];
@@ -164,10 +174,13 @@ try {
     async () => ({ isError: true, error: { message: 'network unavailable', info: { code: 'NETWORK' } }, content: [] })
   );
   const sessionATraces = await call('/api/dsh-workbench/knowledge/traces?sessionId=trace-session-a&limit=10', 'GET');
-  assert.equal(sessionATraces.totalMatched, 2, 'trace filtering should isolate one session');
+  assert.equal(sessionATraces.totalMatched, 3, 'trace filtering should isolate one session');
   assert.equal(sessionATraces.summary.hasParallelEvidence, true, 'overlapping knowledge/Web calls should produce parallel evidence');
   assert.equal(sessionATraces.summary.parallelBatches, 1);
   assert.ok(sessionATraces.summary.overlapPairs[0].overlapMs > 0, 'parallel evidence should include a positive overlap duration');
+  assert.equal(sessionATraces.summary.hasParallelWebEvidence, true, 'overlapping web_search calls should produce direct F4 evidence');
+  assert.equal(sessionATraces.summary.webParallelBatches, 1);
+  assert.ok(sessionATraces.summary.webOverlapPairs[0].overlapMs > 0);
   const knowledgeTrace = sessionATraces.traces.find((trace) => trace.tool === 'knowledge_search');
   assert.equal(knowledgeTrace.result.estimatedTokens, 100, 'token metrics must remain available after redaction');
   assert.equal(knowledgeTrace.result.retrievalTokens, 150, 'retrieval token metrics must remain available after redaction');
@@ -179,7 +192,7 @@ try {
   assert.equal(traceStoreText.includes('secret-must-not-persist'), false, 'sensitive arguments must be redacted before persistence');
   assert.equal(traceStoreText.includes('also-secret'), false, 'sensitive URL query parameters must be redacted before persistence');
   const clearedSession = await call('/api/dsh-workbench/knowledge/traces', 'POST', { action: 'clear', sessionId: 'trace-session-b' });
-  assert.equal(clearedSession.summary.total, 2, 'session-scoped clear should retain other sessions');
+  assert.equal(clearedSession.summary.total, 3, 'session-scoped clear should retain the three parallel traces from the other session');
   const aborted = new AbortController();
   aborted.abort();
   await assert.rejects(
@@ -214,8 +227,17 @@ try {
   assert.ok(toolHit.results.length >= 1 && toolHit.results.length <= 5, 'knowledge_search should return bounded summaries');
   assert.ok(['sufficient', 'gray', 'insufficient'].includes(toolHit.coverage), 'knowledge_search should expose coverage');
   assert.ok(['knowledge-only', 'parallel-kb-web', 'web-primary'].includes(toolHit.action), 'knowledge_search should expose fallback action');
+  assert.ok(Array.isArray(toolHit.webQueries), 'knowledge_search should always expose bounded Web fallback queries');
   assert.equal('content' in toolHit.results[0], false, 'knowledge_search must not return full note content');
   assert.ok(knowledgeSearchTool.output.render({}, toolHit)[0].text.includes('[知识1《'), 'tool rendering should expose a complete citation label');
+
+  const multiWebHit = await knowledgeSearchTool.execute(
+    { query: '查询 2026 年 RAG 最新基准？另外查询 2026 年主流向量数据库价格？同时查询最新隐私法规变化？第四项不应进入' },
+    { signal: new AbortController().signal }
+  );
+  assert.notEqual(multiWebHit.action, 'knowledge-only');
+  assert.deepEqual(multiWebHit.webQueries, ['查询 2026 年 RAG 最新基准', '另外查询 2026 年主流向量数据库价格', '同时查询最新隐私法规变化']);
+  assert.ok(knowledgeSearchTool.output.render({}, multiWebHit)[0].text.includes('同一个工具调用批次'));
 
   const helpful = await call('/api/dsh-workbench/knowledge/feedback', 'POST', {
     question: '子代理超时了应该怎么处理？重试机制是什么',

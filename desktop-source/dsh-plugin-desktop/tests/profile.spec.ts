@@ -305,6 +305,40 @@ describe('desktop profile composition', () => {
     expect(rows.find(row => row.id === 'ui-conversation')?.disabled).toBe(false)
   })
 
+  it('projects enabled MCP settings into official client rows and omits disabled servers', () => {
+    const home = temporaryHome()
+    writeFileSync(join(home, 'settings.yaml'), [
+      'dsh-mcp:',
+      '  servers:',
+      '    - serverName: local-tools',
+      '      transport: stdio',
+      '      enabled: true',
+      '      command: node',
+      '      args: [server.mjs]',
+      '      reconnect:',
+      '        maxAttempts: 1',
+      '    - serverName: remote-tools',
+      '      transport: streamable-http',
+      '      enabled: false',
+      '      url: https://example.com/mcp',
+      '',
+    ].join('\n'))
+
+    const prepared = prepareDesktopProfile(undefined, home, 'darwin')
+    const rows = composeEntries([prepared.patches])
+    expect(rows).toContainEqual(expect.objectContaining({
+      id: 'mcp-client-local-tools',
+      name: '@deepseek-ai/dsh-mcp-client',
+      config: expect.objectContaining({
+        transport: 'stdio',
+        command: 'node',
+        args: ['server.mjs'],
+        reconnect: expect.objectContaining({ maxAttempts: 1 }),
+      }),
+    }))
+    expect(rows.map(row => row.id)).not.toContain('mcp-client-remote-tools')
+  })
+
   it('composes installation-owned workbench over the desktop profile with native UI surfaces disabled', () => {
     const home = temporaryHome()
     const fallbackPackage = join(home, 'profiles', 'node_modules', 'dsh-workbench')

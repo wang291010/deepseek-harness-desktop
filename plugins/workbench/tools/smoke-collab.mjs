@@ -13,6 +13,7 @@ const routes = new Map();
 const llmCalls = [];
 const agentPrompts = [];
 const spawnOptions = [];
+const savedImageInputs = [];
 const workspaces = [];
 const plan = {
   title: '附件协作测试',
@@ -32,13 +33,19 @@ const ctx = {
         workspaceRegistry: { list: () => workspaces },
         llm: {
           listProviders: () => [{ id: 'test-provider', name: 'Test Provider' }],
-          listModels: async () => Array.from({ length: 14 }, (_, index) => ({ provider: 'test-provider', id: 'test-model-' + index, name: 'Test Model ' + index })),
+          listModels: async () => Array.from({ length: 14 }, (_, index) => ({ provider: 'test-provider', id: 'test-model-' + index, name: 'Test Model ' + index, inputModalities: index === 0 ? ['text', 'image'] : ['text'] })),
           async *stream(options) {
             const messageText = Array.isArray(options && options.messages) && options.messages[0] && Array.isArray(options.messages[0].content)
               ? options.messages[0].content.map((block) => block && block.text || '').join('')
               : '';
-            llmCalls.push({ system: String(options && options.system || ''), prompt: messageText });
-            yield { type: 'text-delta', text: JSON.stringify(plan) };
+            llmCalls.push({ system: String(options && options.system || ''), prompt: messageText, content: options.messages[0].content, provider: options.provider, model: options.model });
+            const responsePlan = String(options && options.system || '').includes('G1 只读自动并行') ? {
+              ...plan,
+              title: 'G1 自动并行',
+              maxParallel: 3,
+              workers: [1, 2, 3].map((index) => ({ name: '只读问题 ' + index, role: '检索员', task: '回答独立问题 ' + index, dependsOn: [], readOnly: true, acceptance: '给出答案' }))
+            } : plan;
+            yield { type: 'text-delta', text: JSON.stringify(responsePlan) };
           }
         }
       });
@@ -59,6 +66,15 @@ const ctx = {
           }
         },
         agents: { get: (id) => ({ id: id || 'session-1', session: { header: { cwd: 'D:\\demo' } } }), roots: () => [] }
+      });
+    } else if (names.includes('attachments')) {
+      callback({
+        attachments: {
+          async saveImages(inputs) {
+            savedImageInputs.push(...inputs);
+            return inputs.map((input, index) => ({ attachmentId: 'sha256:test-' + index, mediaType: input.mediaType, bytes: input.data.byteLength, width: 2, height: 2, name: input.name }));
+          }
+        }
       });
     } else if (names.includes('commands')) {
       callback({ commands: { register: () => [] }, sessionProjections: {} });
@@ -161,15 +177,21 @@ try {
   assert.ok(uploaded.id, 'upload should return an id');
   assert.equal(uploaded.name, '说明.txt');
   assert.equal(uploaded.mime, 'text/plain');
+  const uploadedImage = await call('/api/dsh-workbench/attachment/put', 'POST', {
+    name: '证据.png',
+    data: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAD0lEQVR4nGP4z8DAwMAAAAYAAf5Wf5kAAAAASUVORK5CYII=', 'base64').toString('base64')
+  });
 
   // --- create orchestration with attachment, plan prompt carries pool + attachment ---
   await call('/api/dsh-workbench/tasks/mutate', 'POST', {
     action: 'orchestration_create', scope: 'all', projectPath: 'D:\\demo', sourceSessionId: 'session-1',
-    idea: '总结附件内容', attachments: [{ id: uploaded.id, name: uploaded.name, mime: uploaded.mime, size: uploaded.size }],
+    idea: '总结附件内容', attachments: [{ id: uploaded.id, name: uploaded.name, mime: uploaded.mime, size: uploaded.size }, { id: uploadedImage.id, name: uploadedImage.name, mime: uploadedImage.mime, size: uploadedImage.size }],
     sourceRefs: [{ kind: 'idea', title: '需求说明', content: '必须核对附件中的 hello world' }]
   });
   let created = (await listAll()).orchestrations[0];
-  assert.equal(created.attachments.length, 1);
+  assert.equal(created.attachments.length, 2);
+  assert.equal(savedImageInputs.length, 1, 'image should be committed through the official attachment store');
+  assert.ok(created.attachments.find((entry) => entry.name === '证据.png').imageRef, 'durable image reference should persist');
   assert.equal(created.sourceRefs.length, 1, 'structured source references should persist');
   assert.ok(String(created.attachments[0].summary).includes('hello world'), 'text attachment should be summarized');
   const id = created.id;
@@ -180,9 +202,32 @@ try {
   const planCall = llmCalls.slice(callsBeforePlan).find((entry) => entry.prompt.includes('总结附件内容'));
   assert.ok(planCall, 'planning should call the model');
   assert.ok(planCall.prompt.includes('说明.txt'), 'plan prompt should include attachment name');
+  const visionCall = llmCalls.slice(callsBeforePlan).find((entry) => entry.content.some((block) => block.type === 'image'));
+  assert.ok(visionCall && visionCall.content.some((block) => block.type === 'image' && block.attachment.attachmentId === 'sha256:test-0'), 'vision evidence extractor should receive a native image block');
+  assert.equal(visionCall.model, 'test-model-0', 'vision evidence extraction should select a model that declares image input');
+  assert.ok(planCall.prompt.includes('视觉模型观察结果'), 'text planner should receive the extracted image evidence');
   assert.ok(planCall.prompt.includes('候选专家参考'), 'plan prompt should include agent pool in pool mode');
   assert.ok(planCall.prompt.includes('alpha'), 'plan prompt should include written pool agent ids');
   assert.ok(llmCalls.some((entry) => entry.prompt.includes('[来源: 需求说明]')), 'plan prompt should carry traceable source references');
+
+  // --- G1: explicit multi-question metadata enforces independent read-only parallel workers ---
+  await call('/api/dsh-workbench/tasks/mutate', 'POST', {
+    action: 'orchestration_create', scope: 'all', projectPath: 'D:\\demo', sourceSessionId: 'session-1',
+    idea: '同时查询问题一？另外查询问题二？并且查询问题三？', autoParallel: true, parallelCount: 3,
+    routing: { mode: 'parallel', targetAgents: 3, readOnlyParallel: true, value: 0.6, parallelism: 1, latencyBenefit: 0.9, preferredTrack: 'A' }
+  });
+  const g1Snapshot = await listAll();
+  const g1Id = g1Snapshot.orchestrations.find((item) => item.autoParallel).id;
+  assert.equal(g1Snapshot.routingMetrics.samples, 1, 'G4 should observe routed tasks in the 14-day window');
+  assert.equal(g1Snapshot.routingMetrics.modes.parallel, 1);
+  assert.equal(g1Snapshot.routingMetrics.averageTargetAgents, 3);
+  await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_plan', scope: 'all', projectPath: 'D:\\demo', id: g1Id });
+  const g1Planned = await waitPhase(g1Id, ['planned', 'failed']);
+  assert.equal(g1Planned.phase, 'planned', g1Planned.runtimeError);
+  assert.equal(g1Planned.workers.length, 3);
+  assert.equal(g1Planned.maxParallel, 3);
+  assert.ok(g1Planned.workers.every((worker) => worker.readOnly === true && worker.dependsOn.length === 0));
+  await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_remove', scope: 'all', projectPath: 'D:\\demo', id: g1Id });
 
   // --- execute: worker prompt carries attachment; logs are recorded ---
   await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_start', scope: 'all', projectPath: 'D:\\demo', id });
@@ -191,6 +236,7 @@ try {
   const terminal = (await listAll()).orchestrations.find((item) => item.id === id);
   assert.equal(terminal.phase, 'review');
   assert.ok(agentPrompts.some((text) => text.includes('说明.txt')), 'worker prompt should include attachment');
+  assert.ok(spawnOptions.some((options) => options.prompt.some((block) => block.type === 'image' && block.attachment.attachmentId === 'sha256:test-0')), 'worker should receive the native image block');
   assert.ok(agentPrompts.some((text) => text.includes('验证一切')), 'worker prompt should include matched pool prompt');
   assert.ok(agentPrompts.some((text) => text.includes('[来源: 需求说明]')), 'worker prompt should carry source references');
   assert.ok(spawnOptions.some((options) => options.agentOptions && options.agentOptions.model === 'pool-model'), 'pool model should be used as fallback when worker model is empty');
@@ -312,7 +358,7 @@ assert.equal(acceptedResult.knowledgeCapture.entry.status, 'review');
   assert.ok(sessionAfter.text.includes('本会话目标是验证项目配置功能'), 'session context should persist');
   await call('/api/dsh-workbench/tasks/mutate', 'POST', { action: 'orchestration_plan', scope: 'all', projectPath: projectDir, id: ctxId });
   await waitPhase(ctxId, ['planned', 'failed']);
-  const rulePrompt = llmCalls[llmCalls.length - 1].prompt;
+  const rulePrompt = [...llmCalls].reverse().find((entry) => entry.prompt.includes('项目规则'))?.prompt || '';
   assert.ok(rulePrompt.includes('项目规则') && rulePrompt.includes('只修改桌面端代码'), 'plan prompt should include project rules');
   assert.ok(rulePrompt.includes('当前会话专属内容') && rulePrompt.includes('本会话目标是验证项目配置功能'), 'plan prompt should include session-specific context');
 

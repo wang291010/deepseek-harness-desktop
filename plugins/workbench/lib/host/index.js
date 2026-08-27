@@ -46,9 +46,16 @@ const PRESET_ROOT = join(DSH_ROOT, '.agent-presets');
 const MAX_READ_BYTES = 512 * 1024;
 const MAX_BODY_BYTES = 768 * 1024;
 const MAX_TASK_STORE_BYTES = 8 * 1024 * 1024;
+const DEFAULT_ROUTING_POLICY = Object.freeze({ version: 1, complexityThreshold: 0.6, valueThreshold: 0.6, parallelQuestionMin: 2, source: 'benchmark-v1', appliedAt: '' });
 const PRESET_FILES = new Set(['agent.cordis.yml', 'preset.yml']);
 const DIAG_LOG = join(DSH_ROOT, 'dsh-workbench-host.log');
 const TASK_STORE = join(DSH_ROOT, 'dsh-workbench-tasks.json');
+// Allow a short, explicitly configured root for Windows repositories whose
+// nested files exceed the default path budget; preserve the existing user-data
+// location when no override is provided.
+const ORCHESTRATION_WORKTREE_ROOT = resolve(
+  (process.env.DSH_WORKBENCH_WORKTREE_ROOT ?? '').trim() || join(DSH_ROOT, 'worktrees'),
+);
 const STYLE_STORE = join(DSH_ROOT, 'dsh-workbench-style.json');
 const MEMORY_STORE = join(DSH_ROOT, 'dsh-workbench-memory.json');
 const AGENTS_STORE = join(DSH_ROOT, 'dsh-workbench-agents.json');
@@ -87,6 +94,33 @@ const KNOWLEDGE_QUALITY_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-quality.
 const KNOWLEDGE_AUTO_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-auto.json');
 const KNOWLEDGE_TRACE_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-traces.json');
 const KNOWLEDGE_STATS_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-stats.json');
+const KNOWLEDGE_REVIEW_STORE = join(DSH_ROOT, 'dsh-workbench-knowledge-reviews.json');
+const MAX_KNOWLEDGE_REVIEW_STORE_BYTES = 12 * 1024 * 1024;
+const MAX_KNOWLEDGE_REVIEW_EVENTS = 2000;
+const MAX_KNOWLEDGE_AI_REVIEWS = 300;
+const MAX_KNOWLEDGE_AI_FEEDBACK = 2000;
+const MAX_KNOWLEDGE_AI_EDITS = 300;
+const MAX_KNOWLEDGE_AI_PROPOSAL_CHARS = 60000;
+const KNOWLEDGE_AI_REVIEW_TIMEOUT_MS = Math.max(100, Math.min(180000, Number(process.env.DSH_KNOWLEDGE_AI_REVIEW_TIMEOUT_MS) || 90000));
+const KNOWLEDGE_REVIEW_RUBRIC_VERSION = 'kcs-zendesk-ragas-geval-v1';
+const KNOWLEDGE_REVIEW_RUBRIC = [
+  { id: 'grounding', label: '来源支持度', weight: 25, description: '条目中的主张能否由正文所附来源证据、会话摘录或明确引用支持。' },
+  { id: 'atomicity', label: '原子性与聚焦度', weight: 15, description: '是否只表达一个可独立检索和复用的知识主题。' },
+  { id: 'completeness', label: '完整性与可复用性', weight: 15, description: '脱离原始会话后是否仍具备必要上下文、结论、方法和适用条件。' },
+  { id: 'uniqueness', label: '去重与冲突', weight: 15, description: '是否避免与现有知识重复，并明确潜在冲突、更新或替代关系。' },
+  { id: 'clarity', label: '清晰度与结构', weight: 10, description: '标题、段落、步骤和措辞是否清楚、简洁且易扫描。' },
+  { id: 'retrievability', label: '元数据与可检索性', weight: 10, description: '类型、标签、摘要、标题和关键词是否能支持后续检索。' },
+  { id: 'freshness', label: '时效与适用范围', weight: 5, description: '是否标明版本、时间、前提和适用边界。' },
+  { id: 'safety', label: '安全与隐私', weight: 5, description: '是否避免密钥、隐私、越权信息和不应长期保存的内容。' }
+];
+const DISTILL_STORE = join(DSH_ROOT, 'dsh-workbench-distill.json');
+const MAX_DISTILL_STORE_BYTES = 4 * 1024 * 1024;
+const MAX_DISTILL_RUNS = 100;
+const MAX_DISTILL_CANDIDATES = 30;
+const MAX_DISTILL_TRANSCRIPT_CHARS = 80000;
+const DISTILL_EXTRACTOR_VERSION = 'p6.1-v1';
+const DISTILL_TYPES = new Set(['preference', 'decision', 'knowledge', 'experience', 'procedure', 'open_loop']);
+const DISTILL_ACTIONS = new Set(['ADD', 'MERGE', 'UPDATE', 'SUPERSEDE', 'SKIP']);
 const MAX_KNOWLEDGE_INDEX_BYTES = 32 * 1024 * 1024;
 const MAX_KNOWLEDGE_EVAL_BYTES = 2 * 1024 * 1024;
 const MAX_KNOWLEDGE_TRACE_BYTES = 2 * 1024 * 1024;
@@ -163,7 +197,7 @@ const ORCHESTRATION_WORKER_MAX_RETRIES = Number.isSafeInteger(Number(process.env
 const ORCHESTRATION_MODEL_FAILOVER_MAX = Number.isSafeInteger(Number(process.env.DSH_WORKBENCH_MODEL_FAILOVER_MAX)) && Number(process.env.DSH_WORKBENCH_MODEL_FAILOVER_MAX) >= 0 ? Number(process.env.DSH_WORKBENCH_MODEL_FAILOVER_MAX) : 2;
 const ORCHESTRATION_MODEL_FAILOVER_ENABLED = String(process.env.DSH_WORKBENCH_MODEL_FAILOVER || 'on').toLowerCase() !== 'off';
 const ATTACHMENT_TYPES = new Map([
-  ['png', 'image/png'], ['jpg', 'image/jpeg'], ['jpeg', 'image/jpeg'], ['webp', 'image/webp'],
+  ['png', 'image/png'], ['jpg', 'image/jpeg'], ['jpeg', 'image/jpeg'], ['webp', 'image/webp'], ['gif', 'image/gif'],
   ['pdf', 'application/pdf'], ['txt', 'text/plain'], ['md', 'text/markdown'], ['json', 'application/json'],
   ['js', 'text/javascript'], ['ts', 'text/typescript'], ['py', 'text/x-python'], ['html', 'text/html'],
   ['css', 'text/css'], ['yml', 'text/yaml'], ['yaml', 'text/yaml'], ['csv', 'text/csv'], ['xml', 'text/xml'],
@@ -204,8 +238,12 @@ const WORKFLOW_DEFAULT_TEMPLATES = [
 let taskMutationQueue = Promise.resolve();
 let styleMutationQueue = Promise.resolve();
 let projectContextMutationQueue = Promise.resolve();
+let knowledgeReviewMutationQueue = Promise.resolve();
+const knowledgeAiReviewJobs = new Map();
+const knowledgeAiReviewLatestByPath = new Map();
 const sseClients = new Set();
 const sseSessions = new Map();
+let orchestrationAttachments = null;
 
 function broadcastTaskEvent(payload) {
   if (sseClients.size === 0) return;
@@ -245,8 +283,12 @@ let chatLlm = null;
 let chatCounter = 0;
 let orchestrationSubagents = null;
 let orchestrationAgents = null;
+let orchestrationJobs = null;
 let workspaceRegistry = null;
 const orchestrationControllers = new Map();
+const distillControllers = new Map();
+let distillMutationQueue = Promise.resolve();
+const orchestrationContinuableRuns = new Map();
 let modelCatalogCache = { expiresAt: 0, items: [] };
 const modelProbeCache = new Map();
 const MODEL_PROBE_CACHE_MS = 10 * 60 * 1000;
@@ -530,6 +572,25 @@ async function generateMemorySnapshot(orchestration) {
   });
 }
 
+function cleanImageAttachmentRef(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  const attachmentId = cleanTaskText(value.attachmentId, 160);
+  const mediaType = cleanTaskText(value.mediaType, 40);
+  const bytes = Number(value.bytes);
+  const width = Number(value.width);
+  const height = Number(value.height);
+  if (!attachmentId || !['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(mediaType)) return null;
+  if (![bytes, width, height].every((entry) => Number.isFinite(entry) && entry > 0)) return null;
+  return {
+    attachmentId,
+    mediaType,
+    bytes: Math.round(bytes),
+    width: Math.round(width),
+    height: Math.round(height),
+    ...(cleanTaskText(value.name, 240) ? { name: cleanTaskText(value.name, 240) } : {})
+  };
+}
+
 function cleanAttachment(raw) {
   const value = raw && typeof raw === 'object' ? raw : {};
   return {
@@ -538,7 +599,8 @@ function cleanAttachment(raw) {
     mime: cleanTaskText(value.mime, 120),
     size: Number.isFinite(Number(value.size)) ? Math.max(0, Math.round(Number(value.size))) : 0,
     path: cleanTaskText(value.path, 500),
-    summary: cleanTaskText(value.summary, 6000)
+    summary: cleanTaskText(value.summary, 6000),
+    imageRef: cleanImageAttachmentRef(value.imageRef)
   };
 }
 
@@ -581,6 +643,8 @@ async function removeAttachmentFile(id) {
 async function resolveAttachments(input) {
   const raw = Array.isArray(input) ? input.slice(0, 12) : [];
   const out = [];
+  const imageInputs = [];
+  const imageIndexes = [];
   for (const item of raw) {
     const id = cleanTaskText(item && item.id, 120);
     if (!/^[0-9a-f-]{36}$/i.test(id)) continue;
@@ -594,14 +658,26 @@ async function resolveAttachments(input) {
     }
     const name = cleanTaskText(item && item.name, 240) || id;
     const ext = String(name).toLocaleLowerCase().split('.').pop() || '';
-    out.push(cleanAttachment({
+    const attachment = cleanAttachment({
       id,
       name,
       mime: cleanTaskText(item && item.mime, 120) || ATTACHMENT_TYPES.get(ext) || 'application/octet-stream',
       size: Number.isFinite(Number(item && item.size)) ? Math.round(Number(item && item.size)) : info.size,
       path: filePath,
       summary: await attachmentSummaryOf(filePath, ext, info.size)
-    }));
+    });
+    out.push(attachment);
+    if (attachment.mime.startsWith('image/')) {
+      imageIndexes.push(out.length - 1);
+      imageInputs.push({ data: await readFile(filePath), mediaType: attachment.mime, name: attachment.name });
+    }
+  }
+  if (imageInputs.length) {
+    if (orchestrationAttachments === null || typeof orchestrationAttachments.saveImages !== 'function') {
+      throw new Error('图片附件服务尚未就绪，请等待桌面端完成启动后重试');
+    }
+    const refs = await orchestrationAttachments.saveImages(imageInputs);
+    refs.forEach((ref, index) => { out[imageIndexes[index]] = cleanAttachment({ ...out[imageIndexes[index]], imageRef: ref }); });
   }
   return out;
 }
@@ -978,7 +1054,9 @@ function cleanKnowledgeEntry(raw) {
 function parseFrontmatter(text) {
   const entry = {
     title: '', type: 'note', context: '', result: '', reusable: '', tags: [], confidence: 'medium', status: '', claimType: '', assumptions: [],
-    verifiedBy: '', verifiedAt: '', staleness: '', related: [], summary: '', source: '', project: '', created: '', body: String(text || '')
+    verifiedBy: '', verifiedAt: '', staleness: '', related: [], summary: '', source: '', project: '', created: '',
+    sourceSessionId: '', sourceRange: '', distillRunId: '', sourceEvidenceHash: '', suggestedAction: '', relatedEntry: '', extractorVersion: '',
+    reviewDecision: '', reviewNote: '', reviewOperationId: '', body: String(text || '')
   };
   const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(entry.body);
   if (!match) {
@@ -999,6 +1077,16 @@ function parseFrontmatter(text) {
   entry.staleness = KNOWLEDGE_STALENESS.includes(line('staleness')) ? line('staleness') : '';
   entry.verifiedBy = line('verifiedBy');
   entry.verifiedAt = line('verifiedAt');
+  entry.sourceSessionId = line('sourceSessionId');
+  entry.sourceRange = line('sourceRange');
+  entry.distillRunId = line('distillRunId');
+  entry.sourceEvidenceHash = line('sourceEvidenceHash');
+  entry.suggestedAction = line('suggestedAction');
+  entry.relatedEntry = line('relatedEntry').replace(/^"|"$/g, '');
+  entry.extractorVersion = line('extractorVersion');
+  entry.reviewDecision = line('reviewDecision');
+  entry.reviewNote = line('reviewNote').replace(/^"|"$/g, '');
+  entry.reviewOperationId = line('reviewOperationId');
   const assumptionLines = [];
   const metaLines = String(match[1] || '').split(/\r?\n/);
   for (let i = 0; i < metaLines.length; i += 1) {
@@ -2399,6 +2487,10 @@ function knowledgeAutoBuildBlock(refs, meta, config) {
     } else {
       lines.push('- 覆盖充分：优先使用本次知识库证据；仅当问题明确要求最新信息时再联网。');
     }
+    if (config && config.webFallback && coverageAction !== 'knowledge-only' && meta && Array.isArray(meta.webQueries) && meta.webQueries.length > 1) {
+      lines.push('- 本题包含多个独立联网子问题；请在同一个工具调用批次中并发执行以下 web_search（最多 3 路），不要逐个等待：');
+      meta.webQueries.forEach((query, index) => lines.push('  ' + (index + 1) + '. ' + query));
+    }
     lines.push('- 引用规则：引用知识库内容时标注 [知识N《标题》· 置信度 X]（如 [知识1《工作台-看门狗机制》· 置信度中]）；引用联网内容时标注来源 URL；不得只给结论不给出处。');
     lines.push('- 可信度区分：知识库与联网信息冲突或都不充分时，说明差异；无法确认的内容一律标注“未验证”，不得编造。');
   } else if (config && config.webFallback) {
@@ -2406,6 +2498,23 @@ function knowledgeAutoBuildBlock(refs, meta, config) {
     lines.push('知识库未找到高置信度匹配。若问题涉及事实、经验或最新信息，请调用 web_search 联网核实并标注来源 URL；无法联网时标注“未验证”。');
   }
   return lines.join('\n');
+}
+
+function knowledgeWebFallbackQueries(query) {
+  const value = cleanTaskText(query, KNOWLEDGE_MAX_QUERY_CHARS);
+  if (!value) return [];
+  let parts = value.split(/[?？;；\n]+/).map((item) => item.trim()).filter(Boolean);
+  if (parts.length < 2) parts = value.split(/(?:，|,)?\s*(?:同时|另外|此外|以及|并且|还要|还想知道|再查)\s*/).map((item) => item.trim()).filter(Boolean);
+  const seen = new Set();
+  const bounded = [];
+  for (const part of parts) {
+    const cleaned = cleanTaskText(part.replace(/^[、，,：:\-\s]+|[。.!！\s]+$/g, ''), 220);
+    const key = cleaned.toLocaleLowerCase();
+    if (cleaned.length < 4 || seen.has(key)) continue;
+    seen.add(key); bounded.push(cleaned);
+    if (bounded.length === 3) break;
+  }
+  return bounded.length > 1 ? bounded : [value];
 }
 
 const knowledgeAutoCache = new Map();
@@ -2560,6 +2669,7 @@ async function knowledgeAutoRetrieve(query, sessionId, project, options = {}) {
     latencyMs: search.latencyMs || 0,
     query: q,
     coverage: search.coverage || null,
+    webQueries: search.coverage && search.coverage.action !== 'knowledge-only' ? knowledgeWebFallbackQueries(q) : [],
     iterations: search.iterations || 1,
     at: new Date().toISOString()
   };
@@ -2981,6 +3091,16 @@ function knowledgeFrontmatter(meta) {
   }
   if (meta.verifiedBy) lines.push('verifiedBy: ' + cleanTaskText(meta.verifiedBy, 80));
   if (meta.verifiedAt) lines.push('verifiedAt: ' + String(meta.verifiedAt));
+  if (meta.sourceSessionId) lines.push('sourceSessionId: ' + cleanTaskText(meta.sourceSessionId, 160));
+  if (meta.sourceRange) lines.push('sourceRange: ' + cleanTaskText(meta.sourceRange, 300));
+  if (meta.distillRunId) lines.push('distillRunId: ' + cleanTaskText(meta.distillRunId, 160));
+  if (meta.sourceEvidenceHash) lines.push('sourceEvidenceHash: ' + cleanTaskText(meta.sourceEvidenceHash, 160));
+  if (meta.suggestedAction) lines.push('suggestedAction: ' + cleanTaskText(meta.suggestedAction, 30));
+  if (meta.relatedEntry) lines.push('relatedEntry: ' + JSON.stringify(cleanTaskText(meta.relatedEntry, 500)));
+  if (meta.extractorVersion) lines.push('extractorVersion: ' + cleanTaskText(meta.extractorVersion, 80));
+  if (meta.reviewDecision) lines.push('reviewDecision: ' + cleanTaskText(meta.reviewDecision, 40));
+  if (meta.reviewNote) lines.push('reviewNote: ' + JSON.stringify(cleanTaskText(meta.reviewNote, 1200)));
+  if (meta.reviewOperationId) lines.push('reviewOperationId: ' + cleanTaskText(meta.reviewOperationId, 160));
   if (Array.isArray(meta.assumptions) && meta.assumptions.length) {
     lines.push('assumptions:');
     meta.assumptions.slice(0, 10).forEach((item) => lines.push('  - ' + cleanTaskText(item, 300)));
@@ -3184,6 +3304,657 @@ async function archiveKnowledgeEntry({ path, restore }) {
   const index = await scanKnowledgeVault();
   const entry = index.entries.find((item) => item.path === dest.relPath) || null;
   return { entry, path: dest.relPath, archived: !restore, restored: !!restore };
+}
+
+function cleanKnowledgeReviewEvent(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  return {
+    id: cleanTaskText(value.id, 160) || randomUUID(),
+    operationId: cleanTaskText(value.operationId, 160) || randomUUID(),
+    pathBefore: cleanTaskText(value.pathBefore, 500),
+    pathAfter: cleanTaskText(value.pathAfter, 500),
+    decision: cleanTaskText(value.decision, 40),
+    note: cleanTaskText(value.note, 1200),
+    actor: cleanTaskText(value.actor, 80) || 'human',
+    hashBefore: cleanTaskText(value.hashBefore, 80),
+    hashAfter: cleanTaskText(value.hashAfter, 80),
+    precheckBlocks: Array.isArray(value.precheckBlocks) ? value.precheckBlocks.map((item) => cleanTaskText(item, 300)).filter(Boolean).slice(0, 10) : [],
+    at: typeof value.at === 'string' ? value.at : new Date().toISOString()
+  };
+}
+
+function cleanKnowledgeAiSuggestion(raw, index = 0) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  return {
+    id: cleanTaskText(value.id, 120) || ('suggestion-' + (index + 1)),
+    title: cleanTaskText(value.title, 180) || ('修改建议 ' + (index + 1)),
+    reason: cleanTaskText(value.reason, 800),
+    severity: ['high', 'medium', 'low'].includes(value.severity) ? value.severity : 'medium',
+    before: cleanDistillText(value.before, 4000),
+    after: cleanDistillText(value.after, 6000)
+  };
+}
+
+function cleanKnowledgeAiReview(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  const scores = new Map((Array.isArray(value.dimensions) ? value.dimensions : []).map((item) => [cleanTaskText(item && item.id, 80), item]));
+  const dimensions = KNOWLEDGE_REVIEW_RUBRIC.map((rubric) => {
+    const source = scores.get(rubric.id) || {};
+    const score = Math.max(0, Math.min(100, Math.round(Number(source.score) || 0)));
+    return { ...rubric, score, rationale: cleanTaskText(source.rationale, 800) };
+  });
+  const computedTotal = Math.round(dimensions.reduce((sum, item) => sum + item.score * item.weight, 0) / 100);
+  const totalScore = Number.isFinite(Number(value.totalScore)) ? Math.max(0, Math.min(100, Math.round(Number(value.totalScore)))) : computedTotal;
+  return {
+    id: cleanTaskText(value.id, 160) || randomUUID(),
+    path: cleanTaskText(value.path, 500),
+    contentHash: cleanTaskText(value.contentHash, 80),
+    rubricVersion: cleanTaskText(value.rubricVersion, 120) || KNOWLEDGE_REVIEW_RUBRIC_VERSION,
+    totalScore,
+    level: ['excellent', 'revise', 'return', 'reject', 'blocked'].includes(value.level) ? value.level : 'return',
+    recommendation: cleanTaskText(value.recommendation, 1000),
+    summary: cleanTaskText(value.summary, 1200),
+    dimensions,
+    hardBlockers: Array.isArray(value.hardBlockers) ? value.hardBlockers.map((item) => cleanTaskText(item, 500)).filter(Boolean).slice(0, 12) : [],
+    warnings: Array.isArray(value.warnings) ? value.warnings.map((item) => cleanTaskText(item, 500)).filter(Boolean).slice(0, 20) : [],
+    suggestions: Array.isArray(value.suggestions) ? value.suggestions.slice(0, 20).map(cleanKnowledgeAiSuggestion) : [],
+    proposedContent: cleanDistillText(value.proposedContent, MAX_KNOWLEDGE_AI_PROPOSAL_CHARS),
+    model: cleanTaskText(value.model, 160) || `${CHAT_PROVIDER}/${CHAT_MODEL}`,
+    createdAt: typeof value.createdAt === 'string' ? value.createdAt : new Date().toISOString()
+  };
+}
+
+function cleanKnowledgeAiFeedback(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  return {
+    id: cleanTaskText(value.id, 160) || randomUUID(),
+    reviewId: cleanTaskText(value.reviewId, 160),
+    path: cleanTaskText(value.path, 500),
+    contentHash: cleanTaskText(value.contentHash, 80),
+    action: cleanTaskText(value.action, 80),
+    decision: cleanTaskText(value.decision, 80),
+    suggestionIds: Array.isArray(value.suggestionIds) ? value.suggestionIds.map((item) => cleanTaskText(item, 120)).filter(Boolean).slice(0, 20) : [],
+    note: cleanTaskText(value.note, 1200),
+    actor: 'human',
+    at: typeof value.at === 'string' ? value.at : new Date().toISOString()
+  };
+}
+
+function cleanKnowledgeAiEdit(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  return {
+    id: cleanTaskText(value.id, 160) || randomUUID(),
+    reviewId: cleanTaskText(value.reviewId, 160),
+    path: cleanTaskText(value.path, 500),
+    beforeHash: cleanTaskText(value.beforeHash, 80),
+    afterHash: cleanTaskText(value.afterHash, 80),
+    suggestionIds: Array.isArray(value.suggestionIds) ? value.suggestionIds.map((item) => cleanTaskText(item, 120)).filter(Boolean).slice(0, 20) : [],
+    hunks: Array.isArray(value.hunks) ? value.hunks.slice(0, 20).map((item, index) => ({
+      id: cleanTaskText(item && item.id, 120) || ('change-' + (index + 1)),
+      title: cleanTaskText(item && item.title, 180) || ('AI 修改 ' + (index + 1)),
+      reason: cleanTaskText(item && item.reason, 600),
+      before: cleanDistillText(item && item.before, 1200),
+      after: cleanDistillText(item && item.after, 1200),
+      start: Number.isSafeInteger(item && item.start) ? item.start : -1
+    })) : [],
+    humanModifiedAtSave: value.humanModifiedAtSave === true,
+    createdAt: typeof value.createdAt === 'string' ? value.createdAt : new Date().toISOString()
+  };
+}
+
+async function readKnowledgeReviewStore() {
+  try {
+    const info = await lstat(KNOWLEDGE_REVIEW_STORE);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('knowledge review store must be a regular non-symbolic file');
+    if (info.size > MAX_KNOWLEDGE_REVIEW_STORE_BYTES) throw new Error('knowledge review store exceeds size limit');
+    const parsed = JSON.parse(await readFile(KNOWLEDGE_REVIEW_STORE, 'utf8'));
+    return {
+      version: 3,
+      revision: Number.isSafeInteger(parsed.revision) ? parsed.revision : 0,
+      events: Array.isArray(parsed.events) ? parsed.events.slice(-MAX_KNOWLEDGE_REVIEW_EVENTS).map(cleanKnowledgeReviewEvent) : [],
+      aiReviews: Array.isArray(parsed.aiReviews) ? parsed.aiReviews.slice(-MAX_KNOWLEDGE_AI_REVIEWS).map(cleanKnowledgeAiReview) : [],
+      feedback: Array.isArray(parsed.feedback) ? parsed.feedback.slice(-MAX_KNOWLEDGE_AI_FEEDBACK).map(cleanKnowledgeAiFeedback) : [],
+      aiEdits: Array.isArray(parsed.aiEdits) ? parsed.aiEdits.slice(-MAX_KNOWLEDGE_AI_EDITS).map(cleanKnowledgeAiEdit) : []
+    };
+  } catch (error) {
+    if (error && error.code === 'ENOENT') return { version: 3, revision: 0, events: [], aiReviews: [], feedback: [], aiEdits: [] };
+    throw error;
+  }
+}
+
+async function writeKnowledgeReviewStore(store) {
+  await mkdir(DSH_ROOT, { recursive: true });
+  const next = {
+    version: 3,
+    revision: Number(store.revision) || 0,
+    events: (store.events || []).slice(-MAX_KNOWLEDGE_REVIEW_EVENTS).map(cleanKnowledgeReviewEvent),
+    aiReviews: (store.aiReviews || []).slice(-MAX_KNOWLEDGE_AI_REVIEWS).map(cleanKnowledgeAiReview),
+    feedback: (store.feedback || []).slice(-MAX_KNOWLEDGE_AI_FEEDBACK).map(cleanKnowledgeAiFeedback),
+    aiEdits: (store.aiEdits || []).slice(-MAX_KNOWLEDGE_AI_EDITS).map(cleanKnowledgeAiEdit)
+  };
+  const temp = KNOWLEDGE_REVIEW_STORE + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, JSON.stringify(next, null, 2) + '\n', 'utf8');
+  let lastError;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try { await rename(temp, KNOWLEDGE_REVIEW_STORE); return next; }
+    catch (error) { lastError = error; if (attempt < 4) await new Promise((resolvePromise) => setTimeout(resolvePromise, 25 * (attempt + 1))); }
+  }
+  try { await rm(temp, { force: true }); } catch {}
+  throw lastError;
+}
+
+async function appendKnowledgeReviewEvent(event) {
+  const store = await readKnowledgeReviewStore();
+  store.revision += 1;
+  store.events.push(cleanKnowledgeReviewEvent(event));
+  await writeKnowledgeReviewStore(store);
+  return store.events[store.events.length - 1];
+}
+
+function latestKnowledgeAiReview(store, path) {
+  return (store.aiReviews || []).filter((item) => item.path === path).slice(-1)[0] || null;
+}
+
+function latestKnowledgeAiEdit(store, path) {
+  return (store.aiEdits || []).filter((item) => item.path === path).slice(-1)[0] || null;
+}
+
+function publicKnowledgeAiEdit(edit, currentHash) {
+  if (!edit) return null;
+  const changedAfterSave = edit.afterHash !== currentHash;
+  return {
+    ...edit,
+    count: edit.suggestionIds.length || edit.hunks.length,
+    changedAfterSave,
+    state: edit.humanModifiedAtSave || changedAfterSave ? 'human_modified' : 'saved'
+  };
+}
+
+function publicKnowledgeAiReviewJob(job) {
+  if (!job) return null;
+  return {
+    id: job.id,
+    path: job.path,
+    contentHash: job.contentHash,
+    status: job.status,
+    phase: job.phase,
+    progress: job.progress,
+    message: job.message,
+    error: job.error,
+    reviewId: job.reviewId,
+    createdAt: job.createdAt,
+    updatedAt: job.updatedAt,
+    completedAt: job.completedAt
+  };
+}
+
+function latestKnowledgeAiReviewJob(path, contentHash = '') {
+  const id = knowledgeAiReviewLatestByPath.get(path);
+  const job = id ? knowledgeAiReviewJobs.get(id) : null;
+  if (!job) return null;
+  return contentHash && job.contentHash !== contentHash ? null : publicKnowledgeAiReviewJob(job);
+}
+
+function updateKnowledgeAiReviewJob(job, patch) {
+  Object.assign(job, patch, { updatedAt: new Date().toISOString() });
+  knowledgeAiReviewJobs.set(job.id, job);
+  knowledgeAiReviewLatestByPath.set(job.path, job.id);
+  return publicKnowledgeAiReviewJob(job);
+}
+
+function friendlyKnowledgeAiReviewError(error) {
+  const message = String((error && error.message) || error || 'AI 初审失败');
+  if (/Unterminated string|Unexpected end of JSON|JSON at position|valid JSON|分项评分不完整|标签格式不完整/i.test(message)) {
+    return 'AI 返回格式不完整，系统自动重试后仍未得到完整结果，请稍后重试。';
+  }
+  if (/timed?\s*out|timeout|超时/i.test(message)) return 'AI 初审等待超时，请稍后重试。';
+  return cleanTaskText(message, 500) || 'AI 初审失败，请稍后重试。';
+}
+
+async function startKnowledgeAiReview(body) {
+  const file = await readKnowledgeReviewFile(body.path);
+  if (file.target.folder !== 'inbox') throw new Error('only Inbox entries can be AI reviewed');
+  if (body.expectedHash && body.expectedHash !== file.hash) throw new Error('文件已被修改，请重新加载后再进行 AI 初审');
+  const existing = latestKnowledgeAiReviewJob(file.target.relPath, file.hash);
+  if (existing && ['queued', 'running'].includes(existing.status)) return existing;
+  const now = new Date().toISOString();
+  const job = {
+    id: randomUUID(),
+    path: file.target.relPath,
+    contentHash: file.hash,
+    status: 'queued',
+    phase: 'queued',
+    progress: 5,
+    message: '已进入审核队列',
+    error: '',
+    reviewId: '',
+    createdAt: now,
+    updatedAt: now,
+    completedAt: ''
+  };
+  updateKnowledgeAiReviewJob(job, {});
+  void runKnowledgeAiReview({ path: file.target.relPath, expectedHash: file.hash }, (progress) => updateKnowledgeAiReviewJob(job, progress)).then((review) => {
+    updateKnowledgeAiReviewJob(job, { status: 'completed', phase: 'completed', progress: 100, message: `AI 初审完成：${review.totalScore} 分`, reviewId: review.id, completedAt: new Date().toISOString() });
+  }).catch((error) => {
+    updateKnowledgeAiReviewJob(job, { status: 'failed', phase: 'failed', progress: 100, message: 'AI 初审失败', error: friendlyKnowledgeAiReviewError(error), completedAt: new Date().toISOString() });
+  });
+  if (knowledgeAiReviewJobs.size > 100) {
+    const old = [...knowledgeAiReviewJobs.values()].filter((item) => !['queued', 'running'].includes(item.status)).sort((a, b) => String(a.updatedAt).localeCompare(String(b.updatedAt)));
+    while (knowledgeAiReviewJobs.size > 100 && old.length) knowledgeAiReviewJobs.delete(old.shift().id);
+  }
+  return publicKnowledgeAiReviewJob(job);
+}
+
+function knowledgeAiReviewJobStatus(id) {
+  const job = knowledgeAiReviewJobs.get(cleanTaskText(id, 160));
+  if (!job) throw new Error('AI 初审任务不存在或应用已重启，请重新发起');
+  return publicKnowledgeAiReviewJob(job);
+}
+
+async function appendKnowledgeAiFeedbackUnsafe(feedback) {
+  const store = await readKnowledgeReviewStore();
+  store.revision += 1;
+  store.feedback.push(cleanKnowledgeAiFeedback(feedback));
+  await writeKnowledgeReviewStore(store);
+  return store.feedback[store.feedback.length - 1];
+}
+
+async function appendKnowledgeAiEditUnsafe(file, content, body) {
+  const reviewId = cleanTaskText(body.aiReviewId, 160);
+  const suggestionIds = Array.isArray(body.appliedSuggestionIds) ? body.appliedSuggestionIds.map((item) => cleanTaskText(item, 120)).filter(Boolean).slice(0, 20) : [];
+  if (!reviewId || !suggestionIds.length) return null;
+  const store = await readKnowledgeReviewStore();
+  const review = (store.aiReviews || []).find((item) => item.id === reviewId);
+  if (!review || review.path !== file.target.relPath || review.contentHash !== file.hash) throw new Error('AI 修改来源与当前正文不匹配，请重新初审');
+  const selected = suggestionIds.map((id) => (review.suggestions || []).find((item) => item.id === id)).filter(Boolean);
+  const hunks = selected.map((suggestion, index) => {
+    const after = String(suggestion.after || '');
+    const before = String(suggestion.before || '');
+    let start = after ? content.indexOf(after) : -1;
+    if (start < 0 && !after && before) start = Math.min(Math.max(0, file.content.indexOf(before)), content.length);
+    return { id: suggestion.id || ('change-' + (index + 1)), title: suggestion.title, reason: suggestion.reason, before, after, start };
+  }).sort((left, right) => (left.start < 0 ? Number.MAX_SAFE_INTEGER : left.start) - (right.start < 0 ? Number.MAX_SAFE_INTEGER : right.start));
+  const edit = cleanKnowledgeAiEdit({
+    id: randomUUID(),
+    reviewId,
+    path: file.target.relPath,
+    beforeHash: file.hash,
+    afterHash: knowledgeEntryHash(content),
+    suggestionIds,
+    hunks,
+    humanModifiedAtSave: typeof body.aiAppliedContent === 'string' && body.aiAppliedContent !== content,
+    createdAt: new Date().toISOString()
+  });
+  store.revision += 1;
+  store.aiEdits.push(edit);
+  await writeKnowledgeReviewStore(store);
+  return edit;
+}
+
+async function validateKnowledgeAiEditSource(file, body) {
+  const reviewId = cleanTaskText(body.aiReviewId, 160);
+  const suggestionIds = Array.isArray(body.appliedSuggestionIds) ? body.appliedSuggestionIds.map((item) => cleanTaskText(item, 120)).filter(Boolean) : [];
+  if (!reviewId || !suggestionIds.length) return;
+  const store = await readKnowledgeReviewStore();
+  const review = (store.aiReviews || []).find((item) => item.id === reviewId);
+  if (!review || review.path !== file.target.relPath || review.contentHash !== file.hash) throw new Error('AI 修改来源与当前正文不匹配，请重新初审');
+  if (suggestionIds.some((id) => !(review.suggestions || []).some((item) => item.id === id))) throw new Error('AI 修改建议不存在，请重新初审');
+}
+
+async function readKnowledgeReviewFile(path) {
+  const target = knowledgeResolve(path);
+  if (!target) throw new Error('invalid knowledge path');
+  const info = await lstat(target.full);
+  if (info.isSymbolicLink() || !info.isFile()) throw new Error('knowledge entry must be a regular non-symbolic file');
+  if (info.size > KNOWLEDGE_MAX_ENTRY_BYTES) throw new Error('knowledge entry exceeds size limit');
+  const content = await readFile(target.full, 'utf8');
+  return { target, content, hash: knowledgeEntryHash(content), parsed: parseFrontmatter(content) };
+}
+
+function knowledgeReviewSourceKind(parsed) {
+  const source = String(parsed.source || '').toLowerCase();
+  if (parsed.sourceSessionId || source.includes('conversation-distill') || source.includes('会话')) return 'conversation';
+  if (source.includes('项目日志') || /项目日志\s*C\d+/i.test(source)) return 'project-log';
+  if (source.includes('orchestration') || source.includes('项目经验')) return 'project';
+  if (source.includes('text') || source.includes('手工')) return 'manual';
+  return 'other';
+}
+
+function knowledgeReviewRisk(entry) {
+  const warnings = [];
+  if (!entry.source) warnings.push('缺少来源');
+  if (entry.confidence === 'low') warnings.push('低置信度');
+  if (entry.staleness === 'VOLATILE') warnings.push('易变内容');
+  if (!entry.summary) warnings.push('缺少摘要');
+  return { warnings, lowRisk: warnings.length === 0 && entry.confidence !== 'low' && entry.staleness !== 'VOLATILE' };
+}
+
+async function knowledgeReviewList() {
+  await ensureKnowledgeVault();
+  let index = await readKnowledgeIndex();
+  if (await knowledgeIndexStale()) index = await scanKnowledgeVault();
+  const store = await readKnowledgeReviewStore();
+  const items = (index.entries || []).filter((entry) => entry.folder === 'inbox' && ['draft', 'review'].includes(entry.status)).map((entry) => {
+    const risk = knowledgeReviewRisk(entry);
+    const aiReview = latestKnowledgeAiReview(store, entry.path);
+    const aiJob = latestKnowledgeAiReviewJob(entry.path, entry.hash);
+    const aiEdit = latestKnowledgeAiEdit(store, entry.path);
+    return { ...entry, sourceKind: knowledgeReviewSourceKind(entry), risk, aiJob, aiEdit: publicKnowledgeAiEdit(aiEdit, entry.hash), aiReview: aiReview ? { id: aiReview.id, totalScore: aiReview.totalScore, level: aiReview.level, recommendation: aiReview.recommendation, hardBlockers: aiReview.hardBlockers, contentHash: aiReview.contentHash, stale: aiReview.contentHash !== entry.hash, createdAt: aiReview.createdAt } : null };
+  });
+  items.sort((a, b) => Number(b.risk.warnings.length > 0) - Number(a.risk.warnings.length > 0) || String(a.createdAt || a.updatedAt).localeCompare(String(b.createdAt || b.updatedAt)));
+  return {
+    total: items.length,
+    counts: { draft: items.filter((item) => item.status === 'draft').length, review: items.filter((item) => item.status === 'review').length, lowRisk: items.filter((item) => item.risk.lowRisk).length },
+    items
+  };
+}
+
+async function knowledgeReviewDetail(path) {
+  const file = await readKnowledgeReviewFile(path);
+  const precheck = await precheckKnowledgeEntry({ title: file.parsed.title, content: file.content, source: file.parsed.source, excludePath: file.target.relPath });
+  const store = await readKnowledgeReviewStore();
+  const history = store.events.filter((event) => event.pathBefore === file.target.relPath || event.pathAfter === file.target.relPath).slice(-50).reverse();
+  const aiReview = latestKnowledgeAiReview(store, file.target.relPath);
+  const aiEdit = latestKnowledgeAiEdit(store, file.target.relPath);
+  return {
+    path: file.target.relPath,
+    content: file.content,
+    hash: file.hash,
+    meta: file.parsed,
+    sourceKind: knowledgeReviewSourceKind(file.parsed),
+    precheck,
+    risk: knowledgeReviewRisk(file.parsed),
+    history,
+    rubric: { version: KNOWLEDGE_REVIEW_RUBRIC_VERSION, dimensions: KNOWLEDGE_REVIEW_RUBRIC },
+    aiJob: latestKnowledgeAiReviewJob(file.target.relPath, file.hash),
+    aiEdit: publicKnowledgeAiEdit(aiEdit, file.hash),
+    aiReview: aiReview ? { ...aiReview, stale: aiReview.contentHash !== file.hash } : null,
+    feedbackCount: (store.feedback || []).filter((item) => item.path === file.target.relPath).length
+  };
+}
+
+function safeKnowledgeAiProposal(original, proposed) {
+  const source = parseFrontmatter(original);
+  const candidate = parseFrontmatter(String(proposed || ''));
+  const body = String(candidate.body || '').trim() ? candidate.body : source.body;
+  const meta = {
+    ...source,
+    title: candidate.title || source.title,
+    type: KNOWLEDGE_TYPES.includes(candidate.type) ? candidate.type : source.type,
+    context: candidate.context || source.context,
+    result: candidate.result || source.result,
+    reusable: candidate.reusable || source.reusable,
+    tags: candidate.tags.length ? candidate.tags : source.tags,
+    confidence: KNOWLEDGE_CONFIDENCES.includes(candidate.confidence) ? candidate.confidence : source.confidence,
+    claimType: KNOWLEDGE_CLAIM_TYPES.includes(candidate.claimType) ? candidate.claimType : source.claimType,
+    staleness: KNOWLEDGE_STALENESS.includes(candidate.staleness) ? candidate.staleness : source.staleness,
+    assumptions: candidate.assumptions.length ? candidate.assumptions : source.assumptions,
+    related: candidate.related.length ? candidate.related : source.related,
+    summary: candidate.summary || source.summary,
+    status: source.status,
+    source: source.source,
+    project: source.project,
+    created: source.created
+  };
+  return (knowledgeFrontmatter(meta) + '\n' + body).slice(0, MAX_KNOWLEDGE_AI_PROPOSAL_CHARS);
+}
+
+function knowledgeAiReviewPrompt(file, precheck, sanitizedContent) {
+  const rubricText = KNOWLEDGE_REVIEW_RUBRIC.map((item) => `${item.id}（${item.label}，权重 ${item.weight}）：${item.description}`).join('\n');
+  return [
+    `评分规则版本：${KNOWLEDGE_REVIEW_RUBRIC_VERSION}`,
+    '你审核的是准备进入长期知识库的 Markdown 草稿。只依据提供的草稿、来源字段和重复/冲突预检，不得凭常识把没有证据的主张判为正确。',
+    '逐维给 0-100 分和简短理由。修改建议必须提供草稿中可精确找到的 before 原文与 after 替换文本；如果是整体结构调整，再同时给出完整 proposedContent。',
+    '输出要精简：八个 DIMENSION 必须全部输出且放在最前面；SUGGESTION 最多 6 条，BEFORE 与 AFTER 各不超过 600 字。',
+    '不得更改 status、source、project、sourceSessionId、sourceRange、distillRunId、sourceEvidenceHash、extractorVersion、review* 等来源与审核字段。',
+    '只输出以下标签文本，不要 JSON、Markdown 代码围栏或额外说明。标签内容允许自然换行：',
+    '<DIMENSION id="grounding" score="0">理由</DIMENSION>',
+    '（依次输出全部八个 DIMENSION）',
+    '<SUMMARY>总体判断</SUMMARY>',
+    '<RECOMMENDATION>给审核人的下一步建议</RECOMMENDATION>',
+    '<WARNING>非硬阻塞问题</WARNING>',
+    '<SUGGESTION id="s1" severity="medium"><TITLE>建议标题</TITLE><REASON>原因</REASON><BEFORE>草稿中的精确原文</BEFORE><AFTER>建议替换文本</AFTER></SUGGESTION>',
+    '评分维度：\n' + rubricText,
+    '规则预检：\n' + JSON.stringify({ blocks: precheck.blocks, warnings: precheck.warnings, duplicates: precheck.duplicates, similar: precheck.similar }, null, 2),
+    '待审核草稿（疑似敏感内容已经脱敏）：\n' + sanitizedContent
+  ].join('\n\n').slice(0, 90000);
+}
+
+function parseKnowledgeAiReviewOutput(text) {
+  const raw = String(text || '').trim().replace(/^```(?:\w+)?\s*/i, '').replace(/\s*```$/i, '');
+  if (!raw) throw new Error('AI 初审返回为空');
+  try {
+    const parsed = parseJsonObject(raw);
+    if (parsed && typeof parsed === 'object') return parsed;
+  } catch { /* tagged output is the preferred resilient format */ }
+  const firstTag = (name, source = raw) => {
+    const match = String(source).match(new RegExp(`<${name}\\b[^>]*>([\\s\\S]*?)<\\/${name}>`, 'i'));
+    return match ? match[1].trim() : '';
+  };
+  const dimensions = [];
+  for (const match of raw.matchAll(/<DIMENSION\b([^>]*)>([\s\S]*?)<\/DIMENSION>/gi)) {
+    const id = (match[1].match(/\bid\s*=\s*["']([^"']+)["']/i) || [])[1] || '';
+    const score = (match[1].match(/\bscore\s*=\s*["']?([0-9]{1,3})/i) || [])[1] || 0;
+    if (id) dimensions.push({ id, score: Number(score), rationale: match[2].trim() });
+  }
+  const warnings = [...raw.matchAll(/<WARNING\b[^>]*>([\s\S]*?)<\/WARNING>/gi)].map((match) => match[1].trim()).filter(Boolean);
+  const suggestions = [];
+  for (const match of raw.matchAll(/<SUGGESTION\b([^>]*)>([\s\S]*?)<\/SUGGESTION>/gi)) {
+    const id = (match[1].match(/\bid\s*=\s*["']([^"']+)["']/i) || [])[1] || ('suggestion-' + (suggestions.length + 1));
+    const severity = (match[1].match(/\bseverity\s*=\s*["']([^"']+)["']/i) || [])[1] || 'medium';
+    suggestions.push({ id, severity, title: firstTag('TITLE', match[2]), reason: firstTag('REASON', match[2]), before: firstTag('BEFORE', match[2]), after: firstTag('AFTER', match[2]) });
+  }
+  if (!dimensions.length) throw new Error('AI 初审返回的标签格式不完整');
+  return { summary: firstTag('SUMMARY'), recommendation: firstTag('RECOMMENDATION'), dimensions, warnings, suggestions, proposedContent: firstTag('PROPOSED_CONTENT') };
+}
+
+async function runKnowledgeAiReview(body, onProgress = () => {}) {
+  onProgress({ status: 'running', phase: 'precheck', progress: 12, message: '正在检查来源、重复项与敏感信息' });
+  const file = await readKnowledgeReviewFile(body.path);
+  if (file.target.folder !== 'inbox') throw new Error('only Inbox entries can be AI reviewed');
+  if (body.expectedHash && body.expectedHash !== file.hash) throw new Error('文件已被修改，请重新加载后再进行 AI 初审');
+  const precheck = await precheckKnowledgeEntry({ title: file.parsed.title, content: file.content, source: file.parsed.source, excludePath: file.target.relPath });
+  const secretScan = redactDistillText(file.content);
+  const hardBlockers = [...precheck.blocks];
+  if (secretScan.redacted) hardBlockers.unshift('内容包含疑似密钥或敏感信息，必须先脱敏');
+  if (!String(file.parsed.title || '').trim()) hardBlockers.push('缺少可识别标题');
+  if (!String(file.parsed.body || '').trim()) hardBlockers.push('正文为空');
+  const system = '你是严格、可解释的知识质量评审器。使用固定评分表，不夸大事实正确性，不替人做最终发布决定。严格使用指定标签格式输出。';
+  const prompt = knowledgeAiReviewPrompt(file, precheck, secretScan.text);
+  let parsed = null;
+  let parseError = null;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    onProgress({ status: 'running', phase: attempt ? 'retrying' : 'evaluating', progress: attempt ? 64 : 24, message: attempt ? '返回格式不完整，正在自动重试' : 'AI 正在按八维规则评分' });
+    try {
+      const output = await streamLlmText(attempt ? system + ' 上一次返回格式不完整；这次必须先完整输出八个闭合的 DIMENSION 标签，再输出其他短标签。' : system, prompt, {
+        maxTokens: 6500,
+        temperature: 0.1,
+        timeoutMs: KNOWLEDGE_AI_REVIEW_TIMEOUT_MS,
+        onProgress: (chars) => onProgress({ status: 'running', phase: attempt ? 'retrying' : 'evaluating', progress: Math.min(attempt ? 82 : 62, (attempt ? 64 : 24) + Math.floor(chars / 180)), message: attempt ? '正在重新生成完整评分' : 'AI 正在生成分项评分与建议' })
+      });
+      const candidate = parseKnowledgeAiReviewOutput(output);
+      const ids = new Set(Array.isArray(candidate && candidate.dimensions) ? candidate.dimensions.map((item) => item && item.id) : []);
+      if (!candidate || KNOWLEDGE_REVIEW_RUBRIC.some((item) => !ids.has(item.id))) throw new Error('AI 初审返回的分项评分不完整');
+      parsed = candidate;
+      break;
+    } catch (error) {
+      parseError = error;
+      if (/timed?\s*out|timeout/i.test(String((error && error.message) || error))) break;
+    }
+  }
+  if (!parsed) throw parseError || new Error('AI 初审返回格式不完整');
+  onProgress({ status: 'running', phase: 'scoring', progress: 88, message: '正在校验分数并整理修改建议' });
+  const dimensions = KNOWLEDGE_REVIEW_RUBRIC.map((rubric) => {
+    const candidate = Array.isArray(parsed.dimensions) ? parsed.dimensions.find((item) => item && item.id === rubric.id) : null;
+    return { ...rubric, score: Math.max(0, Math.min(100, Math.round(Number(candidate && candidate.score) || 0))), rationale: cleanTaskText(candidate && candidate.rationale, 800) };
+  });
+  if (secretScan.redacted) {
+    const safety = dimensions.find((item) => item.id === 'safety');
+    if (safety) { safety.score = 0; safety.rationale = '规则扫描发现疑似密钥或敏感信息。'; }
+  }
+  if (!file.parsed.source) {
+    const grounding = dimensions.find((item) => item.id === 'grounding');
+    if (grounding) { grounding.score = Math.min(grounding.score, 30); grounding.rationale = grounding.rationale || '缺少来源，无法确认主张支持度。'; }
+  }
+  if (precheck.duplicates.length) {
+    const uniqueness = dimensions.find((item) => item.id === 'uniqueness');
+    if (uniqueness) uniqueness.score = Math.min(uniqueness.score, 35);
+  }
+  const totalScore = Math.round(dimensions.reduce((sum, item) => sum + item.score * item.weight, 0) / 100);
+  const level = hardBlockers.length ? 'blocked' : totalScore >= 85 ? 'excellent' : totalScore >= 70 ? 'revise' : totalScore >= 50 ? 'return' : 'reject';
+  const proposedContent = parsed.proposedContent && file.content.length <= MAX_KNOWLEDGE_AI_PROPOSAL_CHARS ? safeKnowledgeAiProposal(file.content, String(parsed.proposedContent)) : '';
+  const review = cleanKnowledgeAiReview({
+    id: randomUUID(), path: file.target.relPath, contentHash: file.hash, rubricVersion: KNOWLEDGE_REVIEW_RUBRIC_VERSION,
+    totalScore, level, recommendation: parsed.recommendation, summary: parsed.summary, dimensions, hardBlockers,
+    warnings: [...precheck.warnings, ...(Array.isArray(parsed.warnings) ? parsed.warnings : [])], suggestions: parsed.suggestions,
+    proposedContent, model: `${CHAT_PROVIDER}/${CHAT_MODEL}`, createdAt: new Date().toISOString()
+  });
+  onProgress({ status: 'running', phase: 'saving', progress: 95, message: '正在保存评分和审核记录' });
+  const operation = knowledgeReviewMutationQueue.then(async () => {
+    const current = await readKnowledgeReviewFile(file.target.relPath);
+    if (current.hash !== file.hash) throw new Error('AI 初审期间文件发生变化，结果未保存，请重新审核');
+    const store = await readKnowledgeReviewStore();
+    store.revision += 1;
+    store.aiReviews.push(review);
+    store.events.push(cleanKnowledgeReviewEvent({ operationId: review.id, pathBefore: file.target.relPath, pathAfter: file.target.relPath, decision: 'ai_review', note: `Rubric ${review.rubricVersion} · ${review.totalScore} 分 · ${review.level}`, actor: 'ai', hashBefore: file.hash, hashAfter: file.hash, precheckBlocks: hardBlockers }));
+    await writeKnowledgeReviewStore(store);
+    return { ...review, stale: false };
+  });
+  knowledgeReviewMutationQueue = operation.catch(() => {});
+  return operation;
+}
+
+async function recordKnowledgeAiFeedback(body) {
+  const reviewId = cleanTaskText(body.reviewId, 160);
+  if (!reviewId) throw new Error('AI review id required');
+  const operation = knowledgeReviewMutationQueue.then(async () => {
+    const store = await readKnowledgeReviewStore();
+    const review = (store.aiReviews || []).find((item) => item.id === reviewId);
+    if (!review) throw new Error('AI review not found');
+    const feedback = cleanKnowledgeAiFeedback({ ...body, reviewId, path: review.path, contentHash: review.contentHash });
+    store.revision += 1;
+    store.feedback.push(feedback);
+    await writeKnowledgeReviewStore(store);
+    return feedback;
+  });
+  knowledgeReviewMutationQueue = operation.catch(() => {});
+  return operation;
+}
+
+async function atomicReplaceKnowledgeFile(file, content) {
+  const temp = file + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, content, 'utf8');
+  try { await rename(temp, file); }
+  catch (error) { try { await rm(temp, { force: true }); } catch {} throw error; }
+}
+
+async function moveReviewedKnowledge(file, destinationFolder, markdown) {
+  const destination = knowledgeWritePath(destinationFolder, file.target.file.replace(/\.md$/i, ''));
+  if (!destination) throw new Error('invalid review destination');
+  try {
+    const info = await lstat(destination.full);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('review destination is not a regular file');
+    const existing = await readFile(destination.full, 'utf8');
+    if (knowledgeEntryHash(existing) === knowledgeEntryHash(markdown)) {
+      await rm(file.target.full, { force: false });
+      return destination;
+    }
+    throw new Error('目标目录存在同名但内容不同的条目，请改名或先处理重复项');
+  } catch (error) {
+    if (!error || error.code !== 'ENOENT') throw error;
+  }
+  const temp = destination.full + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, markdown, 'utf8');
+  try { await rename(temp, destination.full); }
+  catch (error) { try { await rm(temp, { force: true }); } catch {} throw error; }
+  const written = await readFile(destination.full, 'utf8');
+  if (knowledgeEntryHash(written) !== knowledgeEntryHash(markdown)) throw new Error('发布后的内容校验失败，Inbox 原文件已保留');
+  await rm(file.target.full, { force: false });
+  return destination;
+}
+
+async function saveKnowledgeReview(body) {
+  const operation = knowledgeReviewMutationQueue.then(async () => {
+    const file = await readKnowledgeReviewFile(body.path);
+    if (file.target.folder !== 'inbox') throw new Error('only Inbox entries can be edited in review center');
+    if (body.expectedHash && body.expectedHash !== file.hash) throw new Error('文件已被其他窗口修改，请重新加载后再保存');
+    const content = String(body.content || '');
+    if (!content.trim() || Buffer.byteLength(content, 'utf8') > KNOWLEDGE_MAX_ENTRY_BYTES) throw new Error('review content is empty or too large');
+    await validateKnowledgeAiEditSource(file, body);
+    await atomicReplaceKnowledgeFile(file.target.full, content);
+    const hashAfter = knowledgeEntryHash(content);
+    await appendKnowledgeReviewEvent({ operationId: randomUUID(), pathBefore: file.target.relPath, pathAfter: file.target.relPath, decision: 'edit', note: body.note, actor: 'human', hashBefore: file.hash, hashAfter });
+    if (body.aiReviewId && body.appliedSuggestionIds && body.appliedSuggestionIds.length) await appendKnowledgeAiEditUnsafe(file, content, body);
+    if (body.aiReviewId) await appendKnowledgeAiFeedbackUnsafe({ reviewId: body.aiReviewId, path: file.target.relPath, contentHash: file.hash, action: body.appliedSuggestionIds && body.appliedSuggestionIds.length ? 'apply_suggestions' : 'save_after_ai_review', suggestionIds: body.appliedSuggestionIds, note: body.note });
+    await scanKnowledgeVault();
+    return knowledgeReviewDetail(file.target.relPath);
+  });
+  knowledgeReviewMutationQueue = operation.catch(() => {});
+  return operation;
+}
+
+async function decideKnowledgeReview(body) {
+  const operation = knowledgeReviewMutationQueue.then(async () => {
+    const decision = cleanTaskText(body.decision, 40);
+    if (!['approve', 'request_changes', 'reject'].includes(decision)) throw new Error('unknown review decision');
+    const file = await readKnowledgeReviewFile(body.path);
+    if (file.target.folder !== 'inbox') throw new Error('only Inbox entries can be reviewed');
+    if (body.expectedHash && body.expectedHash !== file.hash) throw new Error('文件已被其他窗口修改，请重新加载后再审核');
+    const note = cleanTaskText(body.note, 1200);
+    if (['request_changes', 'reject'].includes(decision) && !note) throw new Error('退回修改或不采纳时必须填写审核意见');
+    const operationId = randomUUID();
+    const precheck = await precheckKnowledgeEntry({ title: file.parsed.title, content: file.content, source: file.parsed.source, excludePath: file.target.relPath });
+    const secretScan = redactDistillText(file.content);
+    if (decision === 'approve' && secretScan.redacted) throw new Error('内容包含疑似密钥或敏感信息，请脱敏后再发布');
+    if (decision === 'approve' && !file.parsed.source && body.sourceConfirmed !== true) throw new Error('条目缺少来源，请人工核对后勾选来源确认');
+    if (decision === 'approve' && precheck.blocks.length && !cleanTaskText(body.forceReason, 500)) throw new Error('存在重复或冲突阻塞项，单条强制发布需要填写理由');
+    const now = new Date().toISOString();
+    const nextStatus = decision === 'approve' ? 'published' : (decision === 'reject' ? 'deprecated' : 'draft');
+    const nextMeta = {
+      ...file.parsed,
+      status: nextStatus,
+      verifiedBy: decision === 'approve' ? 'human' : file.parsed.verifiedBy,
+      verifiedAt: decision === 'approve' ? now : file.parsed.verifiedAt,
+      reviewDecision: decision === 'approve' ? 'approved' : (decision === 'reject' ? 'rejected' : 'changes_requested'),
+      reviewNote: note || cleanTaskText(body.forceReason, 500),
+      reviewOperationId: operationId
+    };
+    const markdown = knowledgeFrontmatter(nextMeta) + '\n' + file.parsed.body;
+    let pathAfter = file.target.relPath;
+    if (decision === 'approve') pathAfter = (await moveReviewedKnowledge(file, 'atomic', markdown)).relPath;
+    else if (decision === 'reject') pathAfter = (await moveReviewedKnowledge(file, 'archive', markdown)).relPath;
+    else await atomicReplaceKnowledgeFile(file.target.full, markdown);
+    const hashAfter = knowledgeEntryHash(markdown);
+    await appendKnowledgeReviewEvent({ operationId, pathBefore: file.target.relPath, pathAfter, decision, note: note || cleanTaskText(body.forceReason, 500), actor: 'human', hashBefore: file.hash, hashAfter, precheckBlocks: precheck.blocks });
+    if (body.aiReviewId) await appendKnowledgeAiFeedbackUnsafe({ reviewId: body.aiReviewId, path: file.target.relPath, contentHash: file.hash, action: 'decision', decision, note: note || cleanTaskText(body.forceReason, 500) });
+    const index = await scanKnowledgeVault();
+    const entry = index.entries.find((item) => item.path === pathAfter) || null;
+    if (decision === 'approve' && entry) {
+      try { const config = await readVectorConfig(); if (config.provider !== 'none') await updateKnowledgeVectorsFor([entry]); } catch {}
+    }
+    return { ok: true, decision, pathBefore: file.target.relPath, pathAfter, entry, precheck, operationId };
+  });
+  knowledgeReviewMutationQueue = operation.catch(() => {});
+  return operation;
+}
+
+async function batchKnowledgeReview(body) {
+  const paths = Array.isArray(body.paths) ? [...new Set(body.paths.map((item) => cleanTaskText(item, 500)).filter(Boolean))].slice(0, 50) : [];
+  if (!paths.length) throw new Error('review paths required');
+  const decision = cleanTaskText(body.decision, 40);
+  if (!['approve', 'reject'].includes(decision)) throw new Error('batch decision must be approve or reject');
+  const results = [];
+  for (const path of paths) {
+    try {
+      if (decision === 'approve') {
+        const detail = await knowledgeReviewDetail(path);
+        if (!detail.risk.lowRisk || detail.precheck.blocks.length) throw new Error('不符合低风险批量通过条件');
+      }
+      const result = await decideKnowledgeReview({ path, decision, note: body.note, expectedHash: body.hashes && body.hashes[path], sourceConfirmed: false });
+      results.push({ path, ok: true, pathAfter: result.pathAfter });
+    } catch (error) { results.push({ path, ok: false, error: String((error && error.message) || error) }); }
+  }
+  return { results, succeeded: results.filter((item) => item.ok).length, failed: results.filter((item) => !item.ok).length };
 }
 
 async function captureKnowledgeRaw({ name, source, content }) {
@@ -3720,6 +4491,8 @@ function summarizeKnowledgeTraces(traces) {
   const web = list.filter((trace) => trace.tool === 'web_search' || trace.tool === 'web_fetch');
   const overlapPairs = [];
   const batches = new Set();
+  const webOverlapPairs = [];
+  const webBatches = new Set();
   for (const kbTrace of knowledge) {
     for (const webTrace of web) {
       if (!kbTrace.sessionId || kbTrace.sessionId !== webTrace.sessionId) continue;
@@ -3737,6 +4510,19 @@ function summarizeKnowledgeTraces(traces) {
       batches.add(kbTrace.sessionId + ':' + kbTrace.turn + ':' + kbTrace.step);
     }
   }
+  for (let leftIndex = 0; leftIndex < web.length; leftIndex += 1) {
+    const left = web[leftIndex];
+    if (left.tool !== 'web_search') continue;
+    for (let rightIndex = leftIndex + 1; rightIndex < web.length; rightIndex += 1) {
+      const right = web[rightIndex];
+      if (right.tool !== 'web_search' || !left.sessionId || left.sessionId !== right.sessionId) continue;
+      if (left.turn !== right.turn || left.step !== right.step) continue;
+      const overlapMs = Math.max(0, Math.min(left.endedMs, right.endedMs) - Math.max(left.startedMs, right.startedMs));
+      if (overlapMs <= 0) continue;
+      webOverlapPairs.push({ leftTraceId: left.id, rightTraceId: right.id, sessionId: left.sessionId, turn: left.turn, step: left.step, overlapMs });
+      webBatches.add(left.sessionId + ':' + left.turn + ':' + left.step);
+    }
+  }
   return {
     total: list.length,
     successful: list.filter((trace) => trace.success).length,
@@ -3747,7 +4533,10 @@ function summarizeKnowledgeTraces(traces) {
     webCalls: web.length,
     overlapPairs: overlapPairs.slice(-100),
     parallelBatches: batches.size,
-    hasParallelEvidence: overlapPairs.length > 0
+    hasParallelEvidence: overlapPairs.length > 0,
+    webOverlapPairs: webOverlapPairs.slice(-100),
+    webParallelBatches: webBatches.size,
+    hasParallelWebEvidence: webOverlapPairs.length > 0
   };
 }
 
@@ -4194,6 +4983,10 @@ function renderKnowledgeSearchTool(value) {
   if (!value.results || !value.results.length) lines.push('', '未找到可引用的已发布知识条目。');
   if (value.action === 'parallel-kb-web') lines.push('', '覆盖处于灰区：并行使用 web_search 补充证据，并明确说明冲突。');
   if (value.action === 'web-primary') lines.push('', '覆盖不足：以 web_search 为主；知识库未支持的结论必须标记为未验证。');
+  if (value.action !== 'knowledge-only' && Array.isArray(value.webQueries) && value.webQueries.length > 1) {
+    lines.push('', '并发联网查询建议（请在同一个工具调用批次中一次发出，不要串行等待）：');
+    value.webQueries.forEach((query, index) => lines.push((index + 1) + '. ' + query));
+  }
   lines.push('', '引用知识库结论时使用上方完整标签，不要虚构编号、标题或路径。');
   return lines.join('\n');
 }
@@ -4232,6 +5025,9 @@ function makeKnowledgeSearchTool() {
           coverage: { type: 'string', enum: ['sufficient', 'gray', 'insufficient'] },
           coverageScore: { type: 'number' },
           action: { type: 'string', enum: ['knowledge-only', 'parallel-kb-web', 'web-primary'] },
+          // DSH 0.1.1-rc.2 accepts only its documented JSON Schema subset here.
+          // Runtime generation remains bounded to three queries by knowledgeWebFallbackQueries().
+          webQueries: { type: 'array', items: { type: 'string' } },
           results: {
             type: 'array',
             items: {
@@ -4247,7 +5043,7 @@ function makeKnowledgeSearchTool() {
           estimatedTokens: { type: 'integer' }, retrievalTokens: { type: 'integer' },
           latencyMs: { type: 'integer' }, iterations: { type: 'integer' }
         },
-        required: ['query', 'coverage', 'coverageScore', 'action', 'results', 'estimatedTokens', 'retrievalTokens', 'latencyMs', 'iterations']
+        required: ['query', 'coverage', 'coverageScore', 'action', 'webQueries', 'results', 'estimatedTokens', 'retrievalTokens', 'latencyMs', 'iterations']
       },
       render: (_args, value) => [{ type: 'text', text: renderKnowledgeSearchTool(value) }],
       presentationMeta: (_args, value) => ({ coverage: value.coverage, action: value.action, resultCount: value.results.length })
@@ -4276,6 +5072,7 @@ function makeKnowledgeSearchTool() {
         .filter((entry) => knowledgeEntryConfidenceRank(entry) >= minRank)
         .slice(0, config.maxRefs);
       const coverage = knowledgeCoverageSignal(query, selected, config.thresholds);
+      const webQueries = coverage.action === 'knowledge-only' ? [] : knowledgeWebFallbackQueries(query);
       const results = selected.map((entry, index) => ({
         id: '知识' + (index + 1),
         title: cleanTaskText(entry.title, 300),
@@ -4289,6 +5086,7 @@ function makeKnowledgeSearchTool() {
         coverage: coverage.level,
         coverageScore: coverage.score,
         action: coverage.action,
+        webQueries,
         results,
         estimatedTokens: Math.max(0, Math.ceil(results.reduce((sum, item) => sum + item.title.length + item.path.length + item.summary.length + 40, 0) / 2.5)),
         retrievalTokens: Math.max(0, Math.round(search.retrievalTokens || search.estimatedTokens || 0)),
@@ -4337,6 +5135,7 @@ function makeKnowledgeReadTool() {
 const KNOWLEDGE_TOOL_PROMPT = [
   'Use knowledge_search for questions about the user\'s personal, project, workflow, or workbench knowledge. Do not call it for greetings, acknowledgements, or requests that do not depend on existing knowledge.',
   'For freshness-sensitive questions that need both personal/project knowledge and current external facts, emit knowledge_search and web_search together in the same assistant tool-call batch so they execute concurrently.',
+  'When knowledge_search returns two or more webQueries, emit one web_search call for each suggested query in the same assistant tool-call batch (maximum three calls). Do not wait for one Web result before starting the next.',
   'Follow the knowledge_search coverage action: knowledge-only means answer from the returned entries; parallel-kb-web means use web_search too (in the same batch when it was already predictable, otherwise in the next batch); web-primary means use web_search as the primary source and mark unsupported knowledge-base claims as unverified.',
   'Do not repeat knowledge_search with a near-duplicate query after it reports sufficient coverage. Use knowledge_read for a missing detail, or one focused follow-up search only when the returned entries are demonstrably off-topic.',
   'Call knowledge_read only when a search summary is insufficient, and only with an exact path returned by knowledge_search.',
@@ -4426,9 +5225,15 @@ class WorkspacePathError extends Error {
     this.name = 'WorkspacePathError';
   }
 }
+class WorktreeStateError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'WorktreeStateError';
+  }
+}
 
 /** Resolve before checking so symlinks and Windows junctions cannot escape. */
-async function authorizeWorkspacePath(input, expectedKind) {
+async function authorizeWorkspacePath(input, expectedKind, allowMissingFile = false) {
   const requested = String(input || '');
   if (requested === '' || requested.includes('\0') || !isAbsolute(requested)) {
     throw new WorkspacePathError('an absolute workspace path is required');
@@ -4436,12 +5241,20 @@ async function authorizeWorkspacePath(input, expectedKind) {
   if (workspaceRegistry === null) throw new WorkspacePathError('workspace registry is unavailable');
 
   let canonical;
-  try { canonical = await realpath(requested); } catch {
-    throw new WorkspacePathError('path does not exist or cannot be resolved');
+  let info;
+  try {
+    canonical = await realpath(requested);
+    info = await stat(canonical);
+  } catch (error) {
+    if (!(allowMissingFile && expectedKind === 'file' && error && error.code === 'ENOENT')) {
+      throw new WorkspacePathError('path does not exist or cannot be resolved');
+    }
+    const parent = await realpath(dirname(requested)).catch(() => { throw new WorkspacePathError('parent directory does not exist or cannot be resolved'); });
+    canonical = join(parent, basename(requested));
+    info = null;
   }
-  const info = await stat(canonical);
-  if (expectedKind === 'file' && !info.isFile()) throw new WorkspacePathError('path is not a regular file');
-  if (expectedKind === 'directory' && !info.isDirectory()) throw new WorkspacePathError('path is not a directory');
+  if (info && expectedKind === 'file' && !info.isFile()) throw new WorkspacePathError('path is not a regular file');
+  if (info && expectedKind === 'directory' && !info.isDirectory()) throw new WorkspacePathError('path is not a directory');
 
   const roots = workspaceRegistry.list().map((workspace) => workspace.path);
   if (!roots.some((root) => inside(root, canonical))) {
@@ -4453,6 +5266,17 @@ async function authorizeWorkspacePath(input, expectedKind) {
 function pathFail(res, error) {
   if (error instanceof WorkspacePathError) {
     writeJson(res, 403, { error: 'workspace-path-forbidden', message: error.message });
+    return;
+  }
+  fail(res, error);
+}
+function worktreeFail(res, error) {
+  if (error instanceof WorkspacePathError) {
+    writeJson(res, 403, { error: 'workspace-path-forbidden', message: error.message });
+    return;
+  }
+  if (error instanceof WorktreeStateError) {
+    writeJson(res, 409, { error: 'worktree-state-conflict', message: error.message });
     return;
   }
   fail(res, error);
@@ -4484,11 +5308,99 @@ async function authorizePresetPath(id, file, allowMissingFile = false) {
 
 function runGit(dir, args) {
   return new Promise((resolvePromise, rejectPromise) => {
-    execFile('git', ['-C', dir, ...args], { maxBuffer: 2 * 1024 * 1024, timeout: 15000 }, (err, stdout) => {
+    execFile('git', ['-C', dir, ...args], { maxBuffer: 8 * 1024 * 1024, timeout: 30000, windowsHide: true }, (err, stdout, stderr) => {
+      if (err && stderr) err.message += ': ' + String(stderr).trim().slice(0, 2000);
       if (err) { rejectPromise(err); return; }
       resolvePromise(String(stdout));
     });
   });
+}
+
+function orchestrationWorktreeSlug(value, max = 24) {
+  return String(value || '').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase().slice(0, max) || 'worker';
+}
+
+async function prepareOrchestrationWorktree(orchestration, worker) {
+  if (!orchestration.projectPath) throw new Error('Git worktree 隔离需要选择项目');
+  const { canonical } = await authorizeWorkspacePath(orchestration.projectPath, 'directory');
+  const repoRoot = resolve((await runGit(canonical, ['rev-parse', '--show-toplevel'])).trim());
+  const projectRelative = relative(repoRoot, canonical);
+  if (projectRelative.startsWith('..') || isAbsolute(projectRelative)) throw new Error('所选项目不在 Git 仓库内');
+  const repoKey = createHash('sha256').update(taskProjectKey(repoRoot)).digest('hex').slice(0, 12);
+  const suffix = randomUUID().slice(0, 8);
+  const branch = 'codex/wb-' + orchestrationWorktreeSlug(orchestration.id, 10) + '-' + orchestrationWorktreeSlug(worker.id, 10) + '-' + suffix;
+  const worktreePath = join(ORCHESTRATION_WORKTREE_ROOT, repoKey, orchestrationWorktreeSlug(orchestration.id, 20) + '-' + orchestrationWorktreeSlug(worker.id, 20) + '-' + suffix);
+  if (!inside(ORCHESTRATION_WORKTREE_ROOT, worktreePath)) throw new Error('worktree 路径越界');
+  await mkdir(dirname(worktreePath), { recursive: true });
+  const baseCommit = (await runGit(repoRoot, ['rev-parse', 'HEAD'])).trim();
+  let baseBranch = (await runGit(repoRoot, ['branch', '--show-current'])).trim();
+  if (!baseBranch) baseBranch = 'DETACHED@' + baseCommit.slice(0, 12);
+  await runGit(repoRoot, ['worktree', 'add', '-b', branch, worktreePath, baseCommit]);
+  const worktreeCwd = projectRelative && projectRelative !== '.' ? join(worktreePath, projectRelative) : worktreePath;
+  return { worktreePath, worktreeCwd, worktreeBranch: branch, worktreeBaseBranch: baseBranch, worktreeBaseCommit: baseCommit, worktreeStatus: 'ready' };
+}
+
+async function commitOrchestrationWorktree(worker, orchestrationId) {
+  if (!worker.worktreePath) return '';
+  const changes = (await runGit(worker.worktreePath, ['status', '--porcelain'])).trim();
+  if (!changes) return 'clean';
+  await runGit(worker.worktreePath, ['add', '-A']);
+  await runGit(worker.worktreePath, ['-c', 'user.name=DSH Workbench', '-c', 'user.email=dsh-workbench@local', 'commit', '-m', 'workbench: isolated worker ' + orchestrationWorktreeSlug(orchestrationId, 16) + '/' + orchestrationWorktreeSlug(worker.id, 16)]);
+  return 'changed';
+}
+
+async function createOrchestrationWorktreeParent(parent, worker, controller) {
+  if (orchestrationAgents === null || typeof orchestrationAgents.create !== 'function') throw new Error('当前 Agent 工厂不支持独立 cwd');
+  return orchestrationAgents.create({
+    sessionId: randomUUID(),
+    meta: {
+      cwd: worker.worktreeCwd || worker.worktreePath,
+      parentSession: String(parent.id),
+      origin: 'subagent',
+      delegationDepth: Number(parent.session && parent.session.header && parent.session.header.delegationDepth || 0) + 1
+    },
+    agentOptions: parent.options,
+    signal: controller.signal
+  });
+}
+
+async function mutateOrchestrationWorktree(action, orchestrationId, workerId) {
+  const orchestration = await orchestrationSnapshot(orchestrationId);
+  if (!orchestration) throw new Error('orchestration not found');
+  const worker = (orchestration.workers || []).find((entry) => entry.id === workerId);
+  if (!worker || !worker.worktreePath || !worker.worktreeBranch) throw new WorktreeStateError('该子代理没有可处理的隔离工作树');
+  if (!inside(ORCHESTRATION_WORKTREE_ROOT, worker.worktreePath)) throw new WorkspacePathError('worktree 路径越界');
+  if (!worker.worktreeBranch.startsWith('codex/wb-')) throw new WorkspacePathError('拒绝处理非工作台隔离分支');
+  const { canonical } = await authorizeWorkspacePath(orchestration.projectPath, 'directory');
+  const repoRoot = resolve((await runGit(canonical, ['rev-parse', '--show-toplevel'])).trim());
+  if (action === 'apply') {
+    if (worker.worktreeStatus !== 'changed') throw new WorktreeStateError(worker.worktreeStatus === 'applied' ? '隔离改动已经应用' : '隔离工作树没有可应用的已提交改动');
+    const patchText = await runGit(worker.worktreePath, ['diff', '--binary', worker.worktreeBaseCommit + '..HEAD']);
+    if (!patchText.trim()) throw new WorktreeStateError('隔离分支没有可应用的差异');
+    const patchRoot = join(DSH_ROOT, 'worktree-patches');
+    await mkdir(patchRoot, { recursive: true });
+    const patchPath = join(patchRoot, orchestrationWorktreeSlug(orchestrationId, 20) + '-' + orchestrationWorktreeSlug(workerId, 20) + '-' + randomUUID().slice(0, 8) + '.patch');
+    try {
+      await writeFile(patchPath, patchText, 'utf8');
+      try {
+        await runGit(repoRoot, ['apply', '--check', patchPath]);
+      } catch (error) {
+        throw new WorktreeStateError('原项目存在未解决的冲突，隔离改动未应用：' + String((error && error.message) || error).slice(0, 1000));
+      }
+      await runGit(repoRoot, ['apply', patchPath]);
+    } finally {
+      await rm(patchPath, { force: true }).catch(() => {});
+    }
+    await appendOrchestrationLog(orchestrationId, 'info', '已把隔离分支「' + worker.worktreeBranch + '」的改动应用到原项目工作区（未自动提交）', workerId);
+    return queueOrchestrationPatch(orchestrationId, (item) => ({ ...item, workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, worktreeStatus: 'applied' } : entry), updatedAt: new Date().toISOString() }));
+  }
+  if (action === 'discard') {
+    await runGit(repoRoot, ['worktree', 'remove', '--force', worker.worktreePath]);
+    await runGit(repoRoot, ['branch', '-D', worker.worktreeBranch]);
+    await appendOrchestrationLog(orchestrationId, 'warn', '已删除隔离工作树及分支「' + worker.worktreeBranch + '」', workerId);
+    return queueOrchestrationPatch(orchestrationId, (item) => ({ ...item, workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, worktreeStatus: 'discarded', worktreePath: '', worktreeCwd: '', worktreeBranch: '' } : entry), updatedAt: new Date().toISOString() }));
+  }
+  throw new Error('unsupported worktree action');
 }
 
 function readBody(req, maxBytes = MAX_BODY_BYTES) {
@@ -4658,6 +5570,8 @@ function cleanIdea(raw) {
 
 function cleanOrchestrationAgent(raw, fallbackName, fallbackRole) {
   const value = raw && typeof raw === 'object' ? raw : {};
+  const productProvider = ['codex', 'claude-code'].includes(value.productProvider) ? value.productProvider : '';
+  const executionTrack = value.executionTrack === 'B' && productProvider ? 'B' : 'A';
   return {
     id: cleanTaskText(value.id, 80) || randomUUID(),
     name: cleanTaskText(value.name, 120) || fallbackName,
@@ -4669,9 +5583,19 @@ function cleanOrchestrationAgent(raw, fallbackName, fallbackRole) {
     provider: cleanTaskText(value.provider, 160),
     model: cleanTaskText(value.model, 240),
     modelReason: cleanTaskText(value.modelReason, 1000),
+    executionTrack,
+    productProvider: executionTrack === 'B' ? productProvider : '',
     readOnly: value.readOnly !== false,
     usedProvider: cleanTaskText(value.usedProvider, 160),
     usedModel: cleanTaskText(value.usedModel, 240),
+    usedExecutionTrack: value.usedExecutionTrack === 'B' ? 'B' : (value.usedExecutionTrack === 'A' ? 'A' : ''),
+    usedSubagentProvider: cleanTaskText(value.usedSubagentProvider, 80),
+    worktreePath: cleanTaskText(value.worktreePath, 1000),
+    worktreeCwd: cleanTaskText(value.worktreeCwd, 1000),
+    worktreeBranch: cleanTaskText(value.worktreeBranch, 300),
+    worktreeBaseBranch: cleanTaskText(value.worktreeBaseBranch, 300),
+    worktreeBaseCommit: cleanTaskText(value.worktreeBaseCommit, 80),
+    worktreeStatus: ['ready', 'changed', 'clean', 'applied', 'discarded', 'failed'].includes(value.worktreeStatus) ? value.worktreeStatus : '',
     dependsOn: Array.isArray(value.dependsOn) ? [...new Set(value.dependsOn.map((item) => cleanTaskText(item, 120)).filter(Boolean))].slice(0, 12) : [],
     status: ORCHESTRATION_AGENT_STATUSES.includes(value.status) ? value.status : 'planned',
     sessionId: String(value.sessionId || ''),
@@ -4679,7 +5603,9 @@ function cleanOrchestrationAgent(raw, fallbackName, fallbackRole) {
     error: cleanTaskText(value.error, 4000),
     startedAt: typeof value.startedAt === 'string' ? value.startedAt : '',
     completedAt: typeof value.completedAt === 'string' ? value.completedAt : '',
-    attempts: Number.isSafeInteger(value.attempts) && value.attempts >= 1 ? value.attempts : 1
+    attempts: Number.isSafeInteger(value.attempts) && value.attempts >= 1 ? value.attempts : 1,
+    deliveryMode: value.deliveryMode === 'continuable' ? 'continuable' : (value.deliveryMode === 'one-shot' ? 'one-shot' : ''),
+    deliveredAt: typeof value.deliveredAt === 'string' ? value.deliveredAt : ''
   };
 }
 
@@ -4793,6 +5719,24 @@ function cleanKnowledgeAutoMeta(raw) {
   };
 }
 
+function cleanOrchestrationRouting(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const value = raw && typeof raw === 'object' ? raw : {};
+  const score = (entry) => Number.isFinite(Number(entry)) ? Math.max(0, Math.min(1, Number(entry))) : 0;
+  return {
+    mode: ['quick', 'parallel', 'orchestrate'].includes(value.mode) ? value.mode : 'orchestrate',
+    targetAgents: Number.isSafeInteger(Number(value.targetAgents)) ? Math.max(1, Math.min(4, Number(value.targetAgents))) : 1,
+    readOnlyParallel: Boolean(value.readOnlyParallel),
+    writeIntent: Boolean(value.writeIntent),
+    value: score(value.value),
+    parallelism: score(value.parallelism),
+    latencyBenefit: score(value.latencyBenefit),
+    preferredTrack: value.preferredTrack === 'B' ? 'B' : 'A',
+    actualTrack: value.actualTrack === 'B' ? 'B' : 'A',
+    fallbackReason: cleanTaskText(value.fallbackReason, 1000)
+  };
+}
+
 function knowledgeAutoPrompt(refs, meta) {
   if (!meta) return '';
   return knowledgeAutoBuildBlock(Array.isArray(refs) ? refs : [], meta, { webFallback: true });
@@ -4812,6 +5756,15 @@ function cleanOrchestration(raw) {
     title: cleanTaskText(raw.title, 200) || idea.slice(0, 80),
     idea,
     quick: Boolean(raw.quick),
+    autoParallel: Boolean(raw.autoParallel),
+    parallelCount: Number.isSafeInteger(Number(raw.parallelCount)) ? Math.max(0, Math.min(3, Number(raw.parallelCount))) : 0,
+    routing: cleanOrchestrationRouting(raw.routing),
+    routingReview: raw.routingReview && typeof raw.routingReview === 'object' ? {
+      rating: ['right', 'too_much', 'too_little', 'wrong_track'].includes(raw.routingReview.rating) ? raw.routingReview.rating : '',
+      note: cleanTaskText(raw.routingReview.note, 2000),
+      at: typeof raw.routingReview.at === 'string' ? raw.routingReview.at : ''
+    } : null,
+    worktreeMode: raw.worktreeMode === 'write-workers' ? 'write-workers' : 'off',
     attachments: Array.isArray(raw.attachments) ? raw.attachments.map(cleanAttachment).filter((entry) => entry.id).slice(0, 12) : [],
     memory: Array.isArray(raw.memory) ? raw.memory.map(cleanMemorySnapshot).filter((entry) => entry.id).slice(0, 5) : [],
     sourceRefs: Array.isArray(raw.sourceRefs) ? raw.sourceRefs.map(cleanSourceReference).filter((entry) => entry.title).slice(0, 12) : [],
@@ -4822,6 +5775,7 @@ function cleanOrchestration(raw) {
     modelPolicy: cleanTaskText(raw.modelPolicy, 40),
     projectPath: String(raw.projectPath || ''),
     sourceSessionId: String(raw.sourceSessionId || ''),
+    jobId: cleanTaskText(raw.jobId, 160),
     taskId: String(raw.taskId || ''),
     phase,
     plan: currentPlan,
@@ -4853,19 +5807,20 @@ async function readTaskStore() {
     if (linkInfo.isSymbolicLink() || !linkInfo.isFile()) throw new Error('task store must be a regular non-symbolic file');
     if (linkInfo.size > MAX_TASK_STORE_BYTES) throw new Error(`task store exceeds ${MAX_TASK_STORE_BYTES} bytes`);
     const parsed = JSON.parse(await readFile(TASK_STORE, 'utf8'));
-    if (!parsed || ![1, 2, 3, 4].includes(parsed.version) || !Array.isArray(parsed.tasks)) throw new Error('unsupported task store format');
+    if (!parsed || ![1, 2, 3, 4, 5].includes(parsed.version) || !Array.isArray(parsed.tasks)) throw new Error('unsupported task store format');
     const modelHealth = cleanModelHealth(parsed.modelHealth);
     return {
-      version: 4,
+      version: 5,
       revision: Number.isSafeInteger(parsed.revision) && parsed.revision >= 0 ? parsed.revision : 0,
       tasks: parsed.tasks.map(cleanTask),
       templates: Array.isArray(parsed.templates) ? parsed.templates.map(cleanTemplate) : [],
       ideas: Array.isArray(parsed.ideas) ? parsed.ideas.map(cleanIdea) : [],
       orchestrations: Array.isArray(parsed.orchestrations) ? parsed.orchestrations.map(cleanOrchestration) : [],
-      modelHealth
+      modelHealth,
+      routingPolicy: cleanRoutingPolicy(parsed.routingPolicy)
     };
   } catch (error) {
-    if (error && error.code === 'ENOENT') return { version: 4, revision: 0, tasks: [], templates: [], ideas: [], orchestrations: [], modelHealth: {} };
+    if (error && error.code === 'ENOENT') return { version: 5, revision: 0, tasks: [], templates: [], ideas: [], orchestrations: [], modelHealth: {}, routingPolicy: cleanRoutingPolicy(null) };
     throw error;
   }
 }
@@ -4880,6 +5835,19 @@ function cleanModelHealth(value) {
     if (failures > 0 && lastFailedAt) out[String(key).slice(0, 300)] = { failures, lastFailedAt };
   }
   return out;
+}
+
+function cleanRoutingPolicy(value) {
+  const raw = value && typeof value === 'object' ? value : {};
+  const clamp = (entry, fallback) => Number.isFinite(Number(entry)) ? Math.max(0.35, Math.min(0.9, Math.round(Number(entry) * 100) / 100)) : fallback;
+  return {
+    version: Number.isSafeInteger(raw.version) && raw.version > 0 ? raw.version : DEFAULT_ROUTING_POLICY.version,
+    complexityThreshold: clamp(raw.complexityThreshold, DEFAULT_ROUTING_POLICY.complexityThreshold),
+    valueThreshold: clamp(raw.valueThreshold, DEFAULT_ROUTING_POLICY.valueThreshold),
+    parallelQuestionMin: Number.isSafeInteger(Number(raw.parallelQuestionMin)) ? Math.max(2, Math.min(4, Number(raw.parallelQuestionMin))) : DEFAULT_ROUTING_POLICY.parallelQuestionMin,
+    source: cleanTaskText(raw.source, 80) || DEFAULT_ROUTING_POLICY.source,
+    appliedAt: typeof raw.appliedAt === 'string' ? raw.appliedAt : ''
+  };
 }
 
 function recordModelFailure(provider, model, detail) {
@@ -4902,7 +5870,7 @@ function recordModelFailure(provider, model, detail) {
 }
 
 async function writeTaskStore(store) {
-  store.version = 4;
+  store.version = 5;
   await mkdir(DSH_ROOT, { recursive: true });
   const temp = TASK_STORE + '.tmp-' + process.pid + '-' + randomUUID();
   await writeFile(temp, JSON.stringify(store, null, 2) + '\n', 'utf8');
@@ -4935,6 +5903,78 @@ function orchestrationsForScope(orchestrations, projectPath, scope) {
   if (scope === 'all') return orchestrations;
   const key = scope === 'global' ? '' : taskProjectKey(projectPath);
   return orchestrations.filter((item) => taskProjectKey(item.projectPath) === key);
+}
+
+function computeOrchestrationRoutingMetrics(orchestrations, windowDays = 14, activePolicy = DEFAULT_ROUTING_POLICY) {
+  const nowMs = Date.now();
+  const windowMs = Math.max(1, Number(windowDays) || 14) * 24 * 60 * 60 * 1000;
+  const routed = (Array.isArray(orchestrations) ? orchestrations : []).filter((item) => {
+    if (!item || !item.routing) return false;
+    const createdMs = Date.parse(item.createdAt || '');
+    return Number.isFinite(createdMs) && nowMs - createdMs <= windowMs;
+  });
+  const modes = { quick: 0, parallel: 0, orchestrate: 0 };
+  let accepted = 0;
+  let changesRequested = 0;
+  let failed = 0;
+  let autoParallel = 0;
+  let preferredTrackB = 0;
+  let fallbackTrackB = 0;
+  let totalAgents = 0;
+  const durations = [];
+  const ratingCounts = { right: 0, too_much: 0, too_little: 0, wrong_track: 0 };
+  for (const item of routed) {
+    modes[item.routing.mode] = (modes[item.routing.mode] || 0) + 1;
+    if (item.autoParallel) autoParallel += 1;
+    if (item.routing.preferredTrack === 'B') preferredTrackB += 1;
+    if (item.routing.preferredTrack === 'B' && item.routing.actualTrack === 'A') fallbackTrackB += 1;
+    if (item.routingReview && ratingCounts[item.routingReview.rating] !== undefined) ratingCounts[item.routingReview.rating] += 1;
+    totalAgents += Math.max(1, Number(item.routing.targetAgents) || 1);
+    const runStatuses = new Set((Array.isArray(item.runs) ? item.runs : []).map((run) => run && run.status));
+    if (item.phase === 'accepted' || runStatuses.has('accepted')) accepted += 1;
+    if (item.phase === 'changes_requested' || runStatuses.has('changes_requested')) changesRequested += 1;
+    if (item.phase === 'failed' || runStatuses.has('failed')) failed += 1;
+    const startedMs = Date.parse(item.startedAt || '');
+    const completedMs = Date.parse(item.completedAt || item.acceptedAt || '');
+    if (Number.isFinite(startedMs) && Number.isFinite(completedMs) && completedMs >= startedMs) durations.push(completedMs - startedMs);
+  }
+  const reviewDecisions = accepted + changesRequested;
+  const executed = routed.filter((item) => Number(item.attempt) > 0).length;
+  const manualRated = Object.values(ratingCounts).reduce((sum, value) => sum + value, 0);
+  const policy = cleanRoutingPolicy(activePolicy);
+  const pressure = ratingCounts.too_much - ratingCounts.too_little;
+  const suggestedPolicy = cleanRoutingPolicy({
+    ...policy,
+    version: policy.version + 1,
+    complexityThreshold: policy.complexityThreshold + (pressure >= 2 ? 0.05 : (pressure <= -2 ? -0.05 : 0)),
+    valueThreshold: policy.valueThreshold + (pressure >= 2 ? 0.05 : (pressure <= -2 ? -0.05 : 0)),
+    source: 'human-calibration',
+    appliedAt: ''
+  });
+  return {
+    windowDays: Math.max(1, Number(windowDays) || 14),
+    startedAt: new Date(nowMs - windowMs).toISOString(),
+    generatedAt: new Date(nowMs).toISOString(),
+    samples: routed.length,
+    calibrationReady: routed.length >= 20 && reviewDecisions >= 10 && manualRated >= 10,
+    modes,
+    autoParallel,
+    preferredTrackB,
+    fallbackTrackB,
+    accepted,
+    changesRequested,
+    failed,
+    reviewDecisions,
+    manualRated,
+    ratingCounts,
+    activePolicy: policy,
+    suggestedPolicy,
+    recommendation: pressure >= 2 ? '人工反馈显示过度编排偏多，建议把复杂度/价值阈值各提高 0.05。' : (pressure <= -2 ? '人工反馈显示编排不足偏多，建议把复杂度/价值阈值各降低 0.05。' : '当前人工反馈没有形成稳定的单向偏差，建议维持现有阈值。'),
+    acceptanceRate: reviewDecisions ? Math.round(accepted / reviewDecisions * 1000) / 1000 : null,
+    failureRate: executed ? Math.round(failed / executed * 1000) / 1000 : null,
+    averageTargetAgents: routed.length ? Math.round(totalAgents / routed.length * 10) / 10 : null,
+    averageDurationMs: durations.length ? Math.round(durations.reduce((sum, value) => sum + value, 0) / durations.length) : null
+  };
 }
 
 function ideasForScope(ideas, projectPath, scope) {
@@ -5172,6 +6212,10 @@ async function mutateTasks(body) {
       projectPath: body.projectPath,
       sourceSessionId: body.sourceSessionId,
       quick: body.quick,
+      autoParallel: body.autoParallel,
+      parallelCount: body.parallelCount,
+      routing: body.routing,
+      worktreeMode: body.worktreeMode,
       attachments: await resolveAttachments(body.attachments),
       memory: await resolveMemorySnapshots(body.memoryTokens),
       sourceRefs: body.sourceRefs,
@@ -5257,6 +6301,38 @@ async function mutateTasks(body) {
     store.orchestrations[index] = cleanOrchestration({
       ...current, plan: nextPlan, mainAgent: patchAgent(current.mainAgent), workers: current.workers.map(patchAgent), planVersions: versions, updatedAt: now
     });
+  } else if (action === 'orchestration_set_agent_track') {
+    const index = store.orchestrations.findIndex((item) => item.id === body.id);
+    if (index < 0) throw new Error('orchestration not found');
+    const current = store.orchestrations[index];
+    if (!current.plan || current.phase === 'running') throw new Error('agent tracks can only be edited before execution');
+    const agentId = String(body.agentId || '');
+    if (current.mainAgent && current.mainAgent.id === agentId && body.executionTrack === 'B') throw new Error('主协调代理固定使用轨道 A');
+    const productProvider = ['codex', 'claude-code'].includes(body.productProvider) ? body.productProvider : '';
+    const executionTrack = body.executionTrack === 'B' && productProvider ? 'B' : 'A';
+    if (executionTrack === 'B' && !orchestrationProductProviders().includes(productProvider)) throw new Error('所选轨道 B provider 当前不可用');
+    const patchAgent = (agent) => agent && agent.id === agentId ? { ...agent, executionTrack, productProvider: executionTrack === 'B' ? productProvider : '' } : agent;
+    const nextPlan = cleanOrchestrationPlan({ ...current.plan, mainAgent: patchAgent(current.plan.mainAgent), workers: current.plan.workers.map(patchAgent) });
+    const versions = current.planVersions.map((entry, versionIndex) => versionIndex === current.planVersions.length - 1 ? { ...entry, plan: nextPlan } : entry);
+    store.orchestrations[index] = cleanOrchestration({
+      ...current, plan: nextPlan, mainAgent: patchAgent(current.mainAgent), workers: current.workers.map(patchAgent), planVersions: versions, updatedAt: now
+    });
+  } else if (action === 'orchestration_set_worktree_mode') {
+    const index = store.orchestrations.findIndex((item) => item.id === body.id);
+    if (index < 0) throw new Error('orchestration not found');
+    const current = store.orchestrations[index];
+    if (current.phase === 'running') throw new Error('worktree mode can only be edited before execution');
+    store.orchestrations[index] = cleanOrchestration({ ...current, worktreeMode: body.worktreeMode === 'write-workers' ? 'write-workers' : 'off', updatedAt: now });
+  } else if (action === 'orchestration_rate_routing') {
+    const index = store.orchestrations.findIndex((item) => item.id === body.id);
+    if (index < 0) throw new Error('orchestration not found');
+    const rating = ['right', 'too_much', 'too_little', 'wrong_track'].includes(body.rating) ? body.rating : '';
+    if (!rating) throw new Error('invalid routing rating');
+    store.orchestrations[index] = cleanOrchestration({ ...store.orchestrations[index], routingReview: { rating, note: body.note, at: now }, updatedAt: now });
+  } else if (action === 'routing_apply_recommendation') {
+    const metrics = computeOrchestrationRoutingMetrics(store.orchestrations, 14, store.routingPolicy);
+    if (!metrics.calibrationReady) throw new Error('尚未达到校准门槛：需要 20 条路由任务、10 次人工验收和 10 条路由人工评分');
+    store.routingPolicy = cleanRoutingPolicy({ ...metrics.suggestedPolicy, appliedAt: now });
   } else if (action === 'orchestration_start') {
     const index = store.orchestrations.findIndex((item) => item.id === body.id);
     if (index < 0) throw new Error('orchestration not found');
@@ -5269,10 +6345,11 @@ async function mutateTasks(body) {
     store.orchestrations[index] = cleanOrchestration({
       ...current,
       sourceSessionId,
+      jobId: '',
       phase: 'running',
       attempt: current.attempt + 1,
-      mainAgent: { ...current.mainAgent, status: 'waiting', sessionId: '', output: '', error: '', usedProvider: '', usedModel: '', startedAt: '', completedAt: '' },
-      workers: current.workers.map((worker) => ({ ...worker, readOnly: enforceReadOnly ? true : worker.readOnly, status: 'planned', sessionId: '', output: '', error: '', usedProvider: '', usedModel: '', startedAt: '', completedAt: '' })),
+      mainAgent: { ...current.mainAgent, status: 'waiting', sessionId: '', output: '', error: '', usedProvider: '', usedModel: '', usedExecutionTrack: '', usedSubagentProvider: '', startedAt: '', completedAt: '' },
+      workers: current.workers.map((worker) => ({ ...worker, readOnly: enforceReadOnly ? true : worker.readOnly, status: 'planned', sessionId: '', output: '', error: '', usedProvider: '', usedModel: '', usedExecutionTrack: '', usedSubagentProvider: '', startedAt: '', completedAt: '' })),
       finalReport: '',
       runtimeError: '',
       startedAt: now,
@@ -5319,6 +6396,7 @@ async function mutateTasks(body) {
     });
     store.orchestrations[index] = cleanOrchestration({
       ...current,
+      jobId: '',
       phase: 'running',
       attempt: current.attempt + 1,
       mainAgent: { ...current.mainAgent, status: 'waiting', sessionId: '', output: '', error: '', startedAt: '', completedAt: '' },
@@ -5344,6 +6422,7 @@ async function mutateTasks(body) {
     } : worker);
     store.orchestrations[index] = cleanOrchestration({
       ...current,
+      jobId: '',
       phase: 'running',
       attempt: current.attempt + 1,
       mainAgent: { ...current.mainAgent, status: 'waiting', sessionId: '', output: '', error: '', startedAt: '', completedAt: '' },
@@ -5363,6 +6442,7 @@ async function mutateTasks(body) {
     if (message === '') throw new Error('请写下要继续优化的内容');
     store.orchestrations[index] = cleanOrchestration({
       ...current,
+      jobId: '',
       phase: 'refining',
       refineCount: current.refineCount + 1,
       thread: [...(current.thread || []), { role: 'user', text: message, at: now }],
@@ -5398,22 +6478,53 @@ function contentBlocksText(blocks) {
 
 async function streamLlmText(system, prompt, options = {}) {
   if (chatLlm === null) throw new Error('LLM service unavailable');
+  const content = Array.isArray(options.content) && options.content.length
+    ? options.content
+    : [{ type: 'text', text: prompt }];
   const messages = [{
     id: 'wb-orchestration-' + (++chatCounter),
     role: 'user',
-    content: [{ type: 'text', text: prompt }],
+    content,
     source: { kind: 'user' }
   }];
   const out = [];
-  for await (const chunk of chatLlm.stream({
-    provider: CHAT_PROVIDER,
-    model: CHAT_MODEL,
+  let outputChars = 0;
+  const stream = chatLlm.stream({
+    provider: options.provider || CHAT_PROVIDER,
+    model: options.model || CHAT_MODEL,
     system,
     messages,
     temperature: options.temperature ?? 0.25,
     maxTokens: options.maxTokens ?? 5000
-  })) {
-    if (chunk.type === 'text-delta') out.push(chunk.text);
+  });
+  const iterator = stream[Symbol.asyncIterator]();
+  const deadline = options.timeoutMs ? Date.now() + options.timeoutMs : 0;
+  while (true) {
+    const remaining = deadline ? deadline - Date.now() : 0;
+    if (deadline && remaining <= 0) {
+      try { void Promise.resolve(iterator.return()).catch(() => {}); } catch {}
+      throw new Error('LLM request timed out');
+    }
+    let timer;
+    let next;
+    try {
+      next = deadline
+        ? await Promise.race([
+          iterator.next(),
+          new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('LLM request timed out')), remaining); })
+        ]).finally(() => { if (timer) clearTimeout(timer); })
+        : await iterator.next();
+    } catch (error) {
+      try { void Promise.resolve(iterator.return()).catch(() => {}); } catch {}
+      throw error;
+    }
+    if (next.done) break;
+    const chunk = next.value;
+    if (chunk.type === 'text-delta') {
+      out.push(chunk.text);
+      outputChars += String(chunk.text || '').length;
+      if (typeof options.onProgress === 'function') options.onProgress(outputChars);
+    }
   }
   return out.join('').trim();
 }
@@ -5465,12 +6576,33 @@ async function listOrchestrationModels() {
   const groups = await Promise.all(providers.map(async (provider) => {
     try {
       const models = await chatLlm.listModels(provider.id);
-      return models.map((model) => ({ provider: provider.id, providerName: provider.name || provider.id, id: model.id, name: model.name || model.id }));
+      return models.map((model) => ({
+        provider: provider.id,
+        providerName: provider.name || provider.id,
+        id: model.id,
+        name: model.name || model.id,
+        inputModalities: Array.isArray(model.inputModalities) ? model.inputModalities.filter((item) => item === 'text' || item === 'image') : []
+      }));
     } catch { return []; }
   }));
   const items = groups.flat().slice(0, 200);
   modelCatalogCache = { expiresAt: Date.now() + 60000, items };
   return items;
+}
+
+function orchestrationImageAttachments(attachments) {
+  return (Array.isArray(attachments) ? attachments : []).filter((entry) => entry && cleanImageAttachmentRef(entry.imageRef));
+}
+
+function orchestrationPromptContent(text, attachments) {
+  return [
+    { type: 'text', text: String(text || '') },
+    ...orchestrationImageAttachments(attachments).map((entry) => ({ type: 'image', attachment: cleanImageAttachmentRef(entry.imageRef) }))
+  ];
+}
+
+function orchestrationModelSupportsImages(model) {
+  return Boolean(model && Array.isArray(model.inputModalities) && model.inputModalities.includes('image'));
 }
 
 async function probeOneOrchestrationModel(item, force) {
@@ -5860,13 +6992,19 @@ async function generateOrchestrationPlan(record, feedback, models, policy) {
   const pool = await readAgentsStore();
   const agents = pool.mode === 'pool' ? pool.agents : [];
   const projectContext = await projectContextSummary(record.projectPath, record.sourceSessionId);
-  const modelChoices = modelList.map((item) => item.provider + ' :: ' + item.id + ' (' + item.name + ')').join('\n');
+  const modelChoices = modelList.map((item) => item.provider + ' :: ' + item.id + ' (' + item.name + ')' + (orchestrationModelSupportsImages(item) ? ' [支持图片]' : '')).join('\n');
+  const productProviders = orchestrationProductProviders();
+  const trackBAvailable = productProviders.length > 0;
   const system = [
     '你是一个谨慎的多代理任务编排器。把用户的粗略想法转成可审查、可执行、可验收的方案。',
     '只输出一个 JSON 对象，不要 Markdown，不要解释。主代理负责最终汇总和质量控制；子代理负责边界清晰的工作包。',
     '优先 2-4 个子代理，最多 6 个。可并行的任务不要添加依赖；确有先后关系时，dependsOn 使用子代理 name。',
     '每个任务必须带明确验收标准，不得声称已经执行。',
     '每个子代理必须声明 readOnly：纯分析/检索/评估/调研类工作包填 true（默认）；需要写文件、执行命令、修改代码或修改配置的工作包填 false。只有 readOnly=false 的子代理才会在用户确认后获得写权限。',
+    record.autoParallel ? 'G1 只读自动并行：用户消息包含多个独立只读子问题。必须拆成恰好 ' + Math.max(2, record.parallelCount || 2) + ' 个互不依赖、readOnly=true 的子代理，maxParallel 设为同样数量；每个子代理只负责其中一个问题，主代理最后统一汇总。' : '',
+    record.routing ? 'G3 分流证据：模式=' + record.routing.mode + '，价值=' + record.routing.value + '，可并行度=' + record.routing.parallelism + '，延迟收益=' + record.routing.latencyBenefit + '，写操作=' + (record.routing.writeIntent ? '是' : '否') + '，建议轨道=' + record.routing.preferredTrack + '，实际轨道=' + (record.routing.actualTrack || 'A') + (record.routing.fallbackReason ? '（' + record.routing.fallbackReason + '）' : '') + '。按 targetAgents=' + record.routing.targetAgents + ' 控制规模，避免为简单任务过度拆解。' : '',
+    trackBAvailable ? '轨道 B 当前可用 provider：' + productProviders.join('、') + '。主协调代理必须用轨道 A。需要轨道 B 时，纯分析/调研 worker 优先 claude-code，代码修改/命令执行 worker 优先 codex；轨道 B 是独立产品进程，只回传最终文本，不继承父代理工具、人格和上下文，因此工作包必须自包含。' : '轨道 B 当前不可用，所有代理使用轨道 A。',
+    orchestrationImageAttachments(record.attachments).length ? '本任务包含模型可见的图片附件。需要直接观察图片的相关子代理必须选择标为“支持图片”的模型，并在工作包中明确要求观察图片证据；只汇总子代理文本交接的主代理可以使用普通文本模型。' : '',
     '如果提供了模型目录，只能从目录中为代理选择 provider/model；没有合适选项时两者留空以继承父代理。',
     record.quick ? '快速问答模式：这是简单问题，不要拆解任务。只生成 1 个名为「直接回答」的子代理（role 用「回答者」）和 1 个主代理，主代理 mission 写「直接回答用户问题并给出可执行的结论」。' : ''
   ].join('\n');
@@ -5876,7 +7014,7 @@ async function generateOrchestrationPlan(record, feedback, models, policy) {
     record.knowledgeMeta ? '知识库参考（自动检索，规划时优先参考并溯源）：\n' + knowledgeAutoPrompt(record.knowledgeRefs, record.knowledgeMeta) : '',
     '用户想法：\n' + record.idea,
     record.memory && record.memory.length ? '记忆快照（跨会话上下文，优先引用）：\n' + record.memory.map((entry) => '- [' + entry.title + '] ' + entry.summary + (entry.findings.length ? '\n  发现：' + entry.findings.slice(0, 3).join('；') : '')).join('\n') : '',
-    record.attachments && record.attachments.length ? '已附加文件：\n' + record.attachments.map((entry) => '- ' + entry.name + '（' + entry.size + ' B，' + entry.mime + '）' + (entry.summary ? '\n  内容摘录：' + entry.summary.slice(0, 400) : '')).join('\n') : '',
+    record.attachments && record.attachments.length ? '已附加文件：\n' + record.attachments.map((entry) => '- ' + entry.name + '（' + entry.size + ' B，' + entry.mime + '）' + (entry.imageRef ? ' [图片内容已随本消息传入]' : '') + (entry.summary ? '\n  内容摘录：' + entry.summary.slice(0, 400) : '')).join('\n') : '',
     record.sourceRefs && record.sourceRefs.length ? '用户明确引用的来源（方案中依赖这些内容的判断必须可追溯）：\n' + record.sourceRefs.map((entry) => '- [来源: ' + entry.title + '] ' + entry.content.slice(0, 1200)).join('\n') : '',
     agents.length ? '候选专家参考（可按需创建更合适的角色；若使用候选，请在 workers/mainAgent 里带上 agentRef）：\n' + agents.map((agent) => '- ' + agent.id + '：' + agent.name + '（' + (agent.capabilities || []).join('/') + '）' + (agent.model ? '；模型 ' + agent.model : '')).join('\n') : '',
     feedback ? '用户修改意见：\n' + feedback : '',
@@ -5888,24 +7026,98 @@ async function generateOrchestrationPlan(record, feedback, models, policy) {
       summary: '方案摘要',
       strategy: '执行策略与汇总方式',
       maxParallel: 3,
-      mainAgent: { name: '主代理名称', role: '主代理角色', mission: '主代理职责', rationale: '为什么由该角色主导', provider: '', model: '', modelReason: '选择或继承理由' },
-      workers: [{ name: '子代理名称', role: '专业角色', task: '完整工作包（包含必要上下文）', dependsOn: [], readOnly: true, acceptance: '该子任务的验收标准', provider: '', model: '', modelReason: '选择或继承理由' }],
+      mainAgent: { name: '主代理名称', role: '主代理角色', mission: '主代理职责', rationale: '为什么由该角色主导', executionTrack: 'A', productProvider: '', provider: '', model: '', modelReason: '选择或继承理由' },
+      workers: [{ name: '子代理名称', role: '专业角色', task: '完整工作包（包含必要上下文）', dependsOn: [], readOnly: true, acceptance: '该子任务的验收标准', executionTrack: 'A 或 B', productProvider: '轨道 B 时填 codex 或 claude-code，否则留空', provider: '', model: '', modelReason: '选择或继承理由' }],
       acceptanceCriteria: ['最终由用户验收的标准']
     }, null, 2)
   ].filter(Boolean).join('\n\n');
-  const plan = cleanOrchestrationPlan(await (async () => {
-    const first = await streamLlmText(system, prompt, { maxTokens: 8000 });
-    try {
-      return parseJsonObject(first);
-    } catch (firstError) {
-      const second = await streamLlmText(system, prompt + '\n\n上一次输出解析失败（可能是 JSON 被截断）。请只输出一个完整、闭合的 JSON 对象，不要 Markdown。', { maxTokens: 8000 });
+  const imageAttachments = orchestrationImageAttachments(record.attachments);
+  const imageModel = imageAttachments.length ? modelList.find(orchestrationModelSupportsImages) : null;
+  if (imageAttachments.length && !imageModel) {
+    throw new Error('任务包含图片，但当前可用模型目录中没有明确支持图片输入的模型；请先配置多模态模型后重试');
+  }
+  let imageEvidence = '';
+  let evidenceModel = imageModel;
+  if (imageModel) {
+    const compatibilityCandidates = modelList.filter((item) => /vision|multimodal|gpt-4o|gpt-5|claude|gemini|codex/i.test(item.id + ' ' + item.name));
+    const candidates = [imageModel, ...compatibilityCandidates]
+      .filter((item, index, all) => all.findIndex((entry) => entry.provider === item.provider && entry.id === item.id) === index)
+      .slice(0, 4);
+    for (const candidate of candidates) {
       try {
-        return parseJsonObject(second);
-      } catch (secondError) {
-        throw new Error('方案生成失败（已重试一次）：' + String((firstError && firstError.message) || firstError));
+        const extracted = await streamLlmText(
+          '你是多模态证据提取器。直接观察随消息传入的图片，按文件名逐项给出简洁、客观、可供后续任务规划引用的视觉证据。不要输出 JSON，不要猜测看不清的内容。',
+          '任务目标：\n' + record.idea + '\n\n图片文件：\n' + imageAttachments.map((entry) => '- ' + entry.name).join('\n'),
+          {
+            provider: candidate.provider,
+            model: candidate.id,
+            content: orchestrationPromptContent('请观察这些图片并提取与任务目标有关的视觉证据。', record.attachments),
+            maxTokens: 1800,
+            temperature: 0.1
+          }
+        );
+        if (extracted.trim()) {
+          imageEvidence = extracted;
+          evidenceModel = candidate;
+          break;
+        }
+      } catch (error) {
+        diag('vision evidence model failed: ' + candidate.provider + '/' + candidate.id + ' · ' + String((error && error.message) || error));
       }
     }
+  }
+  if (imageModel && !imageEvidence.trim()) throw new Error('当前候选视觉模型均未返回可用于规划的图片证据');
+  const evidenceAwarePrompt = imageEvidence
+    ? prompt + '\n\n视觉模型观察结果（模型 ' + evidenceModel.provider + '/' + evidenceModel.id + '）：\n' + imageEvidence.slice(0, 8000)
+    : prompt;
+  const fallbackPlanners = modelList.filter((item) => /codex-auto-review|gpt-5\.4(?:-mini)?$|gpt-5\.6(?:-terra)?$/i.test(item.id));
+  const plannerCandidates = [null, ...fallbackPlanners]
+    .filter((item, index, all) => item === null || all.findIndex((entry) => entry && entry.provider === item.provider && entry.id === item.id) === index)
+    .slice(0, 3);
+  let plan = cleanOrchestrationPlan(await (async () => {
+    let lastError = null;
+    for (let attempt = 0; attempt < plannerCandidates.length; attempt++) {
+      const candidate = plannerCandidates[attempt];
+      const retryNote = attempt ? '\n\n此前候选模型输出的 JSON 不完整。请只输出一个完整、闭合的 JSON 对象，不要 Markdown；适当压缩字段文字，确保结构先闭合。' : '';
+      try {
+        const output = await streamLlmText(system, evidenceAwarePrompt + retryNote, {
+          maxTokens: 8000,
+          ...(candidate ? { provider: candidate.provider, model: candidate.id } : {})
+        });
+        return parseJsonObject(output);
+      } catch (error) {
+        lastError = error;
+        diag('orchestration planner candidate failed: ' + (candidate ? candidate.provider + '/' + candidate.id : CHAT_PROVIDER + '/' + CHAT_MODEL) + ' · ' + String((error && error.message) || error));
+      }
+    }
+    throw new Error('方案生成失败（已尝试 ' + plannerCandidates.length + ' 个候选模型）：' + String((lastError && lastError.message) || lastError));
   })());
+  if (record.autoParallel) {
+    const expected = Math.max(2, record.parallelCount || 2);
+    if (plan.workers.length < expected) throw new Error('只读自动并行规划不足：期望 ' + expected + ' 个独立子代理，实际 ' + plan.workers.length + ' 个');
+    plan = cleanOrchestrationPlan({
+      ...plan,
+      maxParallel: expected,
+      workers: plan.workers.slice(0, expected).map((worker) => ({ ...worker, readOnly: true, dependsOn: [] }))
+    });
+  }
+  const routeTrackB = Boolean(record.routing && record.routing.actualTrack === 'B' && trackBAvailable);
+  const selectProductProvider = (worker) => {
+    const preferred = worker.productProvider;
+    if (productProviders.includes(preferred)) return preferred;
+    if (!worker.readOnly && productProviders.includes('codex')) return 'codex';
+    if (worker.readOnly && productProviders.includes('claude-code')) return 'claude-code';
+    return productProviders[0] || '';
+  };
+  plan = cleanOrchestrationPlan({
+    ...plan,
+    mainAgent: { ...plan.mainAgent, executionTrack: 'A', productProvider: '' },
+    workers: plan.workers.map((worker) => {
+      const requestedB = routeTrackB || worker.executionTrack === 'B';
+      const productProvider = requestedB ? selectProductProvider(worker) : '';
+      return { ...worker, executionTrack: productProvider ? 'B' : 'A', productProvider };
+    })
+  });
   const allowed = new Set(modelList.map((item) => item.provider + '\u0000' + item.id));
   const validateAgentModel = (agent, isMain) => {
     if (!agent) return agent;
@@ -5965,7 +7177,7 @@ async function workerPrompt(orchestration, worker) {
     '这是工作台中已经由用户确认执行的一项多代理任务。只完成分配给你的工作包，不要擅自扩大范围。',
     '项目路径：' + (orchestration.projectPath || '全局任务'),
     orchestration.knowledgeMeta ? '知识库参考（自动检索，与任务相关时优先参考并溯源）：\n' + knowledgeAutoPrompt(orchestration.knowledgeRefs, orchestration.knowledgeMeta) : '',
-    (orchestration.attachments || []).length ? '已附加文件（需要时读取内容）：\n' + (orchestration.attachments || []).map((entry) => '- ' + entry.name + '（' + entry.size + ' B）' + (entry.summary ? '\n  ' + entry.summary.slice(0, 1200) : '')).join('\n') : '',
+    (orchestration.attachments || []).length ? '已附加文件（需要时读取内容）：\n' + (orchestration.attachments || []).map((entry) => '- ' + entry.name + '（' + entry.size + ' B）' + (entry.imageRef ? ' [图片内容已随本消息传入，请直接观察，不要仅凭文件名猜测]' : '') + (entry.summary ? '\n  ' + entry.summary.slice(0, 1200) : '')).join('\n') : '',
     (orchestration.sourceRefs || []).length ? '用户明确引用的来源：\n' + orchestration.sourceRefs.map((entry) => '- [来源: ' + entry.title + '] ' + entry.content).join('\n') : '',
     '总目标：\n' + orchestration.idea,
     '你的任务：\n' + worker.mission,
@@ -5974,6 +7186,7 @@ async function workerPrompt(orchestration, worker) {
     dependencyContext ? '依赖任务的结果：\n' + dependencyContext : '',
     (orchestration.sourceRefs || []).length ? '凡是依赖上述引用资料的事实、判断或建议，必须紧邻标注 [来源: 对应名称]；无法从来源确认时明确写“未验证”，不得补造。' : '',
     orchestration.knowledgeMeta ? '知识库引用规则：知识库是优先参考但不是唯一来源——知识库覆盖不全或需要更全面/更新的信息时，可结合自身知识或调用 web_search / web_fetch 联网补充；引用知识库内容时标注 [知识N《标题》· 置信度 X] 或 [来源: 标题]，引用联网内容时标注来源 URL；无法确认的内容标注“未验证”。' : '',
+    '如果运行环境提供 report 工具，请在关键发现出现时及时回传一次增量结果，并在结束前回传一份自包含的最终交接；回传不会结束当前工作。',
     '完成后给出结构清晰的交接报告：完成内容、证据/产物、验证结果、风险和建议。'
   ].filter(Boolean).join('\n\n');
 }
@@ -6028,13 +7241,113 @@ async function pickOrchestrationFailoverModel(worker, triedKeys) {
   return candidates[0];
 }
 
+function orchestrationContinuableAvailable() {
+  if (orchestrationSubagents === null || typeof orchestrationSubagents.startContinuable !== 'function') return false;
+  if (typeof orchestrationSubagents.getProvider !== 'function') return false;
+  const provider = orchestrationSubagents.getProvider('spawn');
+  return Boolean(provider && typeof provider.prepareContinuable === 'function');
+}
+
+function orchestrationProductProviders() {
+  if (orchestrationSubagents === null || typeof orchestrationSubagents.list !== 'function') return [];
+  const available = orchestrationSubagents.list();
+  return ['codex', 'claude-code'].filter((provider) => available.includes(provider));
+}
+
+function settleOrchestrationContinuableRun(info) {
+  const childId = String(info && info.id || '');
+  const pending = orchestrationContinuableRuns.get(childId);
+  if (!pending) return;
+  orchestrationContinuableRuns.delete(childId);
+  pending.resolve({
+    stopReason: String(info.stopReason || 'error'),
+    output: Array.isArray(info.lastAssistantMessage) ? info.lastAssistantMessage : [],
+    deliveredAt: new Date().toISOString()
+  });
+}
+
+async function startOrchestrationWorkerRun(options, parent, controller, subagentProvider = 'spawn') {
+  if (subagentProvider !== 'spawn') {
+    if (!orchestrationProductProviders().includes(subagentProvider)) throw new Error('轨道 B provider 不可用：' + subagentProvider);
+    const run = await orchestrationSubagents.start(subagentProvider, {
+      label: options.label,
+      prompt: options.prompt,
+      parent,
+      signal: controller.signal
+    });
+    return {
+      id: run.id,
+      localAgent: run.localAgent,
+      result: run.result,
+      deliveryMode: 'one-shot',
+      dispose: () => run.dispose()
+    };
+  }
+  if (!orchestrationContinuableAvailable()) {
+    const run = await orchestrationSubagents.start('spawn', options);
+    return {
+      id: run.id,
+      localAgent: run.localAgent,
+      result: run.result,
+      deliveryMode: 'one-shot',
+      dispose: () => run.dispose()
+    };
+  }
+  const childId = randomUUID();
+  let resolveResult;
+  const settled = new Promise((resolve) => { resolveResult = resolve; });
+  orchestrationContinuableRuns.set(childId, { resolve: resolveResult });
+  const onAbort = () => {
+    const pending = orchestrationContinuableRuns.get(childId);
+    if (!pending) return;
+    orchestrationContinuableRuns.delete(childId);
+    pending.resolve({ stopReason: 'aborted', output: [], deliveredAt: new Date().toISOString() });
+  };
+  controller.signal.addEventListener('abort', onAbort, { once: true });
+  try {
+    await orchestrationSubagents.startContinuable({
+      provider: 'spawn',
+      label: options.label,
+      childId,
+      request: {
+        prompt: options.prompt,
+        parent,
+        ...(options.persona ? { persona: options.persona } : {}),
+        ...(options.agentOptions ? { agentOptions: options.agentOptions } : {}),
+        ...(options.maxDepth === undefined ? {} : { maxDepth: options.maxDepth })
+      },
+      signal: controller.signal
+    });
+  } catch (error) {
+    orchestrationContinuableRuns.delete(childId);
+    controller.signal.removeEventListener('abort', onAbort);
+    throw error;
+  }
+  return {
+    id: childId,
+    localAgent: orchestrationAgents && orchestrationAgents.get(childId),
+    deliveryMode: 'continuable',
+    result: settled.finally(() => controller.signal.removeEventListener('abort', onAbort)),
+    async dispose() {
+      try {
+        if (typeof orchestrationSubagents.drainContinuableChildren === 'function') {
+          await orchestrationSubagents.drainContinuableChildren(parent, [childId]);
+        }
+      } finally {
+        orchestrationContinuableRuns.delete(childId);
+        controller.signal.removeEventListener('abort', onAbort);
+      }
+    }
+  };
+}
+
 async function runOrchestrationWorker(orchestrationId, workerId, parent, controller) {
   const maxSameRetries = ORCHESTRATION_WORKER_MAX_RETRIES;
   const maxFailovers = ORCHESTRATION_MODEL_FAILOVER_MAX;
   const triedKeys = new Set();
   let run = null;
   let attemptsDone = 0;
-  let sameRetries = 0;
+  let retriesDone = 0;
   let failovers = 0;
   let lastError = '';
   for (let attempt = 1; ; attempt++) {
@@ -6043,6 +7356,7 @@ async function runOrchestrationWorker(orchestrationId, workerId, parent, control
     const startedAt = new Date().toISOString();
     let finished = false;
     let worker = null;
+    let worktreeParentHandle = null;
     try {
       const current = await orchestrationSnapshot(orchestrationId);
       if (!current || current.phase !== 'running') return;
@@ -6055,39 +7369,65 @@ async function runOrchestrationWorker(orchestrationId, workerId, parent, control
       } catch (e) { /* pool is optional */ }
       const effectiveProvider = worker.provider || (poolEntry && poolEntry.provider) || '';
       const effectiveModel = worker.model || (poolEntry && poolEntry.model) || '';
+      const executionTrack = worker.executionTrack === 'B' && orchestrationProductProviders().includes(worker.productProvider) ? 'B' : 'A';
+      const subagentProvider = executionTrack === 'B' ? worker.productProvider : 'spawn';
+      let executionParent = parent;
+      if (executionTrack === 'B' && !worker.readOnly && current.worktreeMode === 'write-workers') {
+        if (!worker.worktreePath) {
+          const worktree = await prepareOrchestrationWorktree(current, worker);
+          worker = { ...worker, ...worktree };
+          await queueOrchestrationPatch(orchestrationId, (item) => ({
+            ...item,
+            workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, ...worktree } : entry),
+            updatedAt: new Date().toISOString()
+          }));
+          await appendOrchestrationLog(orchestrationId, 'info', '已为「' + worker.name + '」创建独立 Git worktree：' + worktree.worktreeBranch, worker.id);
+        }
+        worktreeParentHandle = await createOrchestrationWorktreeParent(parent, worker, controller);
+        executionParent = worktreeParentHandle.agent;
+      }
       if (effectiveProvider && effectiveModel) triedKeys.add(effectiveProvider + '\u0000' + effectiveModel);
       await queueOrchestrationPatch(orchestrationId, (item) => ({
         ...item,
         workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: 'running', startedAt, error: '', attempts: attempt } : entry),
         updatedAt: startedAt
       }));
-      await appendOrchestrationLog(orchestrationId, 'info', '子代理「' + worker.name + '」第 ' + attempt + ' 次执行开始' + (effectiveProvider && effectiveModel ? '（模型 ' + effectiveProvider + '/' + effectiveModel + '）' : ''), worker.id);
-      const spawned = await orchestrationSubagents.start('spawn', {
+      await appendOrchestrationLog(orchestrationId, 'info', '子代理「' + worker.name + '」第 ' + attempt + ' 次执行开始（轨道 ' + executionTrack + ' · ' + subagentProvider + '）' + (executionTrack === 'A' && effectiveProvider && effectiveModel ? '（模型 ' + effectiveProvider + '/' + effectiveModel + '）' : ''), worker.id);
+      const spawned = await startOrchestrationWorkerRun({
         label: worker.name,
-        prompt: [{ type: 'text', text: await workerPrompt(current, worker) }],
-        parent,
+        prompt: orchestrationPromptContent(await workerPrompt(current, worker) + (worker.worktreePath ? '\n\n你正在独立 Git worktree 中执行，cwd=' + worker.worktreeCwd + '。所有文件改动只能发生在当前 cwd；不要切换到原项目目录。宿主会在成功后统一提交隔离分支。' : ''), current.attachments),
+        parent: executionParent,
         signal: controller.signal,
         persona: '你是' + worker.role + '。保持专业、独立验证，并以可交接的证据为准。',
         ...(effectiveProvider && effectiveModel ? { agentOptions: { provider: effectiveProvider, model: effectiveModel } } : {}),
         maxDepth: 2
-      });
+      }, executionParent, controller, subagentProvider);
       run = spawned;
       const usedProvider = run.localAgent && run.localAgent.options ? String(run.localAgent.options.provider || effectiveProvider || '') : effectiveProvider;
       const usedModel = run.localAgent && run.localAgent.options ? String(run.localAgent.options.model || effectiveModel || '') : effectiveModel;
       await queueOrchestrationPatch(orchestrationId, (item) => ({
         ...item,
-        workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, sessionId: String(run.id), usedProvider, usedModel } : entry),
+        workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, sessionId: String(run.id), usedProvider: executionTrack === 'A' ? usedProvider : '', usedModel: executionTrack === 'A' ? usedModel : '', usedExecutionTrack: executionTrack, usedSubagentProvider: subagentProvider, deliveryMode: run.deliveryMode } : entry),
         updatedAt: new Date().toISOString()
       }));
+      if (run.deliveryMode === 'continuable') {
+        await appendOrchestrationLog(orchestrationId, 'info', '子代理「' + worker.name + '」已进入官方异步回传通道，完成或主动 report 时会唤醒父任务', worker.id);
+      }
       const result = await withTimeout(run.result, ORCHESTRATION_WORKER_TIMEOUT_MS, '子代理执行超时（' + (ORCHESTRATION_WORKER_TIMEOUT_MS / 1000).toFixed(1) + ' 秒）');
       const completedAt = new Date().toISOString();
+      const deliveredAt = typeof result.deliveredAt === 'string' ? result.deliveredAt : '';
       const output = contentBlocksText(result.output);
       const successful = result.stopReason === 'completed';
       const failureDetail = orchestrationFailureDetail(result);
-      if (!successful && effectiveProvider && effectiveModel) void recordModelFailure(effectiveProvider, effectiveModel, failureDetail);
+      let worktreeStatus = worker.worktreeStatus;
+      if (successful && worker.worktreePath) {
+        worktreeStatus = await commitOrchestrationWorktree(worker, orchestrationId);
+        await appendOrchestrationLog(orchestrationId, 'info', worktreeStatus === 'changed' ? '隔离分支已自动提交，等待用户应用到原项目' : '隔离工作树没有产生文件改动', worker.id);
+      }
+      if (!successful && executionTrack === 'A' && effectiveProvider && effectiveModel) void recordModelFailure(effectiveProvider, effectiveModel, failureDetail);
       await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
         ...item,
-        workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: successful ? 'completed' : 'failed', output, error: successful ? '' : failureDetail, completedAt, attempts: attempt } : entry),
+        workers: item.workers.map((entry) => entry.id === workerId ? { ...entry, status: successful ? 'completed' : 'failed', output, error: successful ? '' : failureDetail, completedAt, deliveredAt, attempts: attempt, ...(worker.worktreePath ? { worktreeStatus: successful ? worktreeStatus : 'failed' } : {}) } : entry),
         updatedAt: completedAt
       }));
       if (successful) {
@@ -6102,16 +7442,18 @@ async function runOrchestrationWorker(orchestrationId, workerId, parent, control
       finished = true;
     } finally {
       if (run) { await run.dispose().catch(() => {}); run = null; }
+      if (worktreeParentHandle) { await worktreeParentHandle.dispose().catch(() => {}); worktreeParentHandle = null; }
     }
     if (finished) {
       if (controller.signal.aborted) break;
-      if (failovers < maxFailovers) {
+      if (worker && worker.executionTrack !== 'B' && retriesDone < maxSameRetries && failovers < maxFailovers) {
         const latest = await orchestrationSnapshot(orchestrationId).catch(() => null);
         const latestWorker = latest ? (latest.workers || []).find((entry) => entry.id === workerId) : null;
         if (latestWorker && latestWorker.provider && latestWorker.model) triedKeys.add(latestWorker.provider + '\u0000' + latestWorker.model);
         const nextModel = await pickOrchestrationFailoverModel(latestWorker || worker, triedKeys);
         if (nextModel) {
           failovers++;
+          retriesDone++;
           triedKeys.add(nextModel.key);
           const origin = latestWorker && latestWorker.provider && latestWorker.model ? latestWorker.provider + '/' + latestWorker.model : '继承主会话';
           await appendOrchestrationLog(orchestrationId, 'warn', '子代理 ' + workerId + '：' + lastError + '；自动切换模型 ' + nextModel.provider + '/' + nextModel.id + '（原 ' + origin + '）重试', workerId);
@@ -6124,9 +7466,9 @@ async function runOrchestrationWorker(orchestrationId, workerId, parent, control
           continue;
         }
       }
-      if (sameRetries < maxSameRetries) {
-        sameRetries++;
-        const nextNumber = sameRetries + failovers + 1;
+      if (retriesDone < maxSameRetries) {
+        retriesDone++;
+        const nextNumber = retriesDone + 1;
         await appendOrchestrationLog(orchestrationId, 'warn', '子代理 ' + workerId + '：' + lastError + '；准备第 ' + nextNumber + ' 次重试（同模型）', workerId);
         await queueOrchestrationPatch(orchestrationId, (item) => item.phase === 'cancelled' ? item : ({
           ...item,
@@ -6198,20 +7540,27 @@ function runsWithSnapshot(item, status, completedAt, overrides = {}) {
   return [...item.runs.filter((entry) => entry.attempt !== item.attempt), run].slice(-30);
 }
 
-async function runOrchestration(orchestrationId) {
+function resolveOrchestrationParent(orchestration) {
+  if (orchestrationAgents === null || !orchestration) return null;
+  let parent = orchestrationAgents.get(orchestration.sourceSessionId);
+  const requestedProject = taskProjectKey(orchestration.projectPath);
+  const parentProject = parent && parent.session && parent.session.header ? taskProjectKey(parent.session.header.cwd || '') : '';
+  if (requestedProject && parentProject !== requestedProject) {
+    parent = orchestrationAgents.roots().find((agent) => agent.session && agent.session.header && taskProjectKey(agent.session.header.cwd || '') === requestedProject);
+  }
+  return parent || null;
+}
+
+async function runOrchestration(orchestrationId, suppliedController = null) {
   if (orchestrationControllers.has(orchestrationId)) return;
-  const controller = new AbortController();
+  const controller = suppliedController || new AbortController();
   orchestrationControllers.set(orchestrationId, controller);
   try {
     let orchestration = await orchestrationSnapshot(orchestrationId);
     if (!orchestration || orchestration.phase !== 'running') return;
     if (orchestrationSubagents === null || orchestrationAgents === null) throw new Error('DSH subagent runtime unavailable; restart the desktop host and try again');
-    let parent = orchestrationAgents.get(orchestration.sourceSessionId);
+    const parent = resolveOrchestrationParent(orchestration);
     const requestedProject = taskProjectKey(orchestration.projectPath);
-    const parentProject = parent && parent.session && parent.session.header ? taskProjectKey(parent.session.header.cwd || '') : '';
-    if (requestedProject && parentProject !== requestedProject) {
-      parent = orchestrationAgents.roots().find((agent) => agent.session && agent.session.header && taskProjectKey(agent.session.header.cwd || '') === requestedProject);
-    }
     if (!parent) throw new Error('所选项目当前没有在线主会话；请先打开该项目中的任一会话，再回到任务中心重新执行');
     if (requestedProject && (!parent.session || !parent.session.header || taskProjectKey(parent.session.header.cwd || '') !== requestedProject)) {
       throw new Error('执行会话与所选项目不一致；请先打开该项目中的任一会话，再重新执行');
@@ -6221,8 +7570,9 @@ async function runOrchestration(orchestrationId) {
       orchestration = await orchestrationSnapshot(orchestrationId);
     }
     const pending = new Set(orchestration.workers.filter((worker) => worker.status !== 'completed').map((worker) => worker.id));
+    const active = new Map();
     await appendOrchestrationLog(orchestrationId, 'info', '开始执行：共 ' + orchestration.workers.length + ' 个子代理，本次运行 ' + pending.size + ' 个');
-    while (pending.size > 0) {
+    while (pending.size > 0 || active.size > 0) {
       if (controller.signal.aborted) throw new Error('用户终止执行');
       orchestration = await orchestrationSnapshot(orchestrationId);
       if (!orchestration || orchestration.phase !== 'running') return;
@@ -6234,7 +7584,18 @@ async function runOrchestration(orchestrationId) {
           return dependency && ['completed', 'failed', 'cancelled'].includes(dependency.status);
         });
       });
-      if (ready.length === 0) {
+      const capacity = Math.max(0, (orchestration.maxParallel || 3) - active.size);
+      for (const id of ready.slice(0, capacity)) {
+        pending.delete(id);
+        const execution = runOrchestrationWorker(orchestrationId, id, parent, controller)
+          .finally(() => active.delete(id));
+        active.set(id, execution);
+      }
+      if (active.size > 0) {
+        await Promise.race(active.values());
+        continue;
+      }
+      if (pending.size > 0) {
         const completedAt = new Date().toISOString();
         await queueOrchestrationPatch(orchestrationId, (item) => ({
           ...item,
@@ -6243,9 +7604,6 @@ async function runOrchestration(orchestrationId) {
         }));
         break;
       }
-      const batch = ready.slice(0, orchestration.maxParallel || 3);
-      batch.forEach((id) => pending.delete(id));
-      await Promise.all(batch.map((id) => runOrchestrationWorker(orchestrationId, id, parent, controller)));
     }
     if (controller.signal.aborted) throw new Error('用户终止执行');
     orchestration = await orchestrationSnapshot(orchestrationId);
@@ -6360,20 +7718,15 @@ function continuationPrompt(orchestration, userMessage) {
   }];
 }
 
-async function continueOrchestration(orchestrationId) {
+async function continueOrchestration(orchestrationId, suppliedController = null) {
   if (orchestrationControllers.has(orchestrationId)) return;
-  const controller = new AbortController();
+  const controller = suppliedController || new AbortController();
   orchestrationControllers.set(orchestrationId, controller);
   try {
     let orchestration = await orchestrationSnapshot(orchestrationId);
     if (!orchestration || orchestration.phase !== 'refining') return;
     if (orchestrationSubagents === null || orchestrationAgents === null) throw new Error('DSH subagent runtime unavailable; restart the desktop host and try again');
-    let parent = orchestrationAgents.get(orchestration.sourceSessionId);
-    const requestedProject = taskProjectKey(orchestration.projectPath);
-    const parentProject = parent && parent.session && parent.session.header ? taskProjectKey(parent.session.header.cwd || '') : '';
-    if (requestedProject && parentProject !== requestedProject) {
-      parent = orchestrationAgents.roots().find((agent) => agent.session && agent.session.header && taskProjectKey(agent.session.header.cwd || '') === requestedProject);
-    }
+    const parent = resolveOrchestrationParent(orchestration);
     if (!parent) throw new Error('所选项目当前没有在线主会话；请先打开该项目中的任一会话，再重试继续优化');
     const lastUser = [...(orchestration.thread || [])].reverse().find((entry) => entry.role === 'user');
     const startedAt = new Date().toISOString();
@@ -6431,11 +7784,127 @@ async function continueOrchestration(orchestrationId) {
   }
 }
 
+function orchestrationJobLabel(orchestration, mode) {
+  const prefix = mode === 'refine' ? 'AI 协作优化' : 'AI 协作';
+  return (prefix + ' · ' + (orchestration.title || orchestration.idea || orchestration.id)).slice(0, 200);
+}
+
+async function orchestrationJobOutcome(orchestrationId) {
+  const orchestration = await orchestrationSnapshot(orchestrationId);
+  if (!orchestration) return { status: 'failed', detail: '工作台任务记录不存在' };
+  const completed = orchestration.workers.filter((worker) => worker.status === 'completed').length;
+  const total = orchestration.workers.length;
+  const detail = orchestration.phase + ' · 子代理 ' + completed + '/' + total;
+  const output = orchestration.finalReport || orchestration.runtimeError || ('工作台任务已结束：' + orchestration.title);
+  if (orchestration.phase === 'cancelled') return { status: 'killed', detail, output };
+  if (orchestration.phase === 'review' || orchestration.phase === 'accepted') return { status: 'completed', detail, output };
+  if (orchestration.phase === 'failed') return { status: 'failed', detail, output };
+  return { status: 'failed', detail: detail + ' · 未进入终态', output };
+}
+
+async function startOrchestrationJob(orchestrationId, mode = 'execute') {
+  const runner = mode === 'refine' ? continueOrchestration : runOrchestration;
+  if (orchestrationJobs === null) {
+    void runner(orchestrationId).catch((error) => diag('orchestration run failed: ' + String((error && error.stack) || error)));
+    return '';
+  }
+  const orchestration = await orchestrationSnapshot(orchestrationId);
+  const owner = resolveOrchestrationParent(orchestration);
+  if (!orchestration || !owner) {
+    void runner(orchestrationId).catch((error) => diag('orchestration run failed: ' + String((error && error.stack) || error)));
+    return '';
+  }
+  const controller = new AbortController();
+  let jobId = '';
+  let releaseRegistration;
+  const registrationReady = new Promise((resolveReady) => { releaseRegistration = resolveReady; });
+  try {
+    jobId = String(orchestrationJobs.start({
+      kind: 'orchestration',
+      label: orchestrationJobLabel(orchestration, mode),
+      outputLimitBytes: 120000,
+      owner,
+      run() {
+        // Some Job implementations invoke run() synchronously inside start(). Hold the
+        // worker until jobId + audit log are durable so early task writes cannot overtake
+        // registration metadata.
+        const done = registrationReady.then(() => runner(orchestrationId, controller))
+          .then(() => orchestrationJobOutcome(orchestrationId))
+          .catch((error) => ({ status: controller.signal.aborted ? 'killed' : 'failed', detail: String((error && error.message) || error) }));
+        return {
+          cancel(reason) {
+            if (!controller.signal.aborted) controller.abort(reason || 'official job cancellation requested');
+          },
+          done
+        };
+      }
+    }));
+  } catch (error) {
+    releaseRegistration();
+    diag('official job registration unavailable; falling back to direct orchestration: ' + String((error && error.stack) || error));
+    void runner(orchestrationId).catch((runError) => diag('orchestration run failed: ' + String((runError && runError.stack) || runError)));
+    return '';
+  }
+  await queueOrchestrationPatch(orchestrationId, (item) => ({ ...item, jobId, updatedAt: new Date().toISOString() })).catch(() => {});
+  await appendOrchestrationLog(orchestrationId, 'info', '已接入官方 Job Panel：' + jobId).catch(() => {});
+  releaseRegistration();
+  return jobId;
+}
+
 function orchestrationRuntimeInfo() {
   return {
     available: orchestrationSubagents !== null && orchestrationAgents !== null,
     providers: orchestrationSubagents === null ? [] : orchestrationSubagents.list()
   };
+}
+
+async function probeOrchestrationProductProviders(projectPath) {
+  if (orchestrationSubagents === null || orchestrationAgents === null || typeof orchestrationAgents.create !== 'function') throw new Error('代理运行时或 Agent 工厂不可用');
+  const { canonical } = await authorizeWorkspacePath(projectPath, 'directory');
+  const providers = orchestrationProductProviders();
+  if (!providers.includes('codex') || !providers.includes('claude-code')) throw new Error('Codex / Claude Code provider 尚未全部加载');
+  const controller = new AbortController();
+  const parentHandle = await orchestrationAgents.create({ sessionId: randomUUID(), meta: { cwd: canonical }, signal: controller.signal });
+  const specs = [
+    { provider: 'codex', label: 'Codex probe 1', token: 'CODEX_ONE_OK' },
+    { provider: 'codex', label: 'Codex probe 2', token: 'CODEX_TWO_OK' },
+    { provider: 'claude-code', label: 'Claude probe', token: 'CLAUDE_ONE_OK' }
+  ];
+  const startedAt = Date.now();
+  try {
+    const results = await Promise.all(specs.map(async (spec) => {
+      const beganAt = Date.now();
+      let run = null;
+      try {
+        run = await orchestrationSubagents.start(spec.provider, {
+          label: spec.label,
+          prompt: [{ type: 'text', text: '这是只读兼容性探针。不要调用工具，不要读取或修改文件，只返回精确文本 ' + spec.token }],
+          parent: parentHandle.agent,
+          signal: controller.signal
+        });
+        const result = await withTimeout(run.result, 180000, spec.label + ' 超时');
+        const output = contentBlocksText(result.output);
+        return {
+          provider: spec.provider,
+          label: spec.label,
+          stopReason: result.stopReason,
+          output,
+          expected: spec.token,
+          ok: result.stopReason === 'completed' && output.includes(spec.token),
+          ...(result.diagnostic ? { diagnostic: String(result.diagnostic) } : {}),
+          durationMs: Date.now() - beganAt
+        };
+      } catch (error) {
+        return { provider: spec.provider, label: spec.label, stopReason: 'error', output: '', expected: spec.token, ok: false, error: String((error && error.message) || error), durationMs: Date.now() - beganAt };
+      } finally {
+        if (run) await run.dispose().catch(() => {});
+      }
+    }));
+    return { ok: results.every((entry) => entry.ok), cwd: canonical, concurrent: true, durationMs: Date.now() - startedAt, providers, results };
+  } finally {
+    controller.abort('probe complete');
+    await parentHandle.dispose().catch(() => {});
+  }
 }
 
 function recoverInterruptedOrchestrations() {
@@ -6566,8 +8035,504 @@ function executeTodoCommand(invocation, sessionProjections) {
   }
 }
 
+function distillHash(value) {
+  return createHash('sha256').update(String(value || ''), 'utf8').digest('hex');
+}
+
+function cleanDistillText(value, max = 12000) {
+  return String(value || '').replace(/\u0000/g, '').trim().slice(0, max);
+}
+
+function redactDistillText(value) {
+  let text = cleanDistillText(value, MAX_DISTILL_TRANSCRIPT_CHARS);
+  let redacted = false;
+  const replace = (pattern, replacement) => { text = text.replace(pattern, (...args) => { redacted = true; return typeof replacement === 'function' ? replacement(...args) : replacement; }); };
+  replace(/-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g, '[REDACTED PRIVATE KEY]');
+  replace(/\bBearer\s+[A-Za-z0-9._~+/=-]{12,}/gi, 'Bearer [REDACTED]');
+  replace(/\bsk-[A-Za-z0-9_-]{12,}\b/g, 'sk-[REDACTED]');
+  replace(/\b(api[_-]?key|access[_-]?token|secret|password)\s*[:=]\s*[^\s,;]{6,}/gi, (all, key) => key + '=[REDACTED]');
+  return { text, redacted };
+}
+
+function cleanDistillCandidate(raw, index = 0) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  const type = DISTILL_TYPES.has(value.type) ? value.type : 'knowledge';
+  const action = DISTILL_ACTIONS.has(value.suggestedAction) ? value.suggestedAction : 'ADD';
+  const sourceSeqs = Array.isArray(value.sourceSeqs)
+    ? [...new Set(value.sourceSeqs.map(Number).filter(Number.isFinite))].slice(0, 20)
+    : [];
+  const content = cleanDistillText(value.content || value.body || value.summary, 12000);
+  const safetyBlocked = Boolean(value.safetyBlocked) || content.includes('[REDACTED]');
+  return {
+    id: cleanTaskText(value.id, 120) || ('candidate-' + (index + 1) + '-' + randomUUID().slice(0, 8)),
+    type,
+    title: cleanTaskText(value.title, 160).replace(/[\r\n:]+/g, ' ') || ('未命名候选 ' + (index + 1)),
+    content,
+    context: cleanTaskText(value.context, 2000),
+    result: cleanTaskText(value.result, 2000),
+    reusable: cleanTaskText(value.reusable, 2000),
+    tags: Array.isArray(value.tags) ? value.tags.map((item) => cleanTaskText(item, 60)).filter(Boolean).slice(0, 10) : [],
+    confidence: KNOWLEDGE_CONFIDENCES.includes(value.confidence) ? value.confidence : 'medium',
+    claimType: KNOWLEDGE_CLAIM_TYPES.includes(value.claimType) ? value.claimType : 'fact',
+    staleness: KNOWLEDGE_STALENESS.includes(value.staleness) ? value.staleness : 'CHECK',
+    suggestedAction: safetyBlocked ? 'SKIP' : action,
+    reason: cleanTaskText(value.reason, 1200),
+    relatedEntry: cleanTaskText(value.relatedEntry, 500),
+    sourceSeqs,
+    evidence: cleanDistillText(value.evidence, 1600),
+    precheck: value.precheck && typeof value.precheck === 'object' ? value.precheck : null,
+    safetyBlocked,
+    selected: safetyBlocked || action === 'SKIP' ? false : (value.selected === undefined ? type !== 'open_loop' : Boolean(value.selected))
+  };
+}
+
+function cleanDistillRun(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  const statuses = new Set(['queued', 'running', 'review', 'committing', 'committed', 'failed', 'cancelled', 'undone']);
+  return {
+    id: cleanTaskText(value.id, 160) || randomUUID(),
+    sessionId: cleanTaskText(value.sessionId, 160),
+    projectPath: cleanTaskText(value.projectPath, 500),
+    title: cleanTaskText(value.title, 240),
+    template: cleanTaskText(value.template, 80) || 'auto',
+    range: value.range && typeof value.range === 'object' ? {
+      mode: cleanTaskText(value.range.mode, 40),
+      fromSeq: Number(value.range.fromSeq) || 0,
+      toSeq: Number(value.range.toSeq) || 0,
+      fromTurn: Number(value.range.fromTurn) || 0,
+      toTurn: Number(value.range.toTurn) || 0,
+      turnCount: Number(value.range.turnCount) || 0,
+      messageCount: Number(value.range.messageCount) || 0,
+      rangeHash: cleanTaskText(value.range.rangeHash, 160)
+    } : {},
+    extractorVersion: cleanTaskText(value.extractorVersion, 80) || DISTILL_EXTRACTOR_VERSION,
+    status: statuses.has(value.status) ? value.status : 'queued',
+    jobId: cleanTaskText(value.jobId, 160),
+    candidates: Array.isArray(value.candidates) ? value.candidates.slice(0, MAX_DISTILL_CANDIDATES).map(cleanDistillCandidate) : [],
+    transcript: Array.isArray(value.transcript) ? value.transcript.slice(0, 1000).map((entry) => ({
+      seq: Number(entry.seq) || 0,
+      turn: Number(entry.turn) || 0,
+      role: entry.role === 'assistant' ? 'assistant' : 'user',
+      text: cleanDistillText(entry.text, 12000)
+    })) : [],
+    createdAt: String(value.createdAt || new Date().toISOString()),
+    updatedAt: String(value.updatedAt || new Date().toISOString()),
+    completedAt: String(value.completedAt || ''),
+    error: cleanTaskText(value.error, 2000),
+    committed: Array.isArray(value.committed) ? value.committed.slice(0, MAX_DISTILL_CANDIDATES).map((entry) => ({ path: cleanTaskText(entry.path, 500), hash: cleanTaskText(entry.hash, 160), candidateId: cleanTaskText(entry.candidateId, 160) })) : []
+  };
+}
+
+async function readDistillStore() {
+  try {
+    const info = await lstat(DISTILL_STORE);
+    if (info.isSymbolicLink() || !info.isFile()) throw new Error('distill store must be a regular non-symbolic file');
+    if (info.size > MAX_DISTILL_STORE_BYTES) throw new Error('distill store exceeds size limit');
+    const parsed = JSON.parse(await readFile(DISTILL_STORE, 'utf8'));
+    return {
+      version: 1,
+      revision: Number.isSafeInteger(parsed.revision) ? parsed.revision : 0,
+      cursors: parsed.cursors && typeof parsed.cursors === 'object' ? parsed.cursors : {},
+      runs: Array.isArray(parsed.runs) ? parsed.runs.slice(-MAX_DISTILL_RUNS).map(cleanDistillRun) : []
+    };
+  } catch (error) {
+    if (error && error.code === 'ENOENT') return { version: 1, revision: 0, cursors: {}, runs: [] };
+    throw error;
+  }
+}
+
+async function writeDistillStore(store) {
+  await mkdir(DSH_ROOT, { recursive: true });
+  const next = { version: 1, revision: Number(store.revision) || 0, cursors: store.cursors || {}, runs: (store.runs || []).slice(-MAX_DISTILL_RUNS).map(cleanDistillRun) };
+  const temp = DISTILL_STORE + '.tmp-' + process.pid + '-' + randomUUID();
+  await writeFile(temp, JSON.stringify(next, null, 2) + '\n', 'utf8');
+  let lastError;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try { await rename(temp, DISTILL_STORE); return next; }
+    catch (error) { lastError = error; if (attempt < 4) await new Promise((resolvePromise) => setTimeout(resolvePromise, 25 * (attempt + 1))); }
+  }
+  try { await rm(temp, { force: true }); } catch {}
+  throw lastError;
+}
+
+function mutateDistillStore(mutator) {
+  const operation = distillMutationQueue.then(async () => {
+    const store = await readDistillStore();
+    const result = await mutator(store);
+    store.revision += 1;
+    await writeDistillStore(store);
+    return result;
+  });
+  distillMutationQueue = operation.catch(() => {});
+  return operation;
+}
+
+function distillPrompt(run) {
+  const lines = run.transcript.map((entry) => `[seq=${entry.seq} turn=${entry.turn} role=${entry.role === 'user' ? '用户' : '助手'}]\n${entry.text}`);
+  return [
+    '模板：' + run.template,
+    '项目：' + (run.projectPath || '未指定'),
+    '只提取跨会话仍有价值、表述明确且有证据的内容；宁缺毋滥。用户画像与专家预设不在本期范围。稳定偏好只能标为 preference 候选，不能改写专家配置。',
+    '对话：\n' + lines.join('\n\n')
+  ].join('\n\n').slice(0, MAX_DISTILL_TRANSCRIPT_CHARS);
+}
+
+function fallbackDistillCandidates(run) {
+  const candidates = [];
+  for (const entry of run.transcript.filter((item) => item.role === 'user')) {
+    const text = entry.text.replace(/\s+/g, ' ').trim();
+    let type = '';
+    if (/待办|后续|之后|以后|另行|单独讨论|先暂停/.test(text)) type = 'open_loop';
+    else if (/确认|敲定|决定|采用|按.+方案|就按|确定/.test(text)) type = 'decision';
+    else if (/我(?:希望|喜欢|倾向|习惯|要求)|请始终|默认.+(?:要|用)/.test(text)) type = 'preference';
+    if (!type || text.length < 8) continue;
+    candidates.push(cleanDistillCandidate({
+      type,
+      title: text.slice(0, 42),
+      content: text,
+      confidence: 'medium',
+      claimType: 'fact',
+      staleness: type === 'open_loop' ? 'VOLATILE' : 'CHECK',
+      suggestedAction: 'ADD',
+      reason: '从用户明确表达中提取',
+      sourceSeqs: [entry.seq],
+      evidence: text
+    }, candidates.length));
+    if (candidates.length >= 8) break;
+  }
+  return candidates;
+}
+
+async function coordinateDistillCandidate(candidate) {
+  const preview = knowledgeFrontmatter({
+    title: candidate.title,
+    type: candidate.type === 'experience' ? 'experience' : (candidate.type === 'procedure' ? 'workflow' : 'note'),
+    tags: candidate.tags,
+    confidence: candidate.confidence,
+    status: 'review',
+    claimType: candidate.claimType,
+    staleness: candidate.staleness,
+    source: 'conversation-distill',
+    project: '',
+    related: [],
+    summary: candidate.content.slice(0, 500)
+  }) + '\n\n' + candidate.content;
+  const precheck = await precheckKnowledgeEntry({ title: candidate.title, content: preview, source: 'conversation-distill' });
+  const hit = precheck.exactTitle || precheck.duplicates[0] || precheck.similar[0] || null;
+  let suggestedAction = candidate.suggestedAction;
+  if (suggestedAction === 'ADD' && (precheck.exactTitle || precheck.duplicates.length)) suggestedAction = 'MERGE';
+  if (!hit && ['MERGE', 'UPDATE', 'SUPERSEDE'].includes(suggestedAction)) suggestedAction = 'ADD';
+  return cleanDistillCandidate({ ...candidate, suggestedAction, relatedEntry: hit ? hit.path : '', precheck });
+}
+
+async function runDistillAnalysis(runId, controller = new AbortController()) {
+  distillControllers.set(runId, controller);
+  try {
+    const store = await readDistillStore();
+    const run = store.runs.find((item) => item.id === runId);
+    if (!run) throw new Error('distill run not found');
+    let candidates = [];
+    if (chatLlm !== null) {
+      const system = [
+        '你是高精度会话蒸馏器。只输出 JSON，不要解释。',
+        '格式：{"candidates":[{"type":"preference|decision|knowledge|experience|procedure|open_loop","title":"短标题","content":"原子化 Markdown 内容","context":"情境","result":"结果","reusable":"复用边界","tags":["标签"],"confidence":"high|medium|low","claimType":"fact|hypothesis","staleness":"STABLE|CHECK|VOLATILE","suggestedAction":"ADD|MERGE|UPDATE|SUPERSEDE|SKIP","reason":"理由","sourceSeqs":[1],"evidence":"不超过120字的证据摘录"}]}',
+        '规则：一项一个事实或决策；不得推测；忽略寒暄、临时措辞、工具输出和秘密；最多20项。偏好不等于用户画像，也不得生成或修改专家人设。'
+      ].join('\n');
+      try {
+        const output = await streamLlmText(system, distillPrompt(run), { maxTokens: 5000, temperature: 0.15 });
+        const parsed = parseJsonObject(output);
+        if (parsed && Array.isArray(parsed.candidates)) candidates = parsed.candidates.slice(0, 20).map(cleanDistillCandidate).filter((item) => item.content);
+      } catch (error) { diag('distill LLM extraction failed: ' + String((error && error.message) || error)); }
+    }
+    if (controller.signal.aborted) throw new Error('distill cancelled');
+    if (!candidates.length) candidates = fallbackDistillCandidates(run);
+    const coordinated = [];
+    for (const candidate of candidates) {
+      if (controller.signal.aborted) throw new Error('distill cancelled');
+      coordinated.push(await coordinateDistillCandidate(candidate));
+    }
+    const completedAt = new Date().toISOString();
+    await mutateDistillStore((next) => {
+      const target = next.runs.find((item) => item.id === runId);
+      if (!target || target.status === 'cancelled') return target;
+      target.status = 'review';
+      target.candidates = coordinated;
+      target.transcript = [];
+      target.completedAt = completedAt;
+      target.updatedAt = completedAt;
+      return target;
+    });
+  } catch (error) {
+    const cancelled = controller.signal.aborted || String((error && error.message) || error).includes('cancelled');
+    await mutateDistillStore((store) => {
+      const run = store.runs.find((item) => item.id === runId);
+      if (run) { run.status = cancelled ? 'cancelled' : 'failed'; run.error = String((error && error.message) || error); run.transcript = []; run.updatedAt = new Date().toISOString(); }
+    }).catch(() => {});
+  } finally {
+    distillControllers.delete(runId);
+  }
+}
+
+async function distillJobOutcome(runId) {
+  const store = await readDistillStore();
+  const run = store.runs.find((item) => item.id === runId);
+  if (!run) return { status: 'failed', detail: '蒸馏批次不存在' };
+  if (run.status === 'review' || run.status === 'committed') return { status: 'completed', detail: `提取 ${run.candidates.length} 条候选`, output: run.title };
+  if (run.status === 'cancelled') return { status: 'killed', detail: '蒸馏已取消' };
+  return { status: 'failed', detail: run.error || run.status };
+}
+
+async function startDistillJob(runId) {
+  const controller = new AbortController();
+  if (orchestrationJobs === null) {
+    void runDistillAnalysis(runId, controller);
+    return '';
+  }
+  const store = await readDistillStore();
+  const run = store.runs.find((item) => item.id === runId);
+  const owner = (orchestrationAgents && orchestrationAgents.get(run.sessionId)) || (orchestrationAgents && orchestrationAgents.roots && orchestrationAgents.roots().find((agent) => taskProjectKey(agent.session && agent.session.header && agent.session.header.cwd) === taskProjectKey(run.projectPath)));
+  if (!owner) { void runDistillAnalysis(runId, controller); return ''; }
+  const jobId = String(orchestrationJobs.start({
+    kind: 'distill', label: ('会话蒸馏 · ' + (run.title || run.sessionId)).slice(0, 200), outputLimitBytes: 120000, owner,
+    run() {
+      const done = runDistillAnalysis(runId, controller).then(() => distillJobOutcome(runId));
+      return { cancel(reason) { if (!controller.signal.aborted) controller.abort(reason || 'cancelled'); }, done };
+    }
+  }));
+  await mutateDistillStore((next) => { const target = next.runs.find((item) => item.id === runId); if (target) target.jobId = jobId; });
+  return jobId;
+}
+
+function distillMarkdown(run, candidate) {
+  const typeMap = { experience: 'experience', procedure: 'workflow', decision: 'project', knowledge: 'note', preference: 'note', open_loop: 'project' };
+  const sourceRange = `${run.range.fromSeq || 0}-${run.range.toSeq || 0} / turns ${run.range.fromTurn || 0}-${run.range.toTurn || 0}`;
+  const meta = {
+    title: candidate.title, type: typeMap[candidate.type] || 'note', tags: [...candidate.tags, candidate.type, '会话蒸馏'], confidence: candidate.confidence,
+    status: 'review', claimType: candidate.claimType, staleness: candidate.staleness, source: 'conversation-distill', project: run.projectPath,
+    related: candidate.relatedEntry ? [candidate.relatedEntry] : [], summary: candidate.content.slice(0, 500), context: candidate.context, result: candidate.result,
+    reusable: candidate.reusable, sourceSessionId: run.sessionId, sourceRange, distillRunId: run.id,
+    sourceEvidenceHash: distillHash(candidate.evidence || candidate.content), suggestedAction: candidate.suggestedAction,
+    relatedEntry: candidate.relatedEntry, extractorVersion: run.extractorVersion
+  };
+  return knowledgeFrontmatter(meta) + `\n\n# ${candidate.title}\n\n${candidate.content}\n\n## 来源证据\n\n${candidate.evidence || '证据见来源会话与范围哈希。'}\n`;
+}
+
+async function uniqueDistillInboxTarget(run, candidate) {
+  const date = new Date().toISOString().slice(0, 10);
+  const base = `${date}_${safeKnowledgeName(candidate.title)}_${candidate.id.slice(-8).replace(/[^a-zA-Z0-9-]/g, '')}`;
+  for (let suffix = 0; suffix < 100; suffix += 1) {
+    const name = base + (suffix ? '-' + (suffix + 1) : '');
+    const target = knowledgeWritePath('inbox', name);
+    try { await lstat(target.full); }
+    catch (error) { if (error && error.code === 'ENOENT') return target; throw error; }
+  }
+  throw new Error('无法生成唯一的 Inbox 草稿文件名');
+}
+
+async function commitDistillRun(runId) {
+  await ensureKnowledgeVault();
+  return mutateDistillStore(async (store) => {
+    const run = store.runs.find((item) => item.id === runId);
+    if (!run) throw new Error('distill run not found');
+    if (run.status === 'committed') return run;
+    if (run.status !== 'review') throw new Error('distill run is not ready for review commit');
+    const selected = run.candidates.filter((item) => item.selected && item.suggestedAction !== 'SKIP' && !item.safetyBlocked);
+    if (!selected.length) throw new Error('请至少选择一条可提交候选');
+    run.status = 'committing';
+    const committed = [];
+    try {
+      for (const candidate of selected) {
+        const target = await uniqueDistillInboxTarget(run, candidate);
+        const markdown = distillMarkdown(run, candidate);
+        await writeFile(target.full, markdown, 'utf8');
+        committed.push({ path: target.relPath, hash: distillHash(markdown), candidateId: candidate.id });
+      }
+      run.committed = committed;
+      run.status = 'committed';
+      run.completedAt = new Date().toISOString();
+      run.updatedAt = run.completedAt;
+      store.cursors[run.sessionId] = Math.max(Number(store.cursors[run.sessionId]) || 0, Number(run.range.toSeq) || 0);
+      await scanKnowledgeVault();
+      return run;
+    } catch (error) {
+      run.status = 'review';
+      run.error = String((error && error.message) || error);
+      throw error;
+    }
+  });
+}
+
+async function undoDistillRun(runId) {
+  return mutateDistillStore(async (store) => {
+    const run = store.runs.find((item) => item.id === runId);
+    if (!run || run.status !== 'committed') throw new Error('only committed runs can be undone');
+    for (const entry of run.committed) {
+      const match = /^inbox\/([^/]+\.md)$/.exec(entry.path);
+      if (!match) throw new Error('unsafe committed path');
+      const file = join(KNOWLEDGE_INBOX, match[1]);
+      const info = await lstat(file);
+      if (info.isSymbolicLink() || !info.isFile()) throw new Error('draft is not a regular file: ' + entry.path);
+      const current = await readFile(file, 'utf8');
+      if (distillHash(current) !== entry.hash) throw new Error('草稿已被修改，不能自动撤销：' + entry.path);
+    }
+    for (const entry of run.committed) await rm(join(KNOWLEDGE_INBOX, basename(entry.path)), { force: false });
+    run.status = 'undone';
+    run.updatedAt = new Date().toISOString();
+    await scanKnowledgeVault();
+    return run;
+  });
+}
+
 function makeRoutes() {
   return [
+    // ---- P6.1 conversation distillation: extract -> coordinate -> review -> Inbox draft ----
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/distill/history',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'GET') return bad(res, 'method', 'GET required');
+        try {
+          const sessionId = cleanTaskText(paramOf(req, 'sessionId'), 160);
+          const store = await readDistillStore();
+          const runs = store.runs.filter((item) => !sessionId || item.sessionId === sessionId).slice(-20).reverse().map((item) => ({ ...item, transcript: [] }));
+          writeJson(res, 200, { runs, cursor: sessionId ? (Number(store.cursors[sessionId]) || 0) : 0, extractorVersion: DISTILL_EXTRACTOR_VERSION });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/distill/run',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'GET') return bad(res, 'method', 'GET required');
+        try {
+          const id = cleanTaskText(paramOf(req, 'id'), 160);
+          const store = await readDistillStore();
+          const run = store.runs.find((item) => item.id === id);
+          if (!run) return bad(res, 'not-found', 'distill run not found');
+          writeJson(res, 200, { ...run, transcript: [] });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/distill/analyze',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        try {
+          const sessionId = cleanTaskText(body.sessionId, 160);
+          if (!sessionId) return bad(res, 'session-required', 'sessionId required');
+          const input = Array.isArray(body.transcript) ? body.transcript.slice(0, 1000) : [];
+          const transcript = [];
+          let totalChars = 0;
+          let secretsRedacted = false;
+          for (const entry of input) {
+            if (!entry || !['user', 'assistant'].includes(entry.role)) continue;
+            const result = redactDistillText(entry.text);
+            secretsRedacted = secretsRedacted || result.redacted;
+            if (!result.text) continue;
+            totalChars += result.text.length;
+            if (totalChars > MAX_DISTILL_TRANSCRIPT_CHARS) throw new Error('所选会话内容过长，请缩小蒸馏范围');
+            transcript.push({ seq: Number(entry.seq) || 0, turn: Number(entry.turn) || 0, role: entry.role, text: result.text });
+          }
+          if (!transcript.some((entry) => entry.role === 'user')) return bad(res, 'empty-transcript', '所选范围没有用户对话');
+          const rangeHash = distillHash(JSON.stringify(transcript));
+          const now = new Date().toISOString();
+          const run = cleanDistillRun({
+            id: randomUUID(), sessionId, projectPath: body.projectPath, title: body.title || '当前会话', template: body.template,
+            range: { ...(body.range || {}), rangeHash, messageCount: transcript.length },
+            extractorVersion: DISTILL_EXTRACTOR_VERSION, status: 'running', transcript, createdAt: now, updatedAt: now
+          });
+          const result = await mutateDistillStore((store) => {
+            const existing = store.runs.find((item) => item.sessionId === sessionId && item.range.rangeHash === rangeHash && item.extractorVersion === DISTILL_EXTRACTOR_VERSION && !['failed', 'cancelled', 'undone'].includes(item.status));
+            if (existing) return { run: existing, reused: true };
+            store.runs.push(run);
+            return { run, reused: false };
+          });
+          if (!result.reused) void startDistillJob(run.id).catch((error) => diag('distill job start failed: ' + String((error && error.stack) || error)));
+          writeJson(res, 200, { ...result, secretsRedacted, run: { ...result.run, transcript: [] } });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/distill/review',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        let body;
+        try { body = JSON.parse(await readBody(req)); } catch { return bad(res, 'bad-json', 'invalid JSON body'); }
+        try {
+          const id = cleanTaskText(body.id, 160);
+          const patches = Array.isArray(body.candidates) ? body.candidates : [];
+          const run = await mutateDistillStore((store) => {
+            const target = store.runs.find((item) => item.id === id);
+            if (!target) throw new Error('distill run not found');
+            if (target.status !== 'review') throw new Error('distill run is not editable');
+            const byId = new Map(patches.map((item) => [cleanTaskText(item.id, 160), item]));
+            target.candidates = target.candidates.map((candidate, index) => {
+              const update = byId.get(candidate.id);
+              if (!update) return candidate;
+              return cleanDistillCandidate({ ...candidate, ...update, id: candidate.id, precheck: candidate.precheck, safetyBlocked: candidate.safetyBlocked }, index);
+            });
+            target.updatedAt = new Date().toISOString();
+            return target;
+          });
+          writeJson(res, 200, { ...run, transcript: [] });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/distill/commit',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        try {
+          const body = JSON.parse(await readBody(req));
+          const run = await commitDistillRun(cleanTaskText(body.id, 160));
+          writeJson(res, 200, { ...run, transcript: [] });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/distill/cancel',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        try {
+          const body = JSON.parse(await readBody(req));
+          const id = cleanTaskText(body.id, 160);
+          const controller = distillControllers.get(id);
+          if (controller && !controller.signal.aborted) controller.abort('user cancelled');
+          const run = await mutateDistillStore((store) => {
+            const target = store.runs.find((item) => item.id === id);
+            if (!target) throw new Error('distill run not found');
+            if (['running', 'queued'].includes(target.status)) { target.status = 'cancelled'; target.transcript = []; target.updatedAt = new Date().toISOString(); }
+            return target;
+          });
+          writeJson(res, 200, { ...run, transcript: [] });
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/distill/undo',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        try {
+          const body = JSON.parse(await readBody(req));
+          const run = await undoDistillRun(cleanTaskText(body.id, 160));
+          writeJson(res, 200, { ...run, transcript: [] });
+        } catch (error) { fail(res, error); }
+      }
+    },
     // ---- durable workbench appearance + conversation-style preferences ----
     {
       kind: 'exact',
@@ -6769,6 +8734,7 @@ function makeRoutes() {
         try {
           const store = await readTaskStore();
           const modelCatalog = await listOrchestrationModels();
+          const scopedOrchestrations = orchestrationsForScope(store.orchestrations, projectPath, scope);
           writeJson(res, 200, {
             revision: store.revision,
             projectPath,
@@ -6776,13 +8742,42 @@ function makeRoutes() {
             tasks: tasksForScope(store.tasks, projectPath, scope),
             templates: store.templates,
             ideas: ideasForScope(store.ideas, projectPath, scope),
-            orchestrations: orchestrationsForScope(store.orchestrations, projectPath, scope),
+            orchestrations: scopedOrchestrations,
+            routingMetrics: computeOrchestrationRoutingMetrics(scopedOrchestrations, 14, store.routingPolicy),
+            routingPolicy: store.routingPolicy,
             orchestrationRuntime: orchestrationRuntimeInfo(),
             modelCatalog,
             modelHealth: store.modelHealth || {},
             sessionClients: sessionId ? (sseSessions.get(sessionId) || new Set()).size : 0
           });
         } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/orchestration/provider-probe',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        try {
+          const body = JSON.parse(await readBody(req));
+          writeJson(res, 200, await probeOrchestrationProductProviders(String(body.projectPath || '')));
+        } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/orchestration/worktree',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        try {
+          const body = JSON.parse(await readBody(req));
+          const action = String(body.action || '');
+          if (!['apply', 'discard'].includes(action)) throw new Error('unsupported worktree action');
+          const record = await mutateOrchestrationWorktree(action, String(body.id || ''), String(body.workerId || ''));
+          writeJson(res, 200, { ok: true, orchestration: record });
+        } catch (error) { worktreeFail(res, error); }
       }
     },
     {
@@ -6824,6 +8819,7 @@ function makeRoutes() {
             })();
             const planningStore = await readTaskStore();
             const planningModels = await listOrchestrationModels();
+            const scopedOrchestrations = orchestrationsForScope(planningStore.orchestrations, projectPath, scope);
             writeJson(res, 200, {
               ok: true,
               revision: planningStore.revision,
@@ -6832,7 +8828,9 @@ function makeRoutes() {
               tasks: tasksForScope(planningStore.tasks, projectPath, scope),
               templates: planningStore.templates,
               ideas: ideasForScope(planningStore.ideas, projectPath, scope),
-              orchestrations: orchestrationsForScope(planningStore.orchestrations, projectPath, scope),
+              orchestrations: scopedOrchestrations,
+              routingMetrics: computeOrchestrationRoutingMetrics(scopedOrchestrations, 14, planningStore.routingPolicy),
+              routingPolicy: planningStore.routingPolicy,
               orchestrationRuntime: orchestrationRuntimeInfo(),
               modelCatalog: planningModels
             });
@@ -6854,16 +8852,16 @@ function makeRoutes() {
             if (controller) controller.abort('user cancelled');
           }
           if (body.action === 'orchestration_start') {
-            void runOrchestration(body.id).catch((error) => diag('orchestration run failed: ' + String((error && error.stack) || error)));
+            void startOrchestrationJob(body.id, 'execute').catch((error) => diag('orchestration job start failed: ' + String((error && error.stack) || error)));
           }
           if (body.action === 'orchestration_resume') {
-            void runOrchestration(body.id).catch((error) => diag('orchestration resume failed: ' + String((error && error.stack) || error)));
+            void startOrchestrationJob(body.id, 'execute').catch((error) => diag('orchestration resume job start failed: ' + String((error && error.stack) || error)));
           }
           if (body.action === 'orchestration_worker_retry') {
-            void runOrchestration(body.id).catch((error) => diag('orchestration worker retry failed: ' + String((error && error.stack) || error)));
+            void startOrchestrationJob(body.id, 'execute').catch((error) => diag('orchestration worker retry job start failed: ' + String((error && error.stack) || error)));
           }
           if (body.action === 'orchestration_continue') {
-            void continueOrchestration(body.id).catch((error) => diag('orchestration continue failed: ' + String((error && error.stack) || error)));
+            void startOrchestrationJob(body.id, 'refine').catch((error) => diag('orchestration continue job start failed: ' + String((error && error.stack) || error)));
           }
           if (body.action === 'orchestration_accept') {
             const accepted = store.orchestrations.find((item) => item.id === body.id) || null;
@@ -6874,6 +8872,7 @@ function makeRoutes() {
             }
           }
           const modelCatalog = await listOrchestrationModels();
+          const scopedOrchestrations = orchestrationsForScope(store.orchestrations, projectPath, scope);
           writeJson(res, 200, {
             ok: true,
             revision: store.revision,
@@ -6882,7 +8881,9 @@ function makeRoutes() {
             tasks: tasksForScope(store.tasks, projectPath, scope),
             templates: store.templates,
             ideas: ideasForScope(store.ideas, projectPath, scope),
-            orchestrations: orchestrationsForScope(store.orchestrations, projectPath, scope),
+            orchestrations: scopedOrchestrations,
+            routingMetrics: computeOrchestrationRoutingMetrics(scopedOrchestrations, 14, store.routingPolicy),
+            routingPolicy: store.routingPolicy,
             orchestrationRuntime: orchestrationRuntimeInfo(),
             modelCatalog,
             knowledgeCapture
@@ -6983,7 +8984,7 @@ function makeRoutes() {
         if (!target) return bad(res, 'path-required', 'path required');
         if (target.includes('\0')) return bad(res, 'bad-path', 'invalid path');
         try {
-          const { canonical } = await authorizeWorkspacePath(target, 'file');
+          const { canonical } = await authorizeWorkspacePath(target, 'file', true);
           if (Buffer.byteLength(content, 'utf8') > MAX_READ_BYTES) return bad(res, 'too-large', `content exceeds ${MAX_READ_BYTES} bytes`);
           await writeFile(canonical, content, 'utf8');
           writeJson(res, 200, { ok: true });
@@ -7242,6 +9243,87 @@ function makeRoutes() {
       }
     },
     // ---- knowledge: Obsidian-compatible vault + retrieval engine (P5 v3.1) ----
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/review/list',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'GET') return bad(res, 'method', 'GET required');
+        try { writeJson(res, 200, await knowledgeReviewList()); } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/review/detail',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'GET') return bad(res, 'method', 'GET required');
+        try { writeJson(res, 200, await knowledgeReviewDetail(paramOf(req, 'path'))); } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/review/save',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        try { writeJson(res, 200, await saveKnowledgeReview(JSON.parse(await readBody(req)))); } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/review/decision',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        try { writeJson(res, 200, await decideKnowledgeReview(JSON.parse(await readBody(req)))); } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/review/batch',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        try { writeJson(res, 200, await batchKnowledgeReview(JSON.parse(await readBody(req)))); } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/review/ai-review',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        try { writeJson(res, 200, await runKnowledgeAiReview(JSON.parse(await readBody(req)))); } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/review/ai-review/start',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        try { writeJson(res, 202, await startKnowledgeAiReview(JSON.parse(await readBody(req)))); } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/review/ai-review/status',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'GET') return bad(res, 'method', 'GET required');
+        try { writeJson(res, 200, knowledgeAiReviewJobStatus(paramOf(req, 'id'))); } catch (error) { fail(res, error); }
+      }
+    },
+    {
+      kind: 'exact',
+      path: '/api/dsh-workbench/knowledge/review/ai-feedback',
+      handler: async (req, res) => {
+        if (!fence(req, res)) return;
+        if (req.method !== 'POST') return bad(res, 'method', 'POST required');
+        try { writeJson(res, 200, await recordKnowledgeAiFeedback(JSON.parse(await readBody(req)))); } catch (error) { fail(res, error); }
+      }
+    },
     {
       kind: 'exact',
       path: '/api/dsh-workbench/knowledge/list',
@@ -7925,6 +10007,13 @@ function apply(ctx) {
     workspaceRegistry = scoped.workspaceRegistry;
     register(scoped.webServer);
   });
+  try {
+    const subagentEndDispose = ctx.on('subagent/end', settleOrchestrationContinuableRun);
+    if (typeof subagentEndDispose === 'function') disposers.push(subagentEndDispose);
+    diag('subagent settlement delivery listener registered');
+  } catch (error) {
+    diag('subagent settlement delivery listener register failed: ' + String((error && error.stack) || error));
+  }
   // Bind the official DSH subagent runtime separately so task routes remain
   // available even while an optional provider is still being composed.
   ctx.inject(['subagents', 'agents'], (scoped) => {
@@ -7932,6 +10021,16 @@ function apply(ctx) {
     orchestrationAgents = scoped.agents;
     diag('subagents + agents injected: ' + scoped.subagents.list().join(','));
     void recoverInterruptedOrchestrations().catch((error) => diag('orchestration recovery failed: ' + String((error && error.stack) || error)));
+  });
+  ctx.inject(['attachments'], (scoped) => {
+    orchestrationAttachments = scoped.attachments;
+    diag('official attachment store injected; orchestration image blocks active');
+  });
+  ctx.inject(['jobs'], (scoped) => {
+    orchestrationJobs = scoped.jobs;
+    const detach = scoped.jobs.attachController('dsh-workbench');
+    if (typeof detach === 'function') disposers.push(detach);
+    diag('official jobs registry injected; orchestration Job Panel bridge active');
   });
   ctx.inject(['systemPrompt'], (scoped) => {
     scoped.effect(() => scoped.systemPrompt.section({
@@ -8003,8 +10102,13 @@ function apply(ctx) {
     workflowInFlight.clear();
     for (const controller of orchestrationControllers.values()) controller.abort('host disposed');
     orchestrationControllers.clear();
+    for (const controller of distillControllers.values()) controller.abort('host disposed');
+    distillControllers.clear();
+    for (const pending of orchestrationContinuableRuns.values()) pending.resolve({ stopReason: 'aborted', output: [] });
+    orchestrationContinuableRuns.clear();
     orchestrationSubagents = null;
     orchestrationAgents = null;
+    orchestrationJobs = null;
     workspaceRegistry = null;
     for (const dispose of disposers) dispose();
     for (const dispose of commandDisposers) dispose();

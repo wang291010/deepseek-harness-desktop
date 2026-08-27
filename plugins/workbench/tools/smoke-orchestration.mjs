@@ -142,7 +142,7 @@ try {
   assert.equal(plannedState.feedback, '把方案精简为两个子代理，体验与安全并行');
   assert.equal(plannedState.planVersions[0].feedback, '把方案精简为两个子代理，体验与安全并行');
   const persisted = JSON.parse(await readFile(join(tempHome, '.dsh', 'dsh-workbench-tasks.json'), 'utf8'));
-  assert.equal(persisted.version, 4);
+  assert.equal(persisted.version, 5);
 
   // Simulate an interrupted run: one worker completed, the rest interrupted by restart.
   const storeFile = join(tempHome, '.dsh', 'dsh-workbench-tasks.json');

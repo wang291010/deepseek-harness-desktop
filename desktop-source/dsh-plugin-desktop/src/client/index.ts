@@ -6,6 +6,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import type {} from '@deepseek-ai/dsh-client-ui-theme/client'
 import { applyAdvancedShell } from './advanced-shell.ts'
 import { parseDesktopClientEnvironment } from './environment.ts'
+import { registerMcpSettingsSection } from './mcp-settings.tsx'
 
 export { applyAdvancedShell } from './advanced-shell.ts'
 export { parseDesktopClientEnvironment } from './environment.ts'
@@ -16,10 +17,12 @@ export const inject = [
   'slots',
   'sessions',
   'theme',
+  'settingsScope',
 ]
 
 /** Register desktop-owned client surfaces for the current BrowserWindow mode. @param ctx - browser Cordis context. */
 export function apply(ctx: ClientContext): void {
   const environment = parseDesktopClientEnvironment(window.location.search)
+  registerMcpSettingsSection(ctx)
   if (environment.mode === 'advanced') applyAdvancedShell(ctx, environment)
 }

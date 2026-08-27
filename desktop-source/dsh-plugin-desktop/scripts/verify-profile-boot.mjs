@@ -204,9 +204,13 @@ try {
   if (response.status !== 200) {
     throw new Error(`assembled Web root returned HTTP ${String(response.status)}`)
   }
-  const bootMatch = html.match(/window\.__DSH_BOOT__ = (\{.*?\})<\/script>/u)
+  // The current web server assigns the manifest through globalThis and keeps
+  // the JSON payload in an inline module bootstrap script. Older releases used
+  // window.__DSH_BOOT__, so accept both spellings while requiring the complete
+  // assignment to end at the script boundary.
+  const bootMatch = html.match(/(?:globalThis\["__DSH_BOOT__"\]|window\.__DSH_BOOT__)\s*=\s*(\{[\s\S]*?\})\s*;?\s*<\/script>/u)
   if (bootMatch?.[1] === undefined) {
-    throw new Error('assembled Web root is missing window.__DSH_BOOT__')
+    throw new Error('assembled Web root is missing the DSH boot manifest assignment')
   }
   const graph = JSON.parse(bootMatch[1])
   const ids = new Set(graph.entries.map(entry => entry.id))

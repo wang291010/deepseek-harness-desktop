@@ -29,6 +29,12 @@ import FileSettingsProvider, {
 import { parseDocument } from 'yaml'
 import { unpackedAsarPath } from './packaged-runtime-path.ts'
 import type { DesktopShellMode } from './runtime.ts'
+import {
+  McpSettingsSchema,
+  mcpRowsFromSettings,
+  validateMcpSettings,
+  type McpSettings,
+} from './mcp.ts'
 
 /** Persistent profile managed by the desktop launcher and the ordinary dsh plugin command. */
 export const DESKTOP_PROFILE_NAME = 'desktop'
@@ -58,6 +64,39 @@ const DESKTOP_SETTINGS_NAMESPACE = 'dsh-desktop'
 const UI_LAYOUT_PACKAGE = '@deepseek-ai/dsh-client-ui-layout'
 const UI_SIDEBAR_PACKAGE = '@deepseek-ai/dsh-client-ui-sidebar'
 const UI_CONVERSATION_PACKAGE = '@deepseek-ai/dsh-client-ui-conversation'
+
+/** Read the durable MCP settings section from the same provider document used by startup. */
+function readMcpSettings(config: SettingsFileConfig): McpSettings {
+  const spec = resolveSettingsFileSpec(config)
+  let text: string
+  try {
+    text = readFileSync(spec.filename, 'utf8')
+  } catch (cause) {
+    if ((cause as NodeJS.ErrnoException).code === 'ENOENT') return McpSettingsSchema({ servers: [] })
+    throw cause
+  }
+  let document: unknown
+  if (spec.format === 'yaml') {
+    const parsed = parseDocument(text, { prettyErrors: true })
+    if (parsed.errors.length > 0) {
+      throw new Error(`${BIN_NAME}: invalid settings document: ${parsed.errors.map(error => error.message).join('; ')}`)
+    }
+    document = parsed.toJS() ?? {}
+  } else {
+    document = text.trim().length === 0 ? {} : JSON.parse(text)
+  }
+  if (typeof document !== 'object' || document === null || Array.isArray(document)) {
+    throw new Error(`${BIN_NAME}: settings document must be a map of namespace sections`)
+  }
+  const root = document as Record<string, unknown>
+  const section = root['dsh-mcp']
+  const rawServers = section !== null && typeof section === 'object' && !Array.isArray(section)
+    ? (section as Record<string, unknown>).servers
+    : undefined
+  const settings = McpSettingsSchema({ servers: Array.isArray(rawServers) ? rawServers as McpSettings['servers'] : [] })
+  validateMcpSettings(settings)
+  return settings
+}
 
 /**
  * Parse desktop presentation state and reject corrupted values.
@@ -329,10 +368,13 @@ export function prepareDesktopProfile(
     ...rowConfig(settings),
   } as SettingsFileConfig)
   const mode = readDesktopShellMode(settingsConfig)
+  const mcpSettings = readMcpSettings(settingsConfig)
   patches.push({
     id: 'settings',
     config: settingsConfig,
   })
+  const mcpRows = mcpRowsFromSettings(mcpSettings)
+  if (mcpRows.length > 0) patches.push({ insert: mcpRows })
   if (mode === 'advanced') {
     for (const [id, packageName] of [
       ['ui-layout', UI_LAYOUT_PACKAGE],

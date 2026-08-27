@@ -13,6 +13,11 @@ import { settingsNamespace } from '@deepseek-ai/dsh-settings'
 import { PRODUCT_NAME } from './desktop-identity.ts'
 import type { DesktopShellMode } from './runtime.ts'
 import type {} from './runtime.ts'
+import {
+  MCP_SETTINGS_NAMESPACE,
+  McpSettingsSchema,
+  validateMcpSettings,
+} from './mcp.ts'
 
 /** Stable Cordis plugin name. */
 export const name = 'desktop-shell'
@@ -110,6 +115,32 @@ export function apply(ctx: Context, config: Config): void {
       },
     },
   )
+  const mcpSettings = ctx.settings.register(
+    settingsNamespace(MCP_SETTINGS_NAMESPACE),
+    McpSettingsSchema,
+    {
+      applies: 'restart',
+      validate: validateMcpSettings,
+    },
+  )
+  ctx.effect(() => {
+    let pending: ReturnType<typeof setImmediate> | undefined
+    const initial = JSON.stringify(mcpSettings.get())
+    const stopWatching = mcpSettings.watch(next => {
+      if (JSON.stringify(next) === initial) return
+      pending ??= setImmediate(() => {
+        pending = undefined
+        void ctx.desktopRuntime.requestRestart().catch((cause: unknown) => {
+          ctx.logger.error('dsh-plugin-desktop: failed to restart after MCP settings change')
+          ctx.logger.error(cause)
+        })
+      })
+    })
+    return () => {
+      stopWatching()
+      if (pending !== undefined) clearImmediate(pending)
+    }
+  }, 'dsh-plugin-desktop: restart after MCP settings change')
   ctx.effect(() => {
     let pending: ReturnType<typeof setImmediate> | undefined
     const stopWatching = settings.watch((next) => {
