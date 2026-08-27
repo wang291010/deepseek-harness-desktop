@@ -8,11 +8,13 @@ compatibility test before it becomes the new baseline.
 
 ## Desktop runtime
 
-- Desktop package: `dsh-plugin-desktop@2.1.1`（2026-08-20：用量插件包名
-  改为 `@wang291010/dsh-usage-stats`，归属与更新上游见 `docs/ownership-boundary.md`）
+- Desktop package: `dsh-plugin-desktop@2.1.2`（2026-08-27：新增 MCP 独立配置、
+  worktree 冲突保护与多代理协作收口；用量插件归属与更新上游见 `docs/ownership-boundary.md`）
 - DeepSeek Harness core: `@deepseek-ai/dsh@0.1.0-rc.6`
 - Electron: `43.4.0`
 - Desktop-bundled pnpm: `11.7.0`
+- Setup installer SHA-256 (2.1.2):
+  `D287CCD7BE0F12E17107657AD4E8411580195E469792DE08DDE5BB285C3BF724`
 - Setup installer SHA-256 (2.1.1):
   `83713ED9E02D3E3353D44E5AC31A47ADF6FB5665191B7098CB52DF0127B89C87`
 - Setup installer SHA-256 (2.0.1):

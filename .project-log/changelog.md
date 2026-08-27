@@ -6,6 +6,14 @@
 
 `编号 | 时间 | 模块 | 文件 | 改动内容 | 原因 | 验证 | 回滚`
 
+| C0091 | 2026-08-27 12:05 | 工程与发布 | desktop-source/package.json、desktop-source/dsh-plugin-desktop/package.json、docs/version-baseline.md、desktop-source/dsh-plugin-desktop/dist/DeepSeek-Harness-Desktop-2.1.2-x64-Setup.exe | 将桌面核心和产品工作区版本从 2.1.1 升级为 2.1.2；生成独立 Windows x64 未签名安装包并记录 SHA-256；准备新建 v2.1.2 Release，保留 v2.1.1 历史 Release 不再覆盖 | 用户澄清上一轮误覆盖旧版 Release，希望将当前 MCP、worktree 冲突保护和多代理协作收口作为新版本发布，并附带简短更新内容 | `corepack.cmd yarn dist:win`：9 个测试文件通过、113 通过/1 跳过；安装器校验通过；SHA-256 为 `D287CCD7BE0F12E17107657AD4E8411580195E469792DE08DDE5BB285C3BF724` | 回滚版本号与基线文档，删除 v2.1.2 Release/资产；不修改 v2.1.1 |
+
+| C0090 | 2026-08-27 11:55 | 知识库/日志系统 | .project-log/{changelog,index,learnings,status}.md | 修正蒸馏职责说明：`project-log-distill` 用于从项目日志提炼可复用项目经验，工作台侧边栏用于从当前对话提炼会话知识；两者均保留并按目的互补，不要求二选一；只有同一内容被无差别重复写入时才需要合并或跳过 | 用户澄清希望同时保留项目经验蒸馏与当前对话蒸馏，确认二者不是替代关系 | 已重新确认两条链路的输入来源和产物目的；未修改代码、技能实现或知识库条目 | 无需回滚；若未来改为单一入口，应同步修订技能与工作台边界说明 |
+
+| C0089 | 2026-08-27 11:45 | 知识库/日志系统 | .project-log/{changelog,index,learnings,status}.md | 确认蒸馏职责边界：Codex 在项目上下文中使用 `project-log-update`/`project-log-distill` 处理项目日志经验；工作台使用侧边栏当前会话蒸馏处理会话内容；禁止同一内容走两条入口，跨入口时以来源和重复预检为准 | 用户希望 Codex 使用项目日志蒸馏技能，个人工作台使用专门的侧边栏蒸馏功能 | 形成并记录操作规则；未修改实现代码、技能内容或知识库条目 | 无需回滚；若改变入口归属，需同步更新 AGENTS.md、技能说明和工作台蒸馏提示 |
+
+| C0088 | 2026-08-27 11:35 | 知识库/日志系统 | C:\Users\wang2\.codex\skills\project-log-distill\SKILL.md、plugins/workbench/lib/client.js、plugins/workbench/lib/host/index.js、.project-log/config.json | 核对项目日志蒸馏技能、右侧当前会话蒸馏和工作台知识库蒸馏的输入、游标、状态、来源与写入目标；确认三者没有直接技术冲突，但共享 `01-Inbox`，需按“项目日志经验 vs 当前会话内容”分工并避免同一内容重复蒸馏 | 用户询问项目日志蒸馏技能与工作台当前对话蒸馏是否冲突，并希望明确使用边界 | 已读取技能增量读取规则、会话蒸馏范围/游标/历史接口、会话来源元数据与知识库目标配置；未修改代码或知识条目 | 无需回滚；若后续改变职责边界，应同步更新技能规则、来源元数据或审核策略 |
+
 | C0085 | 2026-08-27 10:11 | 工程与日志系统 | docs/project-log-skills-update-2026-08-27.md、.project-log/{changelog,index,learnings,status}.md | 新增 project-log 技能迁移说明：完整记录三项 skill 的旧新行为差异、两份副本同步要求、项目日志导航变化、工作台更新步骤、UTF-8 校验、哈希一致性和回滚方式，供另一套工作台直接更新旧版技能 | 用户在另一套工作台维护了旧版三个 skill，需要一份不依赖当前对话的完整更新说明并保持两套环境行为一致 | Markdown 文件已生成并覆盖 init/update/distill 全部变化；引用的校验命令与当前已通过结果一致；`git diff --check` 通过 | 删除 `docs/project-log-skills-update-2026-08-27.md` 并恢复本条之前的项目日志状态 |
 
 | C0086 | 2026-08-27 10:20 | 发布/Windows x64 | desktop-source/dsh-plugin-desktop/dist/DeepSeek-Harness-Desktop-2.1.1-x64-Setup.exe、.project-log/{changelog,index,learnings,status}.md | 按 `dist:win` 生成最新版未签名 Windows x64 NSIS 安装包；构建过程包含 build、TypeScript、Windows 发布回归、runtime closure、electron-builder 和 PE 安装器校验；发布提交排除 `artifacts/` 中的 provider 包、压缩包和截图 | 用户要求上传现有修改并打包最新版安装包；发布前需避免把本地验收材料、用户数据或大体积 provider 归档纳入源码提交 | 普通权限首次构建受 node_modules ACL 拒绝；提升权限重跑成功：9 个测试文件、113 通过/1 跳过，runtime closure 201 节点，electron-builder exit 0，`verify-win-installer` 通过；安装包为未签名构建 | 使用 Git 回滚本次发布提交；删除 dist 后重新构建；不上传 `artifacts/` |
