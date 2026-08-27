@@ -29,6 +29,13 @@
 - 结果：`dist:win` 在提升权限后完成全套 Windows 发布门禁，生成未签名 x64 NSIS 安装包并通过 PE 校验；普通权限失败原因是 node_modules ACL，而非构建代码错误。
 - 评价：发布前先检查 Git 状态和忽略规则，避免把本地验收材料、用户数据或大体积 provider 归档误上传。
 
+## C0087 · 上传后必须核对远程资产哈希
+
+- 场景/触发词：GitHub Release、覆盖旧安装包、上传完成、下载地址、SHA-256。
+- 做了什么：使用 `gh release upload --clobber` 覆盖 `v2.1.1` 同名资产，并通过 GitHub API读取远程资产大小、状态、digest 和下载地址。
+- 结果：远程资产状态为 `uploaded`，远程 digest 与本地安装包 SHA-256 完全一致；源码 `eab2c9c` 同步在 `origin/main`。
+- 评价：上传命令成功不等于资产可用，必须再读 Release API 对比远程大小和 digest，尤其是覆盖同名资产时。
+
 ## C0084 · AI 项目日志应采用地图式渐进披露
 
 - 场景/触发词：上下文污染 / project-log 优化 / AI coding agent / 全文读取 learnings / 技能副本漂移
