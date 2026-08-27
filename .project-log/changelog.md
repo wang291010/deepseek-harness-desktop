@@ -6,6 +6,8 @@
 
 `编号 | 时间 | 模块 | 文件 | 改动内容 | 原因 | 验证 | 回滚`
 
+| C0092 | 2026-08-27 13:45 | 工程与发布 | GitHub Release `v2.1.2`、desktop-source/dsh-plugin-desktop/dist/DeepSeek-Harness-Desktop-2.1.2-x64-Setup.exe | 创建正式 `v2.1.2` Release 并发布更新说明；上传 Windows x64 未签名安装包；远程资产状态为 uploaded，保留 `v2.1.1` 原 Release 不变 | 用户希望当前修改作为新版本发布，并简单标注更新内容，而不是覆盖 2.1.1 | GitHub API 核对：tag `v2.1.2`、draft=false、prerelease=false；资产大小 234380377；远程 digest `sha256:d287ccd7be0f12e17107657ad4e8411580195e469792de08dde5bb285c3bf724` 与本地一致；v2.1.1 仍有独立资产 | 删除 v2.1.2 Release/资产并回退 tag；不修改 v2.1.1 |
+
 | C0091 | 2026-08-27 12:05 | 工程与发布 | desktop-source/package.json、desktop-source/dsh-plugin-desktop/package.json、docs/version-baseline.md、desktop-source/dsh-plugin-desktop/dist/DeepSeek-Harness-Desktop-2.1.2-x64-Setup.exe | 将桌面核心和产品工作区版本从 2.1.1 升级为 2.1.2；生成独立 Windows x64 未签名安装包并记录 SHA-256；准备新建 v2.1.2 Release，保留 v2.1.1 历史 Release 不再覆盖 | 用户澄清上一轮误覆盖旧版 Release，希望将当前 MCP、worktree 冲突保护和多代理协作收口作为新版本发布，并附带简短更新内容 | `corepack.cmd yarn dist:win`：9 个测试文件通过、113 通过/1 跳过；安装器校验通过；SHA-256 为 `D287CCD7BE0F12E17107657AD4E8411580195E469792DE08DDE5BB285C3BF724` | 回滚版本号与基线文档，删除 v2.1.2 Release/资产；不修改 v2.1.1 |
 
 | C0090 | 2026-08-27 11:55 | 知识库/日志系统 | .project-log/{changelog,index,learnings,status}.md | 修正蒸馏职责说明：`project-log-distill` 用于从项目日志提炼可复用项目经验，工作台侧边栏用于从当前对话提炼会话知识；两者均保留并按目的互补，不要求二选一；只有同一内容被无差别重复写入时才需要合并或跳过 | 用户澄清希望同时保留项目经验蒸馏与当前对话蒸馏，确认二者不是替代关系 | 已重新确认两条链路的输入来源和产物目的；未修改代码、技能实现或知识库条目 | 无需回滚；若未来改为单一入口，应同步修订技能与工作台边界说明 |
